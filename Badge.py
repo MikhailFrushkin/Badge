@@ -225,8 +225,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             dialog = CustomDialog()
             dialog.set_text(mes)
             dialog.exec_()
-            download_new_arts_in_comp(list_arts, self)
+
             main_download_stickers(self)
+
+            download_new_arts_in_comp(list_arts, self)
         except Exception as ex:
             logger.error(ex)
 

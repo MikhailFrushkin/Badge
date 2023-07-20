@@ -15,7 +15,7 @@ from googleapiclient.discovery import build
 from loguru import logger
 
 from config import anikoya_path, dp_path, id_google_table_anikoya, id_google_table_DP, add_record_google_table, \
-    GoogleTable, Article
+    GoogleTable, Article, sticker_path_all
 from config import path_root
 from utils import df_in_xlsx, rename_files, move_ready_folder, ProgressBar
 
@@ -270,6 +270,11 @@ def download_new_arts(link, arts_list, shop, self=None):
                 if file.split('.')[1] == 'png' or file.split('.')[1] == 'jpg':
                     if file.split('.')[0].isdigit():
                         list_image.append(file)
+                elif file.split('.')[1] == 'pdf':
+                    try:
+                        shutil.copy2(os.path.join(new_folder, file), sticker_path_all)
+                    except Exception as ex:
+                        logger.error(ex)
 
         for name in list_skin_names_one:
             list_skin_one = []
@@ -277,11 +282,11 @@ def download_new_arts(link, arts_list, shop, self=None):
                 if file.split('.')[1] == 'png' or file.split('.')[1] == 'jpg':
                     if name in file.split('.')[0].lower():
                         if 'подлож' in file.split('.')[0].lower() \
-                                and '1' not in file.split('.')[0].lower()\
-                                and '11' not in file.split('.')[0].lower()\
-                                and '12' not in file.split('.')[0].lower()\
-                                and '15' not in file.split('.')[0].lower()\
-                                and '111' not in file.split('.')[0].lower()\
+                                and '1' not in file.split('.')[0].lower() \
+                                and '11' not in file.split('.')[0].lower() \
+                                and '12' not in file.split('.')[0].lower() \
+                                and '15' not in file.split('.')[0].lower() \
+                                and '111' not in file.split('.')[0].lower() \
                                 :
                             continue
                         list_skin_one.append(file)
@@ -449,7 +454,7 @@ if __name__ == '__main__':
     for i in records:
         print(os.path.abspath(i.folder))
 
-    print('НЕ соответствует число карттинок с базой')
+    print('НЕ соответствует число картинок с базой')
     records = Article.select().where(Article.nums_in_folder != Article.nums)
     for i in records:
         print(os.path.abspath(i.folder))

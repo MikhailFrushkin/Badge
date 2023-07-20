@@ -8,7 +8,7 @@ from googleapiclient.http import MediaIoBaseDownload
 from loguru import logger
 
 from config import google_sticker_path1, sticker_path1, google_sticker_path2, sticker_path2, sticker_path3, \
-    google_sticker_path3
+    google_sticker_path3, sticker_path_all
 from utils import ProgressBar
 
 
@@ -139,7 +139,7 @@ def main_download_stickers(self=None):
         progress = ProgressBar(3, self)
     for google_sticker_path, sticker_path in sticker_paths:
         folder_url = f"https://drive.google.com/drive/folders/{google_sticker_path}"
-        local_directory = f"{sticker_path}"
+        local_directory = f"{sticker_path_all}"
         download_missing_files_from_drive(folder_url, local_directory)
         if self:
             progress.update_progress()

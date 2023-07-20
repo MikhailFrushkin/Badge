@@ -17,6 +17,8 @@ token = env.str('token')
 
 anikoya_path = env.str('anikoya_path')
 dp_path = env.str('dp_path')
+
+sticker_path_all = env.str('sticker_path_all')
 sticker_path1 = env.str('sticker_path1')
 sticker_path2 = env.str('sticker_path2')
 sticker_path3 = env.str('sticker_path3')
@@ -64,6 +66,20 @@ class GoogleTable(Model):
         database = db
 
 
+class Orders(Model):
+    num_on_list = IntegerField()
+    art = CharField(index=True)
+    nums_in_folder = IntegerField()
+    size = IntegerField()
+    skin = CharField()
+    images = TextField()
+    sticker = CharField()
+    created_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        database = db
+
+
 class Article(Model):
     art = CharField(null=True, index=True)
     folder = CharField(null=True)
@@ -71,6 +87,7 @@ class Article(Model):
     nums_in_folder = IntegerField(null=True)
     size = IntegerField(null=True)
     skin = CharField(null=True)
+    sticker = CharField(null=True)
     images = TextField(null=True)
     shop = CharField(null=True)
     created_at = DateTimeField(default=datetime.now)
@@ -101,6 +118,7 @@ class Article(Model):
         return article
 
     def fill_additional_columns(self):
+        print(self.art)
         # Заполнение столбца "Skin"
         skin_filename = [filename for filename in os.listdir(self.folder) if "подлож" in filename.lower() or
                          "один" in filename.lower()]
@@ -114,6 +132,12 @@ class Article(Model):
                 image_filenames.append(os.path.join(self.folder, filename))
         self.images = ', '.join(image_filenames) if image_filenames else None
         self.nums_in_folder = len(image_filenames)
+
+        for root, _, files in os.walk(sticker_path_all):
+            for file in files:
+                if file == self.art + '.pdf':
+                    self.sticker = os.path.join(root, file)
+
         self.save()
 
 
