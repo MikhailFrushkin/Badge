@@ -2,12 +2,43 @@ import os
 from datetime import datetime
 
 import pandas as pd
+from PIL import Image
 from loguru import logger
 from peewee import *
 
 from config import path_root, sticker_path_all
 
 db = SqliteDatabase(f'{path_root}\mydatabase.db')
+
+
+def crop_to_content(image_path, output_path):
+    start = datetime.now()
+    # Открываем изображение с помощью Pillow
+    image = Image.open(image_path)
+
+    # Конвертируем изображение в режим RGBA, если оно ещё не в нем
+    image = image.convert("RGBA")
+
+    # Получаем пиксельные данные изображения
+    data = image.getdata()
+
+    # Ищем границы содержимого
+    left, top, right, bottom = image.width, image.height, 0, 0
+    for x in range(image.width):
+        for y in range(image.height):
+            # Если пиксель непрозрачен (alpha > 0), обновляем границы
+            if data[y * image.width + x][3] > 0:  # Пиксельный формат RGBA: (R, G, B, A)
+                left = min(left, x)
+                top = min(top, y)
+                right = max(right, x)
+                bottom = max(bottom, y)
+
+    # Обрезаем изображение до границ содержимого
+    image_cropped = image.crop((left, top, right + 1, bottom + 1))
+
+    # Сохраняем обрезанное изображение
+    image_cropped.save(output_path)
+    logger.debug(datetime.now() - start)
 
 
 class GoogleTable(Model):
@@ -70,6 +101,7 @@ class Article(Model):
 
     def fill_additional_columns(self):
         print(self.art)
+        print(os.path.abspath(self.folder))
         folder_name = os.path.basename(self.folder)
         # Заполнение столбца "Skin"
         skin_filename = [filename for filename in os.listdir(self.folder) if "подлож" in filename.lower() or
@@ -79,9 +111,14 @@ class Article(Model):
 
         # Заполнение столбца "Images"
         image_filenames = []
-        for filename in os.listdir(self.folder):
-            if filename.split('.')[0].isdigit():
-                image_filenames.append(os.path.join(self.folder, filename))
+        for index, filename in enumerate(os.listdir(self.folder)):
+            if filename.split('.')[0].isdigit() and os.path.isfile(os.path.join(self.folder, filename)):
+                try:
+                    crop_to_content(os.path.join(self.folder, filename), os.path.join(self.folder, f'!{filename}'))
+                except Exception as ex:
+                    logger.error(ex)
+                image_filenames.append(os.path.join(self.folder, f'!{index}'))
+
         self.images = ', '.join(image_filenames) if image_filenames else None
         self.nums_in_folder = len(image_filenames)
 

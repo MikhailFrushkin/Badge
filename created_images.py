@@ -1,28 +1,22 @@
+import datetime
 import glob
 import os
+import shutil
+import subprocess
 from pprint import pprint
 
+import cv2
+import numpy as np
 import pandas as pd
 from loguru import logger
 from peewee import fn
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
-from config import path_root
+from config import path_root, ready_path, gimp_path
 from db import Article, Orders
 from utils import df_in_xlsx
 from PIL import Image, ImageDraw, ImageFont
-
-
-def read_excel(filename):
-    df = pd.read_excel(filename,
-                       usecols=['Название товара', 'Артикул Wildberries', 'Артикул продавца', 'Статус задания',
-                                'Время с момента заказа']).fillna(0)
-    grouped_df = df.groupby('Артикул продавца').size().reset_index(name='Количество записей')
-    grouped_df['Артикул продавца'] = grouped_df['Артикул продавца'].apply(str.strip)
-    sorted_df = grouped_df.sort_values(by='Количество записей', ascending=False)
-    df_in_xlsx(sorted_df, 'Сгрупированный заказ')
-    return sorted_df
 
 
 def combine_images_to_pdf(input_files, output_pdf):
@@ -81,9 +75,10 @@ def distribute_images(queryset, size):
         56: {'diameter': 70, 'nums': 12, 'ICONS_PER_ROW': 3, 'ICONS_PER_COL': 4}
     }
     size_images_param = dict_sizes_images[size]
+    nums = size_images_param['nums']
+    list_arts = [(i.num_on_list, i.nums_in_folder, i.images) for i in queryset]
+    list_arts = sorted(list_arts, key=lambda x: x[1], reverse=True)
 
-    queryset = queryset.order_by('-nums_in_folder')
-    list_arts = [(i.id, i.nums_in_folder, i.images) for i in queryset]
     # Список для хранения наборов
     sets_of_orders = []
 
@@ -91,43 +86,34 @@ def distribute_images(queryset, size):
     current_count = 0  # Текущее количество элементов в наборе
     count = 0
     while len(list_arts) > 0:
-        for order in list_arts:
-            if order[1] > size_images_param['nums']:
+        for order in list_arts[:]:
+            if order[1] > nums:
                 image_list = [(i, order[0]) for i in order[2].split(',')]
-                if (current_count + (len(image_list) % size_images_param['nums'])) <= size_images_param['nums'] and (
-                        (len(image_list) % size_images_param['nums']) != 0):
-                    current_set.extend(image_list[-(order[1] % size_images_param['nums']):])
-                    current_count += len(image_list) % size_images_param['nums']
+                if (current_count + (len(image_list) % nums)) <= nums and ((len(image_list) % nums) != 0):
+                    current_set.extend(image_list[-(order[1] % nums):])
+                    current_count += len(image_list) % nums
 
                     logger.debug(order[1])
-                    logger.debug(size_images_param['nums'])
-                    logger.debug(order[1] % size_images_param['nums'])
+                    logger.debug(nums)
+                    logger.debug(order[1] % nums)
 
-                    full_lists = order[1] // size_images_param['nums']
+                    full_lists = order[1] // nums
                     for i in range(full_lists):
-                        sets_of_orders.append(image_list[
-                                              size_images_param['nums'] * i:size_images_param['nums'] * i +
-                                                                            size_images_param['nums']])
-                        logger.error(image_list[
-                                     size_images_param['nums'] * i:size_images_param['nums'] * i + size_images_param[
-                                         'nums']])
+                        sets_of_orders.append(image_list[nums * i:nums * i + nums])
+                        logger.error(image_list[nums * i:nums * i + nums])
                     list_arts.remove(order)
-                elif (order[1] > size_images_param['nums']) and current_count == 0:
-                    full_lists = order[1] // size_images_param['nums']
+                elif (order[1] > nums) and current_count == 0:
+                    full_lists = order[1] // nums
                     for i in range(full_lists):
-                        sets_of_orders.append(image_list[
-                                              size_images_param['nums'] * i:size_images_param['nums'] * i +
-                                                                            size_images_param['nums']])
-                        logger.error((image_list[
-                                      size_images_param['nums'] * i:size_images_param['nums'] * i + size_images_param[
-                                          'nums']]))
+                        sets_of_orders.append(image_list[nums * i:nums * i + nums])
+                        logger.error((image_list[nums * i:nums * i + nums]))
+                    if order[1] % nums != 0:
+                        current_set.extend(image_list[-(order[1] % nums):])
 
-                    current_set.extend(image_list[-(order[1] % size_images_param['nums']):])
-
-                    logger.debug(order[1])
-                    logger.debug(size_images_param['nums'])
-                    logger.debug(order[1] % size_images_param['nums'])
-                    logger.error(image_list[-(order[1] % size_images_param['nums']):])
+                        logger.debug(order[1])
+                        logger.debug(nums)
+                        logger.debug(order[1] % nums)
+                        logger.error(image_list[-(order[1] % nums):])
 
                     list_arts.remove(order)
                 else:
@@ -136,30 +122,26 @@ def distribute_images(queryset, size):
                     current_set = []
                     current_count = 0
 
-                    full_lists = order[1] // size_images_param['nums']
+                    full_lists = order[1] // nums
                     for i in range(full_lists):
-                        sets_of_orders.append(image_list[
-                                              size_images_param['nums'] * i:size_images_param['nums'] * i +
-                                                                            size_images_param['nums']])
-                        logger.error((image_list[
-                                      size_images_param['nums'] * i:size_images_param['nums'] * i + size_images_param[
-                                          'nums']]))
+                        sets_of_orders.append(image_list[nums * i:nums * i + nums])
+                        logger.error((image_list[nums * i:nums * i + nums]))
 
-                    if order[1] % size_images_param['nums'] != 0:
-                        current_set.extend(image_list[-(order[1] % size_images_param['nums']):])
-                        current_count += len(image_list[-(order[1] % size_images_param['nums']):])
+                    if order[1] % nums != 0:
+                        current_set.extend(image_list[-(order[1] % nums):])
+                        current_count += len(image_list[-(order[1] % nums):])
                     logger.debug(order[1])
-                    logger.debug(size_images_param['nums'])
-                    logger.debug(order[1] % size_images_param['nums'])
+                    logger.debug(nums)
+                    logger.debug(order[1] % nums)
 
                     list_arts.remove(order)
 
-            if (current_count + order[1]) <= size_images_param['nums']:
+            if (current_count + order[1]) <= nums:
                 count += 1
                 current_set.extend([(i, order[0]) for i in order[2].split(',')])
                 current_count += order[1]
                 list_arts.remove(order)
-                if current_count == size_images_param['nums']:
+                if current_count == nums:
                     sets_of_orders.append(current_set)
                     logger.success(f'{current_set} , {current_count}')
                     current_set = []
@@ -179,6 +161,69 @@ def distribute_images(queryset, size):
             current_count = list_arts[0][1]
             list_arts.remove(list_arts[0])
 
+    print('Сумма значков: ', sum([len(i) for i in sets_of_orders]))
+    print('Сумма значков на листах: ', set([len(i) for i in sets_of_orders]))
+    print('Количество листов: ', len(sets_of_orders))
+    # for sublist in sets_of_orders:
+    #     if len(sublist) == 60:
+    #         print(sublist)
+
+    create_contact_sheet(sets_of_orders, size_images_param, size)
+
+
+def distribute_images2(queryset, size):
+    dict_sizes_images = {
+        25: {'diameter': 35, 'nums': 48, 'ICONS_PER_ROW': 6, 'ICONS_PER_COL': 8},
+        37: {'diameter': 51, 'nums': 20, 'ICONS_PER_ROW': 4, 'ICONS_PER_COL': 5},
+        44: {'diameter': 53, 'nums': 15, 'ICONS_PER_ROW': 3, 'ICONS_PER_COL': 5},
+        56: {'diameter': 70, 'nums': 12, 'ICONS_PER_ROW': 3, 'ICONS_PER_COL': 4}
+    }
+    size_images_param = dict_sizes_images[size]
+    nums = size_images_param['nums']
+
+    # Fetch the required fields from the queryset using 'values_list'
+    queryset = queryset.order_by('-nums_in_folder')
+    list_arts = [(i.id, i.nums_in_folder, i.images) for i in queryset]
+
+    sets_of_orders = []
+    current_set = []
+    current_count = 0
+
+    for order in list_arts[:]:
+        image_list = [(i, order[0]) for i in order[2].split(',')]
+        len_list = len(image_list)
+
+        if order[1] > nums:
+            if (current_count + (len_list % nums)) <= nums and (len_list % nums) != 0:
+                current_set.extend(image_list[-(order[1] % nums):])
+                current_count += len_list % nums
+                sets_of_orders.extend([image_list[nums * i:nums * i + nums] for i in range(order[1] // nums)])
+                list_arts.remove(order)
+            elif current_count == 0:
+                sets_of_orders.extend([image_list[nums * i:nums * i + nums] for i in range(order[1] // nums)])
+                current_set.extend(image_list[-(order[1] % nums):])
+                current_count += len_list % nums
+                list_arts.remove(order)
+
+        if (current_count + order[1]) <= nums:
+            current_set.extend(image_list)
+            current_count += order[1]
+            list_arts.remove(order)
+            if current_count == nums:
+                sets_of_orders.append(current_set)
+                current_set = []
+                current_count = 0
+
+    if current_count != 0:
+        sets_of_orders.append(current_set)
+
+    if list_arts:
+        # If there are remaining elements in list_arts, add them as a new set
+        current_set = []
+        for order in list_arts:
+            current_set.extend([(i, order[0]) for i in order[2].split(',')])
+        sets_of_orders.append(current_set)
+
     print(sum([len(i) for i in sets_of_orders]))
     print(set([len(i) for i in sets_of_orders]))
     print(len(sets_of_orders))
@@ -188,19 +233,6 @@ def distribute_images(queryset, size):
 
     print(len(set([i[1] for item in sets_of_orders for i in item])))
     create_contact_sheet(sets_of_orders, size_images_param, size)
-
-
-def crop_to_content(image):
-    # Convert the image to grayscale
-    grayscale_image = image.convert('L')
-
-    # Get the bounding box of the non-white (content) region
-    bbox = grayscale_image.getbbox()
-
-    # Crop the image to the bounding box
-    cropped_image = image.crop(bbox)
-
-    return cropped_image
 
 
 def create_contact_sheet(images=None, size_images_param=None, size=None):
@@ -222,60 +254,64 @@ def create_contact_sheet(images=None, size_images_param=None, size=None):
                 for j in range(size_images_param['ICONS_PER_ROW']):
                     try:
                         image = Image.open(img[i * size_images_param['ICONS_PER_ROW'] + j][0].strip())
-                        cropped_image = crop_to_content(image)
-                        image = write_images_art(cropped_image, f'#{img[i * size_images_param["ICONS_PER_ROW"] + j][1]}')
+                        image = write_images_art(image, f'#{img[i * size_images_param["ICONS_PER_ROW"] + j][1]}')
                         image = image.resize((image_width, image_height), Image.LANCZOS)
                         contact_sheet.paste(image, (j * image_width, i * image_height))
                     except IndexError as ex:
                         logger.error(img[0][1])
             logger.success(f'Созданно изображение {index}.png')
-            contact_sheet.save(f'output/{size}/{index}.png')
+            contact_sheet.save(f'{ready_path}/{size}/{index}.png')
         except Exception as ex:
             logger.error(ex)
 
 
-def main(filename='заказ.xlsx'):
-    Orders.drop_table()
-    if not Orders.table_exists():
-        Orders.create_table(safe=True)
+def creared_good_images(all_arts):
+    try:
+        Orders.drop_table()
+        if not Orders.table_exists():
+            Orders.create_table(safe=True)
+        bad_arts = []
+        shutil.rmtree(ready_path, ignore_errors=True)
+        os.makedirs(f'{ready_path}/25', exist_ok=True)
+        os.makedirs(f'{ready_path}/37', exist_ok=True)
+        os.makedirs(f'{ready_path}/44', exist_ok=True)
+        os.makedirs(f'{ready_path}/56', exist_ok=True)
 
-    df = read_excel(filename)
-    bad_arts = []
+        for art in all_arts:
+            row = Article.get_or_none(Article.art == art.art)
+            if row:
+                data = [{'art': row.art,
+                         'folder': row.folder,
+                         'nums': row.nums,
+                         'nums_in_folder': row.nums_in_folder,
+                         'size': row.size,
+                         'skin': row.skin,
+                         'sticker': row.sticker,
+                         'images': row.images,
+                         'shop': row.shop,
+                         }
+                        ] * art.count
+                Orders.bulk_create([Orders(**item) for item in data])
+            else:
+                bad_arts.append((art.count, art.count))
 
-    all_arts = zip(df['Артикул продавца'].tolist(), df['Количество записей'].tolist())
+        sorted_orders = Orders.sorted_records()
+        for index, row in enumerate(sorted_orders, start=1):
+            row.num_on_list = index
+            row.save()
 
-    for (art, count) in all_arts:
-        row = Article.get_or_none(Article.art == art)
-        if row:
-            data = [{'art': row.art,
-                     'folder': row.folder,
-                     'nums': row.nums,
-                     'nums_in_folder': row.nums_in_folder,
-                     'size': row.size,
-                     'skin': row.skin,
-                     'sticker': row.sticker,
-                     'images': row.images,
-                     'shop': row.shop,
-                     }
-                    ] * count
-            Orders.bulk_create([Orders(**item) for item in data])
-        else:
-            bad_arts.append((art, count))
+        records = Orders.select(Orders.size).distinct()
+        for size in records:
+            combine_images_to_pdf(Orders.select().where(Orders.size == size.size), f"{ready_path}/{size.size}.pdf")
+            sum_result = Orders.select(fn.SUM(Orders.nums_in_folder)).where(Orders.size == size.size).scalar()
 
-    sorted_orders = Orders.sorted_records()
-    for index, row in enumerate(sorted_orders, start=1):
-        row.num_on_list = index
-        row.save()
-
-    records = Orders.select(Orders.size).distinct()
-    for size in records:
-        combine_images_to_pdf(Orders.select().where(Orders.size == size.size), f"output/{size.size}.pdf")
-        sum_result = Orders.select(fn.SUM(Orders.nums_in_folder)).where(Orders.size == size).scalar()
-
-        print("Сумма значений в столбце:", sum_result)
-        distribute_images(Orders.select().where(Orders.size == size.size), size.size)
-
+            print("Сумма значений в столбце:", sum_result)
+            distribute_images(Orders.select().where(Orders.size == size.size), size.size)
+    except Exception as ex:
+        logger.error(ex)
 
 
 if __name__ == '__main__':
-    main()
+    input_file = r'E:\Очередь на печать\49.png'
+    output_file = r'E:\Очередь на печать\!1.png'
+    # crop_to_content2(input_file, output_file)

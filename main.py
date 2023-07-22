@@ -423,17 +423,22 @@ if __name__ == '__main__':
     # add_rows_google_table()
 
     # update_db()
+    count = 0
 
-    # if not Article.table_exists():
-    #     Article.create_table(safe=True)
-    # for root, dirs, files in os.walk(rf'{dp_path}\Готовые'):
-    #     for dir in dirs:
-    #         if len(dir) > 6:
-    #             Article.create_with_art(dir, os.path.join(root, dir), 'DP')
-    # for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
-    #     for dir in dirs:
-    #         if len(dir) > 6:
-    #             Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
+    if not Article.table_exists():
+        Article.create_table(safe=True)
+    for root, dirs, files in os.walk(rf'{dp_path}\Готовые'):
+        for dir in dirs:
+            if len(dir) > 6:
+                count += 1
+                Article.create_with_art(dir, os.path.join(root, dir), 'DP')
+                print(count)
+    for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
+        for dir in dirs:
+            if len(dir) > 6:
+                count += 1
+                Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
+                print(count)
 
     print('Нет подложек')
     records = Article.select().where(Article.skin >> None)

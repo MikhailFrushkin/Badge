@@ -9,8 +9,10 @@ env.read_env()
 
 token = env.str('token')
 
+all_badge = env.str('all_badge')
 anikoya_path = env.str('anikoya_path')
 dp_path = env.str('dp_path')
+ready_path = env.str('ready_path')
 
 sticker_path_all = env.str('sticker_path_all')
 sticker_path1 = env.str('sticker_path1')
@@ -18,6 +20,7 @@ sticker_path2 = env.str('sticker_path2')
 sticker_path3 = env.str('sticker_path3')
 
 acrobat_path = env.str('acrobat_path')
+gimp_path = env.str('gimp_path')
 
 google_sticker_path1 = env.str('google_sticker_path1')
 google_sticker_path2 = env.str('google_sticker_path2')

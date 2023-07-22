@@ -3,15 +3,18 @@ from pathlib import Path
 
 import qdarkstyle
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QTextEdit, QPushButton, QDialog
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QTextEdit, QPushButton, QDialog, QMessageBox, QWidget, \
+    QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView, QLabel
 from PyQt5.QtWidgets import (
     QFileDialog, QCheckBox, QProgressBar
 )
 from loguru import logger
 
+from created_images import creared_good_images
+from db import Article
 from dow_stickers import main_download_stickers
 from main import update_db, download_new_arts_in_comp
-from utils import enum_printers
+from utils import enum_printers, read_excel_file, FilesOnPrint
 
 
 class CustomDialog(QDialog):
@@ -35,6 +38,108 @@ class CustomDialog(QDialog):
 
     def set_text(self, text):
         self.text_edit.setPlainText(text)
+
+
+class QueueDialog(QWidget):
+    def __init__(self, files_on_print, printers, title, parent=None):
+        super().__init__(parent)
+        self.files_on_print = files_on_print
+        self.printers = printers
+        self.setWindowTitle(title)
+
+        layout = QVBoxLayout(self)
+
+        self.tableWidget = QTableWidget(self)
+        self.tableWidget.setColumnCount(4)  # Добавление колонки "Название"
+        self.tableWidget.setMinimumSize(800, 300)
+        self.tableWidget.setHorizontalHeaderLabels(
+            ["Название", "Артикул", "Количество", "Найден"])  # Обновленные заголовки
+
+        font = self.tableWidget.font()
+        font.setPointSize(14)
+        self.tableWidget.setFont(font)
+
+        self.tableWidget.setRowCount(len(self.files_on_print))
+
+        for row, file_on_print in enumerate(self.files_on_print):
+            name_item = QTableWidgetItem(file_on_print.name)  # Получение названия из датакласса
+            art_item = QTableWidgetItem(file_on_print.art)
+            count_item = QTableWidgetItem(str(file_on_print.count))
+            status_item = QTableWidgetItem(str(file_on_print.status))
+            self.tableWidget.setItem(row, 0, name_item)  # Установка элемента в колонку "Название"
+            self.tableWidget.setItem(row, 1, art_item)
+            self.tableWidget.setItem(row, 2, count_item)
+            self.tableWidget.setItem(row, 3, status_item)
+
+        layout.addWidget(self.tableWidget)
+
+        font = self.tableWidget.font()
+
+        print_button = QPushButton("Печать", self)
+        print_button.setFont(font)
+        print_button.clicked.connect(self.evt_btn_print_clicked)
+        layout.addWidget(print_button)
+
+        print_all_button = QPushButton("Печатать все", self)
+        print_all_button.setFont(font)
+        print_all_button.clicked.connect(self.evt_btn_print_all_clicked)
+        layout.addWidget(print_all_button)
+
+        # Установка режима выделения целых строк
+        self.tableWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+        # Установка ширины колонки "Артикул" в 80% от ширины окна
+        header = self.tableWidget.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+
+        self.progress_label = QLabel("Прогресс:", self)
+        self.progress_label.setFont(font)
+        layout.addWidget(self.progress_label)
+
+        self.progress_bar = QProgressBar(self)
+        layout.addWidget(self.progress_bar)
+
+    def evt_btn_print_clicked(self):
+        selected_data = self.get_selected_data()
+        if selected_data:
+            logger.debug(selected_data)
+            creared_good_images(selected_data)
+        else:
+            QMessageBox.information(self, 'Отправка на печать', 'Ни одна строка не выбрана')
+
+    def evt_btn_print_all_clicked(self):
+        all_data = self.get_all_data()
+        if all_data:
+            logger.debug(all_data)
+            creared_good_images(all_data)
+        else:
+            QMessageBox.information(self, 'Отправка на печать', 'Таблица пуста')
+
+    def get_selected_data(self):
+        selected_rows = self.tableWidget.selectionModel().selectedRows()
+        data = []
+        for row in selected_rows:
+            name = self.tableWidget.item(row.row(), 0).text()
+            art = self.tableWidget.item(row.row(), 1).text()
+            count = self.tableWidget.item(row.row(), 2).text()
+            status = self.tableWidget.item(row.row(), 3).text()
+            print(status)
+            if status == '✅':
+                data.append(FilesOnPrint(name=name, art=art, count=int(count), status='✅'))
+        return data
+
+    def get_all_data(self):
+        data = []
+        for row in range(self.tableWidget.rowCount()):
+            name = self.tableWidget.item(row, 0).text()
+            art = self.tableWidget.item(row, 1).text()
+            count = self.tableWidget.item(row, 2).text()
+            status = self.tableWidget.item(row, 3).text()
+            if status == '✅':
+                data.append(FilesOnPrint(name=name, art=art, count=int(count), status='✅'))
+        return data
 
 
 class Ui_MainWindow(object):
@@ -171,6 +276,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
         self.current_dir = Path.cwd()
+        self.dialogs = []
+
         self.move(550, 100)
         self.count_printer = 0
         self.column_counter_printer = 0
@@ -188,6 +295,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.pushButton.clicked.connect(self.evt_btn_update)
         self.pushButton_3.clicked.connect(self.evt_btn_open_file_clicked)
+        self.pushButton_6.clicked.connect(self.evt_btn_create_queue)
 
     def addPrinterCheckbox(self, printer_name):
         checkbox = QCheckBox(printer_name, self.centralwidget)
@@ -213,7 +321,57 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         """Ивент на кнопку загрузить файл"""
         res, _ = QFileDialog.getOpenFileName(self, 'Загрузить файл', str(self.current_dir), 'Лист XLSX (*.xlsx)')
         if res:
-            self.lineEdit.setText(res)
+            try:
+                self.lineEdit.setText(res)
+                counts_art = read_excel_file(self.lineEdit.text())
+                values = [f"{item.art}: {item.count} шт." for item in counts_art]
+                self.update_list_view(values)
+            except Exception as ex:
+                logger.error(f'ошибка чтения xlsx {ex}')
+                QMessageBox.information(self, 'Инфо', f'ошибка чтения xlsx {ex}')
+
+    def evt_btn_create_queue(self):
+        """Ивент на кнопку Сформировать очереди"""
+        if self.lineEdit.text():
+            try:
+                # Список выбранных принтеров
+                checked_checkboxes = []
+                for i in range(self.gridLayout.count()):
+                    item = self.gridLayout.itemAt(i)
+                    # Получаем фактический виджет, если элемент является QLayoutItem
+                    widget = item.widget()
+                    # Проверяем, является ли виджет флажком (QCheckBox) и отмечен ли он
+                    if isinstance(widget, QtWidgets.QCheckBox) and widget.isChecked():
+                        checked_checkboxes.append(widget.text())
+                        print(widget.text())
+                if not checked_checkboxes:
+                    QMessageBox.information(self, 'Инфо', 'Не выбран ни один принтер')
+                else:
+                    try:
+                        counts_art = read_excel_file(self.lineEdit.text())
+                        for item in counts_art:
+                            status = Article.get_or_none(Article.art == item.art)
+                            if status:
+                                item.status = '✅'
+                    except Exception as ex:
+                        logger.debug(ex)
+                    try:
+                        logger.success(counts_art)
+                        if len(counts_art) > 0:
+                            dialog = QueueDialog(counts_art, checked_checkboxes, 'Значки')
+                            self.dialogs.append(dialog)
+                            dialog.show()
+                    except Exception as ex:
+                        logger.error(f'Ошибка формирования списков печати {ex}')
+            except Exception as ex:
+                logger.error(ex)
+        else:
+            QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
+
+    def update_list_view(self, values):
+        model = QtCore.QStringListModel()
+        model.setStringList(values)
+        self.listView.setModel(model)
 
     def evt_btn_update(self):
         """Ивент на кнопку обновить базу"""

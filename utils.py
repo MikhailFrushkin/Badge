@@ -1,9 +1,13 @@
 import os
 import shutil
+from dataclasses import dataclass
+from typing import Optional
 
+import pandas as pd
 from loguru import logger
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
+import operator
 
 from db import Article
 from config import anikoya_path
@@ -91,3 +95,29 @@ def enum_printers(start=None) -> list:
 
     logger.info("Доступные принтеры, подключенные по USB: {}".format(", ".join(usb_printers)))
     return usb_printers
+
+
+@dataclass
+class FilesOnPrint:
+    art: str
+    count: int
+    name: Optional[str] = None
+    status: str = '❌'
+    # '✅'
+
+
+def read_excel_file(file: str) -> list:
+    df = pd.read_excel(file)
+    df = df.groupby('Артикул продавца').agg({
+        'Название товара': 'first',
+        'Стикер': 'count',
+    }).reset_index()
+    df = df.rename(columns={'Стикер': 'Количество'})
+
+    files_on_print = []
+    for index, row in df.iterrows():
+        file_on_print = FilesOnPrint(art=row['Артикул продавца'], name=row['Название товара'], count=row['Количество'])
+        files_on_print.append(file_on_print)
+
+    files_on_print = sorted(files_on_print, key=lambda x: x.count, reverse=True)
+    return files_on_print
