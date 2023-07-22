@@ -5,7 +5,8 @@ from loguru import logger
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 
-from config import anikoya_path, Article
+from db import Article
+from config import anikoya_path
 import win32api
 import win32con
 import win32print
@@ -51,13 +52,13 @@ def move_ready_folder(directory=rf'{anikoya_path}\Скаченные с диск
             folder_path = os.path.join(directory, folder)
 
             for i in os.listdir(folder_path):
-                if os.path.isdir(os.path.join(folder_path, i)):
-                    if not os.path.exists(os.path.join(target_directory, i)):
-                        shutil.move(os.path.join(folder_path, i), target_directory)
-                        Article.create_with_art(i, os.path.join(target_directory, i), shop=shop)
-                        logger.debug(f'Перенос из {folder_path} -> {os.path.join(target_directory, folder)}')
+                new_folder = os.path.join(folder_path, i)
+                if not os.path.exists(os.path.join(target_directory, i)):
+                    shutil.move(new_folder, target_directory)
+                    Article.create_with_art(i, os.path.join(target_directory, i), shop=shop)
+                    logger.debug(f'Перенос из {folder_path} -> {os.path.join(target_directory, folder)}')
 
-            shutil.rmtree(directory)
+            # shutil.rmtree(directory)
         except Exception as ex:
             logger.error(ex)
 

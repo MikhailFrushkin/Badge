@@ -13,8 +13,6 @@ from dow_stickers import main_download_stickers
 from main import update_db, download_new_arts_in_comp
 from utils import enum_printers
 
-path_root = Path(__file__).resolve().parent
-
 
 class CustomDialog(QDialog):
     def __init__(self, parent=None):

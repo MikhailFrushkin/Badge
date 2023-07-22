@@ -135,7 +135,7 @@ def main_download_stickers(self=None):
         (google_sticker_path3, sticker_path3)
     ]
     if self:
-        self.second_statusbar.showMessage(f'Обновление стикеров', 100000)
+        self.second_statusbar.showMessage(f'Скачивание стикеров', 100000)
         progress = ProgressBar(3, self)
     for google_sticker_path, sticker_path in sticker_paths:
         folder_url = f"https://drive.google.com/drive/folders/{google_sticker_path}"
@@ -144,7 +144,7 @@ def main_download_stickers(self=None):
         if self:
             progress.update_progress()
     if self:
-        self.second_statusbar.showMessage(f'Обновление стикеров завершено', 1000)
+        self.second_statusbar.showMessage(f'Скачивание стикеров завершено', 1000)
 
 
 if __name__ == '__main__':

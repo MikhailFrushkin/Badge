@@ -14,8 +14,8 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from loguru import logger
 
-from config import anikoya_path, dp_path, id_google_table_anikoya, id_google_table_DP, add_record_google_table, \
-    GoogleTable, Article, sticker_path_all
+from db import add_record_google_table, GoogleTable, Article
+from config import anikoya_path, dp_path, id_google_table_anikoya, id_google_table_DP, sticker_path_all
 from config import path_root
 from utils import df_in_xlsx, rename_files, move_ready_folder, ProgressBar
 
@@ -266,6 +266,9 @@ def download_new_arts(link, arts_list, shop, self=None):
         list_skin_names = ['подлож', 'главная', 'nabor']
         list_skin_names_one = ['одиноч', 'one', 'подлож']
         for file in os.listdir(new_folder):
+            if os.path.isdir(os.path.join(new_folder, file)):
+                return
+        for file in os.listdir(new_folder):
             if os.path.isfile(os.path.join(new_folder, file)):
                 if file.split('.')[1] == 'png' or file.split('.')[1] == 'jpg':
                     if file.split('.')[0].isdigit():
@@ -302,8 +305,8 @@ def download_new_arts(link, arts_list, shop, self=None):
             if len(list_skin) != 0:
                 break
         if len(list_skin_one) == 0:
-            list_skin_one = [i for i in list_skin if '1' in i.lower() or 'one' in i.lower()]
-            list_skin = [i for i in list_skin if i not in list_skin_one]
+            list_skin_one = [i for i in list_skin if '1' in i.lower() or 'one' in i.lower() or 'мал' in i.lower()]
+        list_skin = [i for i in list_skin if i not in list_skin_one]
         print(article_list)
         print(list_skin_one)
         print(list_skin)
@@ -322,12 +325,11 @@ def download_new_arts(link, arts_list, shop, self=None):
                 else:
                     temp_list_skin_one_temp.extend(list_skin)
                 for j in temp_list_skin_one_temp:
-                    if size in j:
-                        try:
-                            shutil.copy2(os.path.join(new_folder, j), folder_art)
-                            rename_files(os.path.join(folder_art, j), 'Подложка')
-                        except Exception as ex:
-                            print(ex)
+                    try:
+                        shutil.copy2(os.path.join(new_folder, j), folder_art)
+                        rename_files(os.path.join(folder_art, j), 'Подложка')
+                    except Exception as ex:
+                        print(ex)
 
             else:
                 if nums == 1:
@@ -358,6 +360,7 @@ def download_new_arts(link, arts_list, shop, self=None):
                                     search_one_image(skin, images_list, folder_art)
                                     break
                 else:
+                    logger.debug(list_skin)
                     for i in list_image:
                         shutil.copy2(os.path.join(new_folder, i), folder_art)
                     for j in list_skin:
@@ -365,21 +368,9 @@ def download_new_arts(link, arts_list, shop, self=None):
                             shutil.copy2(os.path.join(new_folder, j), folder_art)
                             rename_files(os.path.join(folder_art, j), 'Подложка')
                         else:
-                            if 'блюр' in j and size in j:
-                                logger.error(f'Блюр {new_folder}')
+                            if size in j:
                                 shutil.copy2(os.path.join(new_folder, j), folder_art)
                                 rename_files(os.path.join(folder_art, j), 'Подложка')
-                            elif size in j:
-                                shutil.copy2(os.path.join(new_folder, j), folder_art)
-                                rename_files(os.path.join(folder_art, j), 'Подложка')
-                            elif 'блюр' in j:
-                                logger.error(f'Блюр {new_folder}')
-                                shutil.copy2(os.path.join(new_folder, j), folder_art)
-                                rename_files(os.path.join(folder_art, j), 'Подложка')
-                            else:
-                                logger.error(f'Подложка без размера {new_folder}')
-                                shutil.copy2(os.path.join(new_folder, list_image[0]), folder_art)
-                                rename_files(os.path.join(folder_art, list_image[0]), 'Подложка')
 
 
 def update_db(self=None):
@@ -433,16 +424,16 @@ if __name__ == '__main__':
 
     # update_db()
 
-    if not Article.table_exists():
-        Article.create_table(safe=True)
-    for root, dirs, files in os.walk(rf'{dp_path}\Готовые'):
-        for dir in dirs:
-            if len(dir) > 6:
-                Article.create_with_art(dir, os.path.join(root, dir), 'ДП')
-    for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
-        for dir in dirs:
-            if len(dir) > 6:
-                Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
+    # if not Article.table_exists():
+    #     Article.create_table(safe=True)
+    # for root, dirs, files in os.walk(rf'{dp_path}\Готовые'):
+    #     for dir in dirs:
+    #         if len(dir) > 6:
+    #             Article.create_with_art(dir, os.path.join(root, dir), 'DP')
+    # for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
+    #     for dir in dirs:
+    #         if len(dir) > 6:
+    #             Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
 
     print('Нет подложек')
     records = Article.select().where(Article.skin >> None)
