@@ -111,14 +111,25 @@ class Article(Model):
 
         # Заполнение столбца "Images"
         image_filenames = []
-        for index, filename in enumerate(os.listdir(self.folder)):
-            if filename.split('.')[0].isdigit() and os.path.isfile(os.path.join(self.folder, filename)):
-                try:
-                    crop_to_content(os.path.join(self.folder, filename), os.path.join(self.folder, f'!{filename}'))
-                except Exception as ex:
-                    logger.error(ex)
-                image_filenames.append(os.path.join(self.folder, f'!{index}'))
-
+        # for index, filename in enumerate(os.listdir(self.folder), start=1):
+        #     if filename.split('.')[0].isdigit() and os.path.isfile(os.path.join(self.folder, filename)):
+        #         try:
+        #             crop_to_content(os.path.join(self.folder, filename), os.path.join(self.folder, f'!{filename}'))
+        #         except Exception as ex:
+        #             logger.error(ex)
+        #         image_filenames.append(os.path.join(self.folder, f'{filename}'))
+        #
+        # for root, dirs, files in os.walk(self.folder):
+        #     for file in files:
+        #         if file.split('.')[0].isdigit() or file == 'Картинка1.png':
+        #             try:
+        #                 os.remove(os.path.join(root, file))
+        #                 print(f"Файл {os.path.join(root, file)} успешно удален.")
+        #             except OSError as ex:
+        #                 print(f"Не удалось удалить файл {os.path.join(root, file)}: {ex}")
+        for index, filename in enumerate(os.listdir(self.folder), start=1):
+            if filename.split('.')[0].startswith('!') and os.path.isfile(os.path.join(self.folder, filename)):
+                image_filenames.append(os.path.join(self.folder, f'{filename}'))
         self.images = ', '.join(image_filenames) if image_filenames else None
         self.nums_in_folder = len(image_filenames)
 
@@ -127,14 +138,13 @@ class Article(Model):
                 if file == self.art + '.pdf':
                     self.sticker = os.path.join(root, file)
 
-        if len(skin_filename) != 1 or int(folder_name.split('-')[-2]) != len(image_filenames):
-            logger.error(f"Не записался артикул в базу, т.к. не соответствует число подложек или файлов {folder_name}")
-            return
+        # if len(skin_filename) != 1 or int(folder_name.split('-')[-2]) != len(image_filenames):
+        #     logger.error(f"Не записался артикул в базу, т.к. не соответствует число подложек или файлов {folder_name}")
+        #     return
         self.save()
 
 
 class Orders(Article):
-
     num_on_list = IntegerField(null=True)
 
     class Meta:
@@ -145,6 +155,15 @@ class Orders(Article):
     def sorted_records(cls):
         # Метод класса для получения отсортированных записей
         return cls.select().order_by(cls.size)
+
+
+class Statistic(Model):
+    art = CharField()
+    nums = IntegerField()
+    created_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        database = db
 
 
 def add_rows_google_table():
@@ -222,3 +241,11 @@ def print_records_by_month(month, year):
         print(record.date, record.folder_link, record.article)
 
     return records
+
+
+db.connect()
+db.create_tables([Statistic])
+
+# Закрытие соединения с базой данных (необязательно, но рекомендуется)
+db.close()
+

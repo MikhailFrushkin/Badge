@@ -20,7 +20,6 @@ sticker_path2 = env.str('sticker_path2')
 sticker_path3 = env.str('sticker_path3')
 
 acrobat_path = env.str('acrobat_path')
-gimp_path = env.str('gimp_path')
 
 google_sticker_path1 = env.str('google_sticker_path1')
 google_sticker_path2 = env.str('google_sticker_path2')

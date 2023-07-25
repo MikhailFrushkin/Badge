@@ -400,6 +400,9 @@ def download_new_arts_in_comp(list_arts, self=None):
         process = ProgressBar(len(arts_dict), self)
     for key, value in arts_dict.items():
         try:
+            record = GoogleTable.get(folder_link=key)
+            record.status_download = True
+            record.save()
             download_new_arts(link=key, arts_list=value[0], shop=value[1], self=self)
             if value[1] == 'DP':
                 move_ready_folder(directory=rf'{dp_path}\Скаченные с диска',
@@ -411,9 +414,7 @@ def download_new_arts_in_comp(list_arts, self=None):
                                   shop='AniKoya')
             if self:
                 process.update_progress()
-            record = GoogleTable.get(folder_link=key)
-            record.status_download = True
-            record.save()
+
         except Exception as ex:
             logger.error(f'{key}, {value}, {ex}')
 
@@ -424,21 +425,21 @@ if __name__ == '__main__':
 
     # update_db()
     count = 0
-
-    if not Article.table_exists():
-        Article.create_table(safe=True)
-    for root, dirs, files in os.walk(rf'{dp_path}\Готовые'):
-        for dir in dirs:
-            if len(dir) > 6:
-                count += 1
-                Article.create_with_art(dir, os.path.join(root, dir), 'DP')
-                print(count)
-    for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
-        for dir in dirs:
-            if len(dir) > 6:
-                count += 1
-                Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
-                print(count)
+    #
+    # if not Article.table_exists():
+    #     Article.create_table(safe=True)
+    # for root, dirs, files in os.walk(rf'{dp_path}\Готовые'):
+    #     for dir in dirs:
+    #         if len(dir) > 6:
+    #             count += 1
+    #             Article.create_with_art(dir, os.path.join(root, dir), 'DP')
+    #             print(count)
+    # for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
+    #     for dir in dirs:
+    #         if len(dir) > 6:
+    #             count += 1
+    #             Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
+    #             print(count)
 
     print('Нет подложек')
     records = Article.select().where(Article.skin >> None)
@@ -454,7 +455,7 @@ if __name__ == '__main__':
     records = Article.select().where(Article.nums_in_folder != Article.nums)
     for i in records:
         print(os.path.abspath(i.folder))
-        i.nums = i.nums_in_folder
-        i.save()
+        # i.nums = i.nums_in_folder
+        # i.save()
         # subprocess.Popen(f'explorer {os.path.abspath(i.folder)}', shell=True)
         # time.sleep(3)

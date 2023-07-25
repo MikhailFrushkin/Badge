@@ -49,18 +49,20 @@ def df_in_xlsx(df, filename, max_width=50):
 
 
 def move_ready_folder(directory=rf'{anikoya_path}\Скаченные с диска',
-                      target_directory=rf'{anikoya_path}\Новые',
+                      target_directory=rf'{anikoya_path}\Готовые\Новые',
                       shop='AniKoya'):
     for folder in os.listdir(directory):
         try:
             folder_path = os.path.join(directory, folder)
 
             for i in os.listdir(folder_path):
-                new_folder = os.path.join(folder_path, i)
-                if not os.path.exists(os.path.join(target_directory, i)):
-                    shutil.move(new_folder, target_directory)
-                    Article.create_with_art(i, os.path.join(target_directory, i), shop=shop)
-                    logger.debug(f'Перенос из {folder_path} -> {os.path.join(target_directory, folder)}')
+                if os.path.isdir(os.path.join(folder_path, i)):
+                    new_folder = os.path.join(folder_path, i)
+                    print(new_folder)
+                    if not os.path.exists(os.path.join(target_directory, i)):
+                        shutil.move(new_folder, target_directory)
+                        Article.create_with_art(i, os.path.join(target_directory, i), shop=shop)
+                        logger.debug(f'Перенос из {folder_path} -> {os.path.join(target_directory, folder)}')
 
             # shutil.rmtree(directory)
         except Exception as ex:
@@ -121,3 +123,7 @@ def read_excel_file(file: str) -> list:
 
     files_on_print = sorted(files_on_print, key=lambda x: x.count, reverse=True)
     return files_on_print
+
+
+if __name__ == '__main__':
+    move_ready_folder()

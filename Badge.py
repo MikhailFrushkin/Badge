@@ -3,18 +3,127 @@ from pathlib import Path
 
 import qdarkstyle
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import QTimer, Qt, QDate
+from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QTextEdit, QPushButton, QDialog, QMessageBox, QWidget, \
-    QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView, QLabel
+    QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView, QLabel, QCalendarWidget
 from PyQt5.QtWidgets import (
     QFileDialog, QCheckBox, QProgressBar
 )
 from loguru import logger
+from peewee import fn
 
 from created_images import creared_good_images
-from db import Article
+from db import Article, Orders, Statistic
 from dow_stickers import main_download_stickers
 from main import update_db, download_new_arts_in_comp
+from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
 from utils import enum_printers, read_excel_file, FilesOnPrint
+
+
+class GroupedRecordsDialog(QDialog):
+    def __init__(self, parent, start_date, end_date):
+        super(GroupedRecordsDialog, self).__init__(parent)
+        self.setWindowTitle('Grouped Records')
+        self.start_date = start_date
+        self.end_date = end_date
+        self.layout = QVBoxLayout(self)
+        self.table_widget = QTableWidget(self)
+        self.layout.addWidget(self.table_widget)
+        self.populate_table()
+
+        # Set the size of the dialog based on the table size
+        self.adjust_dialog_size()
+
+    def populate_table(self):
+        self.table_widget.setColumnCount(3)  # Add one more column for "Sum of nums"
+        self.table_widget.setHorizontalHeaderLabels(["Артикул", "Количество", "Общее количество значков"])
+
+        # Make the query and retrieve records within the specified date range
+        records = Statistic.select().where(Statistic.created_at.between(self.start_date.toPython(), self.end_date.toPython()))
+
+        # Group the records by 'art' and get the count and sum of "nums" for each group
+        grouped_records = records.group_by(Statistic.art).select(
+            Statistic.art,
+            fn.COUNT(Statistic.id).alias('count'),
+            fn.SUM(Statistic.nums).alias('sum_of_nums')
+        )
+
+        row = 0
+        for group in grouped_records:
+            art_item = QTableWidgetItem(group.art)
+            count_item = QTableWidgetItem(str(group.count))
+            sum_of_nums_item = QTableWidgetItem(str(group.sum_of_nums))
+            self.table_widget.insertRow(row)
+            self.table_widget.setItem(row, 0, art_item)
+            self.table_widget.setItem(row, 1, count_item)
+            self.table_widget.setItem(row, 2, sum_of_nums_item)
+            row += 1
+
+        # Resize the columns to fit the content
+        self.table_widget.resizeColumnsToContents()
+
+    def adjust_dialog_size(self):
+        # Calculate the desired dialog size based on the table size
+        table_width = self.table_widget.sizeHint().width()
+        dialog_width = max(table_width + 50, 400)  # Minimum width of 400 pixels
+        self.setFixedWidth(dialog_width)
+        self.adjustSize()
+
+
+class DateRangeDialog(QDialog):
+    def __init__(self, parent=None):
+        super(DateRangeDialog, self).__init__(parent)
+        layout = QVBoxLayout(self)
+        self.calendar = QCalendarWidget(self)
+        layout.addWidget(self.calendar)
+        self.ok_button = QPushButton('OK', self)
+        self.ok_button.setEnabled(False)
+        self.ok_button.clicked.connect(self.on_ok_button_clicked)
+        layout.addWidget(self.ok_button)
+        self.selected_dates = []
+        self.calendar.clicked.connect(self.on_calendar_clicked)
+
+    def on_calendar_clicked(self, date):
+        if len(self.selected_dates) == 2:
+            logger.debug(self.selected_dates)
+            self.clear_selection()
+        if len(self.selected_dates) < 2:
+            self.selected_dates.append(date)
+            self.selected_dates.sort()
+
+        self.ok_button.setEnabled(len(self.selected_dates) == 2)
+        self.update_date_highlight()
+
+    def update_date_highlight(self):
+        palette = self.calendar.palette()
+        palette.setColor(QPalette.Highlight, Qt.transparent)
+        self.calendar.setPalette(palette)
+
+        if len(self.selected_dates) == 2:
+            current_date = self.selected_dates[0]
+            while current_date <= self.selected_dates[1]:
+                self.calendar.setDateTextFormat(current_date, self.date_format_for_highlight())
+                current_date = current_date.addDays(1)
+
+    def date_format_for_highlight(self):
+        date_format = self.calendar.dateTextFormat(self.selected_dates[0])
+        date_format.setBackground(Qt.lightGray)
+        return date_format
+
+    def on_ok_button_clicked(self):
+        self.accept()
+
+    def reject(self):
+        self.clear_selection()
+        super(DateRangeDialog, self).reject()
+
+    def clear_selection(self):
+        try:
+            self.selected_dates = []
+            self.update_date_highlight()
+        except Exception as ex:
+            logger.error(ex)
 
 
 class CustomDialog(QDialog):
@@ -40,12 +149,54 @@ class CustomDialog(QDialog):
         self.text_edit.setPlainText(text)
 
 
+class Dialog(QDialog):
+    def __init__(self, button_names):
+        super().__init__()
+        self.button_names = button_names
+        self.initUI()
+        self.dialogs = []
+
+    def initUI(self):
+        self.setWindowTitle("Выберите принтер для печати стикеров")
+
+        # Создаем контейнер и устанавливаем для него компоновку
+        container = QWidget(self)
+        layout = QVBoxLayout(container)
+
+        for button_name in self.button_names:
+            button = QPushButton(button_name, self)
+            button.clicked.connect(self.buttonClicked)
+            button.setStyleSheet("QPushButton { font-size: 18px; height: 50px; }")
+            layout.addWidget(button)
+
+        # Добавляем прогресс бар и надпись в контейнер
+        self.progress_label = QLabel(self)
+        self.progress_bar = QProgressBar(self)
+        layout.addWidget(self.progress_label)
+        layout.addWidget(self.progress_bar)
+
+        # Устанавливаем контейнер как главный виджет диалогового окна
+        self.setLayout(layout)
+        self.setFixedWidth(400)
+
+    def buttonClicked(self):
+        sender = self.sender()
+        print(f"Нажата кнопка: {sender.text()}")
+        try:
+            self.show()
+            print_pdf_sticker(printer_name=sender.text())
+            self.reject()
+
+        except Exception as ex:
+            logger.error(ex)
+
+
 class QueueDialog(QWidget):
-    def __init__(self, files_on_print, printers, title, parent=None):
+    def __init__(self, files_on_print, title, sub_self, parent=None):
         super().__init__(parent)
         self.files_on_print = files_on_print
-        self.printers = printers
         self.setWindowTitle(title)
+        self.sub_self = sub_self
 
         layout = QVBoxLayout(self)
 
@@ -75,12 +226,12 @@ class QueueDialog(QWidget):
 
         font = self.tableWidget.font()
 
-        print_button = QPushButton("Печать", self)
+        print_button = QPushButton("Создать", self)
         print_button.setFont(font)
         print_button.clicked.connect(self.evt_btn_print_clicked)
         layout.addWidget(print_button)
 
-        print_all_button = QPushButton("Печатать все", self)
+        print_all_button = QPushButton("Создать все файлы со значками", self)
         print_all_button.setFont(font)
         print_all_button.clicked.connect(self.evt_btn_print_all_clicked)
         layout.addWidget(print_all_button)
@@ -105,7 +256,7 @@ class QueueDialog(QWidget):
         selected_data = self.get_selected_data()
         if selected_data:
             logger.debug(selected_data)
-            creared_good_images(selected_data)
+            creared_good_images(selected_data, self)
         else:
             QMessageBox.information(self, 'Отправка на печать', 'Ни одна строка не выбрана')
 
@@ -113,7 +264,7 @@ class QueueDialog(QWidget):
         all_data = self.get_all_data()
         if all_data:
             logger.debug(all_data)
-            creared_good_images(all_data)
+            creared_good_images(all_data, self)
         else:
             QMessageBox.information(self, 'Отправка на печать', 'Таблица пуста')
 
@@ -140,6 +291,11 @@ class QueueDialog(QWidget):
             if status == '✅':
                 data.append(FilesOnPrint(name=name, art=art, count=int(count), status='✅'))
         return data
+
+    def update_progress(self, current_value, total_value):
+        progress = int(current_value / total_value * 100)
+        self.progress_bar.setValue(progress)
+        QApplication.processEvents()
 
 
 class Ui_MainWindow(object):
@@ -193,30 +349,10 @@ class Ui_MainWindow(object):
         self.verticalLayout.addLayout(self.horizontalLayout_2)
         self.gridLayout = QtWidgets.QGridLayout()
         self.gridLayout.setObjectName("gridLayout")
-
         self.verticalLayout.addLayout(self.gridLayout)
-        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-        self.pushButton_4 = QtWidgets.QPushButton(self.centralwidget)
-        font = QtGui.QFont()
-        font.setFamily("Times New Roman")
-        font.setPointSize(15)
-        font.setBold(True)
-        font.setItalic(False)
-        font.setWeight(75)
-        self.pushButton_4.setFont(font)
-        self.pushButton_4.setObjectName("pushButton_4")
-        self.horizontalLayout_3.addWidget(self.pushButton_4)
-        self.pushButton_5 = QtWidgets.QPushButton(self.centralwidget)
-        font = QtGui.QFont()
-        font.setFamily("Times New Roman")
-        font.setPointSize(15)
-        font.setBold(True)
-        font.setItalic(False)
-        font.setWeight(75)
-        self.pushButton_5.setFont(font)
-        self.pushButton_5.setObjectName("pushButton_5")
-        self.horizontalLayout_3.addWidget(self.pushButton_5)
+
+        self.gridLayout_2 = QtWidgets.QGridLayout()
+        self.gridLayout_2.setObjectName("gridLayout_2")
         self.pushButton_6 = QtWidgets.QPushButton(self.centralwidget)
         font = QtGui.QFont()
         font.setFamily("Times New Roman")
@@ -226,8 +362,39 @@ class Ui_MainWindow(object):
         font.setWeight(75)
         self.pushButton_6.setFont(font)
         self.pushButton_6.setObjectName("pushButton_6")
-        self.horizontalLayout_3.addWidget(self.pushButton_6)
-        self.verticalLayout.addLayout(self.horizontalLayout_3)
+        self.gridLayout_2.addWidget(self.pushButton_6, 2, 1, 1, 1)
+        self.pushButton_5 = QtWidgets.QPushButton(self.centralwidget)
+        font = QtGui.QFont()
+        font.setFamily("Times New Roman")
+        font.setPointSize(15)
+        font.setBold(True)
+        font.setItalic(False)
+        font.setWeight(75)
+        self.pushButton_5.setFont(font)
+        self.pushButton_5.setObjectName("pushButton_5")
+        self.gridLayout_2.addWidget(self.pushButton_5, 2, 2, 1, 1)
+        self.pushButton_4 = QtWidgets.QPushButton(self.centralwidget)
+        font = QtGui.QFont()
+        font.setFamily("Times New Roman")
+        font.setPointSize(15)
+        font.setBold(True)
+        font.setItalic(False)
+        font.setWeight(75)
+        self.pushButton_4.setFont(font)
+        self.pushButton_4.setObjectName("pushButton_4")
+        self.gridLayout_2.addWidget(self.pushButton_4, 2, 3, 1, 1)
+        self.pushButton_8 = QtWidgets.QPushButton(self.centralwidget)
+        font = QtGui.QFont()
+        font.setFamily("Times New Roman")
+        font.setPointSize(15)
+        font.setBold(True)
+        font.setItalic(False)
+        font.setWeight(75)
+        self.pushButton_8.setFont(font)
+        self.pushButton_8.setObjectName("pushButton_8")
+        self.gridLayout_2.addWidget(self.pushButton_8, 0, 2, 1, 1)
+        self.verticalLayout.addLayout(self.gridLayout_2)
+
         self.listView = QtWidgets.QListView(self.centralwidget)
         self.listView.setObjectName("listView")
         self.verticalLayout.addWidget(self.listView)
@@ -266,9 +433,10 @@ class Ui_MainWindow(object):
         self.pushButton.setText(_translate("MainWindow", "Обновить базу"))
         self.pushButton_2.setText(_translate("MainWindow", "Статистика"))
         self.pushButton_3.setText(_translate("MainWindow", "Загрузить файл"))
-        self.pushButton_4.setText(_translate("MainWindow", "Печать стикеров"))
+        self.pushButton_6.setText(_translate("MainWindow", "Печать стикеров"))
         self.pushButton_5.setText(_translate("MainWindow", "Печать обложек"))
-        self.pushButton_6.setText(_translate("MainWindow", "Печать значков"))
+        self.pushButton_4.setText(_translate("MainWindow", "Печать значков"))
+        self.pushButton_8.setText(_translate("MainWindow", "Создать файлы"))
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -295,7 +463,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.pushButton.clicked.connect(self.evt_btn_update)
         self.pushButton_3.clicked.connect(self.evt_btn_open_file_clicked)
-        self.pushButton_6.clicked.connect(self.evt_btn_create_queue)
+        self.pushButton_8.clicked.connect(self.evt_btn_create_files)
+        self.pushButton_6.clicked.connect(self.evt_btn_print_stickers)
+        self.pushButton_5.clicked.connect(self.evt_btn_print_skins)
+        self.pushButton_4.clicked.connect(self.evt_btn_print_images)
+        self.pushButton_2.clicked.connect(self.on_open_dialog_button_clicked)
 
     def addPrinterCheckbox(self, printer_name):
         checkbox = QCheckBox(printer_name, self.centralwidget)
@@ -330,39 +502,27 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 logger.error(f'ошибка чтения xlsx {ex}')
                 QMessageBox.information(self, 'Инфо', f'ошибка чтения xlsx {ex}')
 
-    def evt_btn_create_queue(self):
+    def evt_btn_create_files(self):
         """Ивент на кнопку Сформировать очереди"""
         if self.lineEdit.text():
             try:
-                # Список выбранных принтеров
-                checked_checkboxes = []
-                for i in range(self.gridLayout.count()):
-                    item = self.gridLayout.itemAt(i)
-                    # Получаем фактический виджет, если элемент является QLayoutItem
-                    widget = item.widget()
-                    # Проверяем, является ли виджет флажком (QCheckBox) и отмечен ли он
-                    if isinstance(widget, QtWidgets.QCheckBox) and widget.isChecked():
-                        checked_checkboxes.append(widget.text())
-                        print(widget.text())
-                if not checked_checkboxes:
-                    QMessageBox.information(self, 'Инфо', 'Не выбран ни один принтер')
-                else:
-                    try:
-                        counts_art = read_excel_file(self.lineEdit.text())
-                        for item in counts_art:
-                            status = Article.get_or_none(Article.art == item.art)
-                            if status:
-                                item.status = '✅'
-                    except Exception as ex:
-                        logger.debug(ex)
-                    try:
-                        logger.success(counts_art)
-                        if len(counts_art) > 0:
-                            dialog = QueueDialog(counts_art, checked_checkboxes, 'Значки')
-                            self.dialogs.append(dialog)
-                            dialog.show()
-                    except Exception as ex:
-                        logger.error(f'Ошибка формирования списков печати {ex}')
+
+                try:
+                    counts_art = read_excel_file(self.lineEdit.text())
+                    for item in counts_art:
+                        status = Article.get_or_none(Article.art == item.art)
+                        if status:
+                            item.status = '✅'
+                except Exception as ex:
+                    logger.debug(ex)
+                try:
+                    logger.success(counts_art)
+                    if len(counts_art) > 0:
+                        dialog = QueueDialog(counts_art, 'Значки', self)
+                        self.dialogs.append(dialog)
+                        dialog.show()
+                except Exception as ex:
+                    logger.error(f'Ошибка формирования списков печати {ex}')
             except Exception as ex:
                 logger.error(ex)
         else:
@@ -387,6 +547,76 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             download_new_arts_in_comp(list_arts, self)
         except Exception as ex:
             logger.error(ex)
+
+    def evt_btn_print_stickers(self):
+        """Ивент на кнопку напечатать стикеры"""
+        logger.info(self.lineEdit.text())
+        if self.lineEdit.text() != '':
+            button_names = enum_printers()
+            dialog = Dialog(button_names=button_names)
+            dialog.exec_()
+        else:
+            QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
+
+    def get_printers(self):
+        # Список выбранных принтеров
+        checked_checkboxes = []
+        for i in range(self.gridLayout.count()):
+            item = self.gridLayout.itemAt(i)
+            # Получаем фактический виджет, если элемент является QLayoutItem
+            widget = item.widget()
+            # Проверяем, является ли виджет флажком (QCheckBox) и отмечен ли он
+            if isinstance(widget, QtWidgets.QCheckBox) and widget.isChecked():
+                checked_checkboxes.append(widget.text())
+                print(widget.text())
+        if not checked_checkboxes:
+            QMessageBox.information(self, 'Инфо', 'Не выбран ни один принтер')
+        return checked_checkboxes
+
+    def evt_btn_print_skins(self):
+        """Ивент на кнопку напечатать обложки"""
+        try:
+            print_pdf_skin(self.get_printers())
+        except Exception as ex:
+            logger.error(f'Ошибка печати обложек {ex}')
+
+    def evt_btn_print_images(self):
+        """Ивент на кнопку напечатать значки"""
+        try:
+            printers = self.get_printers()
+            if printers:
+                print_png_images(printers)
+        except Exception as ex:
+            logger.error(f'Ошибка печати обложек {ex}')
+
+    def on_open_dialog_button_clicked(self):
+        dialog = DateRangeDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            try:
+                start_date = dialog.selected_dates[0]
+                end_date = dialog.selected_dates[1]
+                if start_date and end_date:
+                    print(start_date, end_date)
+                    date1 = start_date
+                    date2 = end_date
+
+                    records = Statistic.select().where(Statistic.created_at.between(date1.toPython(), date2.toPython()))
+                    count_of_records = records.count()
+
+                    sum_of_nums = records.select(fn.SUM(Statistic.nums)).scalar()
+                    logger.success(f'Количество артикулов: {count_of_records}\nКоличество значков: {sum_of_nums}')
+                    for i in records:
+                        print(i.art)
+
+                    grouped_records = records.group_by(Statistic.art).select(Statistic.art,
+                                                                             fn.COUNT(Statistic.id).alias('count'))
+                    for group in grouped_records:
+                        print(f"Art: {group.art}, Count of Records: {group.count}")
+
+                    grouped_dialog = GroupedRecordsDialog(self, start_date, end_date)
+                    grouped_dialog.exec_()
+            except Exception as ex:
+                print(ex)
 
 
 if __name__ == '__main__':

@@ -2,15 +2,15 @@ import itertools
 import os
 import subprocess
 import sys
+import time
 
-from PyQt5.QtWidgets import QMessageBox
 from loguru import logger
 
-from config import acrobat_path
-from utils import FilesOnPrint
+from config import acrobat_path, ready_path
+from db import Orders, Statistic
 
 
-def print_pdf(file_path, num_copies, printer_name):
+def print_pdf_sticker(printer_name):
     # Проверка, поддерживается ли печать через subprocess на вашей платформе
     if sys.platform != 'win32':
         print("Печать PDF поддерживается только в Windows.")
@@ -18,78 +18,77 @@ def print_pdf(file_path, num_copies, printer_name):
     if not os.path.isfile(acrobat_path):
         print("Adobe Acrobat Reader не найден.")
         return
+
+    arts = Orders.select().order_by('num_on_List')
     try:
         print_processes = []
         # Открытие PDF-файла с использованием PyPDF2
-        with open(file_path, "rb") as f:
+        # with open(file_path, "rb") as f:
+        for i in arts:
             # Формирование команды для печати файла
-            print_command = f'"{acrobat_path}" /N /T "{file_path}" "{printer_name}"'
-            for _ in range(num_copies):
-                # Запуск процесса печати
+            if i.sticker:
+                print_command = f'"{acrobat_path}" /N /T "{i.sticker}" "{printer_name}"'
                 print_process = subprocess.Popen(print_command, shell=True)
                 print_processes.append(print_process)
-        logger.success(f'Файл {file_path} отправлен на печать ({num_copies} копий). на принтер {printer_name}')
+                time.sleep(0.5)
+                logger.success(f'Файл {i.sticker} отправлен на печать на принтер {printer_name}')
+            else:
+                logger.error(f'Нет стикера на арт: {i.art}')
+
     except Exception as e:
         logger.error(f'Возникла ошибка при печати файла: {e}')
 
 
-
-def queue(printer_list, file_list, self=None):
-    """Печать постеров"""
-    if self:
-        self.progress_label.setText("Прогресс: 0%")
-        self.progress_bar.setValue(0)
-        total = len(file_list)
-        completed = 0
-    printer_list = [i.split('(')[0].strip() for i in printer_list]
-
-    if len(printer_list) == 0:
-        return False
+def print_pdf_skin(printers):
+    file_list = []
     tuple_printing = tuple()
-    for file, printer in zip(file_list, itertools.cycle(printer_list)):
-        tuple_printing += ((file[0], file[1], printer),)
-    for item in tuple_printing:
-        file_path, num_copies, printer_name = item
-        # print_pdf(file_path, num_copies, printer_name)
-        if self:
-            completed += 1
-            progress = int((completed / total) * 100)
-            self.progress_label.setText(f"Прогресс: {progress}%")
-            self.progress_bar.setValue(progress)
+
+    for file in os.listdir(f'{ready_path}'):
+        if os.path.isfile(os.path.join(ready_path, file)):
+            if file.split('.')[1] == 'pdf':
+                file_path = os.path.join(ready_path, file)
+                file_list.append(file_path)
+
+    for file, printer in zip(file_list, itertools.cycle(printers)):
+        tuple_printing += ((file, printer),)
+
+    for file_path, printer_name in tuple_printing:
+        try:
+            print_processes = []
+            print_command = f'"{acrobat_path}" /N /T "{file_path}" "{printer_name}"'
+            print_process = subprocess.Popen(print_command, shell=True)
+            print_processes.append(print_process)
+            logger.success(f'Файл {file_path} отправлен на печать на принтер {printer_name}')
+        except Exception as e:
+            logger.error(f'Возникла ошибка при печати файла: {e}')
 
 
-def queue_sticker(printer_list, file_list, self=None):
+def print_png_images(printers):
+    file_list = []
     tuple_printing = tuple()
-    count = 0
 
-    for file, printer in zip(file_list, itertools.cycle(printer_list)):
-        tuple_printing += ((file[0], file[1], printer),)
-    sorted_data = sorted(tuple_printing, key=lambda x: ('-MAT' not in x[0], x[0]), reverse=True)
+    records = Orders.select()
+    for record in records:
+        Statistic.create(art=record.art, nums=record.nums_in_folder)
 
-    for item in sorted_data:
-        logger.success(item)
-    for item in sorted_data:
-        file_path, num_copies, printer_name = item
-        # print_pdf(file_path, num_copies, printer_name)
-        count += 1
-        if self:
-            self.progress_bar.setValue(count + 1)
-            filename = file_path.split('\\')[-1]
-            self.progress_label.setText(f"Печать: {filename}\nНа принтер: {printer_name}")
+    for root, dirs, files in os.walk(ready_path):
+        for file in files:
+            if file.endswith('png'):
+                file_list.append(os.path.join(root, file))
+
+    for file, printer in zip(file_list, itertools.cycle(printers)):
+        tuple_printing += ((file, printer),)
+
+    for file_path, printer_name in tuple_printing:
+        # Проверка наличия файла
+        try:
+            subprocess.run(['mspaint', '/pt', file_path, printer_name], check=True)
+            logger.success(f'Файл {file_path} отправлен на печать на принтер {printer_name}')
+        except subprocess.CalledProcessError:
+            print("Ошибка при печати файла.")
 
 
 if __name__ == '__main__':
-    printer_list = ['Fax', 'Отправить в OneNote 16']
-    order = [FilesOnPrint(art='POSTER-BITVA.MATVEEVD-GLOSS-3', count=1,
-                          name='Постеры Дмитрий Матвеев Чернокнижник постеры Интерьерные', status='✅'),
-             FilesOnPrint(art='POSTER-BITVA.MATVEEVD-GLOSS-6', count=2,
-                          name='Постеры Дмитрий Матвеев Чернокнижник постеры Интерьерные', status='✅'),
-             FilesOnPrint(art='POSTER-BITVA.SHEPSOLEG-MAT-3', count=1, name='Постеры Олег Шепс постеры Интерьерные А3',
-                          status='✅'), FilesOnPrint(art='POSTER-BITVA.VRAIDOS.CB2-MAT-3', count=1,
-                                                    name='Постеры Виктория Райдос постеры Интерьерные А3', status='✅'),
-             FilesOnPrint(art='POSTER-DEEPINS-GLOSS', count=1, name='Постеры Тиктокер Дипинс  постеры Интерьерные',
-                          status='✅')]
-
-    # file_tuple = create_file_list(order, directory=stiker_path)
-    #
-    # tuple_printing = queue_sticker(printer_list, file_tuple)
+    file_path = r"E:\Новая база значков\AniKoya\Готовые\6\37\REZERO-4NEW-NABOR37\!10003.png"
+    printer_name = "Отправить в OneNote 16"
+    print_pdf_skin(printer_name)

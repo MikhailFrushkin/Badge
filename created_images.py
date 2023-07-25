@@ -1,5 +1,6 @@
 import datetime
 import glob
+import json
 import os
 import shutil
 import subprocess
@@ -13,13 +14,13 @@ from peewee import fn
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
-from config import path_root, ready_path, gimp_path
+from config import path_root, ready_path
 from db import Article, Orders
-from utils import df_in_xlsx
+from utils import df_in_xlsx, ProgressBar
 from PIL import Image, ImageDraw, ImageFont
 
 
-def combine_images_to_pdf(input_files, output_pdf):
+def combine_images_to_pdf(input_files, output_pdf, progress=None):
     c = canvas.Canvas(output_pdf, pagesize=A4)
     x_offset = 20
     y_offset = 20
@@ -43,6 +44,7 @@ def combine_images_to_pdf(input_files, output_pdf):
             c.drawString(x, y + 2, f"#{img.num_on_list}     {img.art}")
             try:
                 logger.success(f"Добавился скин {img.num_on_list}     {img.art}")
+                progress.update_progress()
                 c.drawImage(img.skin, x, y - img_height, width=img_width, height=img_height)
             except Exception as ex:
                 logger.error(f"Не удалось добавить подложку для {img.art} {ex}")
@@ -67,14 +69,7 @@ def write_images_art(image, text1):
     return image
 
 
-def distribute_images(queryset, size):
-    dict_sizes_images = {
-        25: {'diameter': 35, 'nums': 48, 'ICONS_PER_ROW': 6, 'ICONS_PER_COL': 8},
-        37: {'diameter': 51, 'nums': 20, 'ICONS_PER_ROW': 4, 'ICONS_PER_COL': 5},
-        44: {'diameter': 53, 'nums': 15, 'ICONS_PER_ROW': 3, 'ICONS_PER_COL': 5},
-        56: {'diameter': 70, 'nums': 12, 'ICONS_PER_ROW': 3, 'ICONS_PER_COL': 4}
-    }
-    size_images_param = dict_sizes_images[size]
+def distribute_images(queryset, size_images_param):
     nums = size_images_param['nums']
     list_arts = [(i.num_on_list, i.nums_in_folder, i.images) for i in queryset]
     list_arts = sorted(list_arts, key=lambda x: x[1], reverse=True)
@@ -150,9 +145,8 @@ def distribute_images(queryset, size):
             continue
         if current_count != 0:
             sets_of_orders.append(current_set)
-            logger.success(f'{current_set} , {current_count}')
+            # logger.success(f'{current_set} , {current_count}')
         if len(list_arts) == 1:
-            logger.error(list_arts)
             sets_of_orders.append([(i, list_arts[0][0]) for i in list_arts[0][2].split(',')])
             list_arts.remove(list_arts[0])
         if list_arts:
@@ -161,81 +155,13 @@ def distribute_images(queryset, size):
             current_count = list_arts[0][1]
             list_arts.remove(list_arts[0])
 
-    print('Сумма значков: ', sum([len(i) for i in sets_of_orders]))
-    print('Сумма значков на листах: ', set([len(i) for i in sets_of_orders]))
-    print('Количество листов: ', len(sets_of_orders))
-    # for sublist in sets_of_orders:
-    #     if len(sublist) == 60:
-    #         print(sublist)
-
-    create_contact_sheet(sets_of_orders, size_images_param, size)
+    logger.debug(f'Сумма значков: {sum([len(i) for i in sets_of_orders])}')
+    logger.debug(f'Сумма значков на листах: {set([len(i) for i in sets_of_orders])}')
+    logger.debug(f'Количество листов: {len(sets_of_orders)}')
+    return sets_of_orders
 
 
-def distribute_images2(queryset, size):
-    dict_sizes_images = {
-        25: {'diameter': 35, 'nums': 48, 'ICONS_PER_ROW': 6, 'ICONS_PER_COL': 8},
-        37: {'diameter': 51, 'nums': 20, 'ICONS_PER_ROW': 4, 'ICONS_PER_COL': 5},
-        44: {'diameter': 53, 'nums': 15, 'ICONS_PER_ROW': 3, 'ICONS_PER_COL': 5},
-        56: {'diameter': 70, 'nums': 12, 'ICONS_PER_ROW': 3, 'ICONS_PER_COL': 4}
-    }
-    size_images_param = dict_sizes_images[size]
-    nums = size_images_param['nums']
-
-    # Fetch the required fields from the queryset using 'values_list'
-    queryset = queryset.order_by('-nums_in_folder')
-    list_arts = [(i.id, i.nums_in_folder, i.images) for i in queryset]
-
-    sets_of_orders = []
-    current_set = []
-    current_count = 0
-
-    for order in list_arts[:]:
-        image_list = [(i, order[0]) for i in order[2].split(',')]
-        len_list = len(image_list)
-
-        if order[1] > nums:
-            if (current_count + (len_list % nums)) <= nums and (len_list % nums) != 0:
-                current_set.extend(image_list[-(order[1] % nums):])
-                current_count += len_list % nums
-                sets_of_orders.extend([image_list[nums * i:nums * i + nums] for i in range(order[1] // nums)])
-                list_arts.remove(order)
-            elif current_count == 0:
-                sets_of_orders.extend([image_list[nums * i:nums * i + nums] for i in range(order[1] // nums)])
-                current_set.extend(image_list[-(order[1] % nums):])
-                current_count += len_list % nums
-                list_arts.remove(order)
-
-        if (current_count + order[1]) <= nums:
-            current_set.extend(image_list)
-            current_count += order[1]
-            list_arts.remove(order)
-            if current_count == nums:
-                sets_of_orders.append(current_set)
-                current_set = []
-                current_count = 0
-
-    if current_count != 0:
-        sets_of_orders.append(current_set)
-
-    if list_arts:
-        # If there are remaining elements in list_arts, add them as a new set
-        current_set = []
-        for order in list_arts:
-            current_set.extend([(i, order[0]) for i in order[2].split(',')])
-        sets_of_orders.append(current_set)
-
-    print(sum([len(i) for i in sets_of_orders]))
-    print(set([len(i) for i in sets_of_orders]))
-    print(len(sets_of_orders))
-    for sublist in sets_of_orders:
-        if len(sublist) == 60:
-            print(sublist)
-
-    print(len(set([i[1] for item in sets_of_orders for i in item])))
-    create_contact_sheet(sets_of_orders, size_images_param, size)
-
-
-def create_contact_sheet(images=None, size_images_param=None, size=None):
+def create_contact_sheet(images=None, size_images_param=None, size=None, self=None):
     a4_width = 2480
     a4_height = 3508
     image_width_mm = size_images_param['diameter']
@@ -245,6 +171,10 @@ def create_contact_sheet(images=None, size_images_param=None, size=None):
     mm_to_inch = 25.4
     image_width = int(image_width_mm * 300 / mm_to_inch)
     image_height = int(image_height_mm * 300 / mm_to_inch)
+    if self:
+        self.progress_label.setText(f"Прогресс: Создание изображений {size} mm.")
+        self.progress_bar.setValue(0)
+        progress = ProgressBar(len(images), self)
     for index, img in enumerate(images, start=1):
         try:
             # Создаем пустой контейнер для объединения изображений (RGBA mode)
@@ -258,14 +188,17 @@ def create_contact_sheet(images=None, size_images_param=None, size=None):
                         image = image.resize((image_width, image_height), Image.LANCZOS)
                         contact_sheet.paste(image, (j * image_width, i * image_height))
                     except IndexError as ex:
-                        logger.error(img[0][1])
+                        pass
             logger.success(f'Созданно изображение {index}.png')
+            progress.update_progress()
             contact_sheet.save(f'{ready_path}/{size}/{index}.png')
         except Exception as ex:
             logger.error(ex)
 
 
-def creared_good_images(all_arts):
+def creared_good_images(all_arts, self):
+    with open('data.json', 'r') as file:
+        dict_sizes_images = json.load(file)
     try:
         Orders.drop_table()
         if not Orders.table_exists():
@@ -300,13 +233,26 @@ def creared_good_images(all_arts):
             row.num_on_list = index
             row.save()
 
-        records = Orders.select(Orders.size).distinct()
-        for size in records:
-            combine_images_to_pdf(Orders.select().where(Orders.size == size.size), f"{ready_path}/{size.size}.pdf")
-            sum_result = Orders.select(fn.SUM(Orders.nums_in_folder)).where(Orders.size == size.size).scalar()
+        records = Orders.select(Orders.size).order_by('-size').distinct()
+        records = sorted([i.size for i in records])
 
-            print("Сумма значений в столбце:", sum_result)
-            distribute_images(Orders.select().where(Orders.size == size.size), size.size)
+        for size in records:
+            if self:
+                self.progress_bar.setValue(0)
+                self.progress_label.setText(f"Прогресс: Создание подложек {size} mm.")
+
+                progress = ProgressBar(Orders.select().where(Orders.size == size).count(), self)
+
+            size_images_param = dict_sizes_images[str(size)]
+
+            combine_images_to_pdf(Orders.select().where(Orders.size == size), f"{ready_path}/{size}.pdf",
+                                  progress)
+            sum_result = Orders.select(fn.SUM(Orders.nums_in_folder)).where(Orders.size == size).scalar()
+
+            logger.debug(f"Сумма значений в столбце: {sum_result}")
+
+            sets_of_orders = distribute_images(Orders.select().where(Orders.size == size), size_images_param)
+            create_contact_sheet(sets_of_orders, size_images_param, size, self)
     except Exception as ex:
         logger.error(ex)
 

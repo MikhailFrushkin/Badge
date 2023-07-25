@@ -87,7 +87,7 @@ def download_file(service, file_id: str, file_name: str, local_directory: str):
     return True
 
 
-def download_missing_files_from_drive(folder_url: str, local_directory: str):
+def download_missing_files_from_drive(folder_url: str, local_directory: str, self=None):
     """Download missing files from Google Drive to the specified local directory."""
     # Authenticate and create the Drive service
     credentials = service_account.Credentials.from_service_account_file('google_acc.json')
@@ -105,7 +105,9 @@ def download_missing_files_from_drive(folder_url: str, local_directory: str):
 
     # Get folder_id
     folder_id = re.search(r'/folders/([^/]+)', folder_url).group(1)
-
+    if self:
+        self.second_statusbar.showMessage(f'Скачивание стикеров', 100000)
+        progress = ProgressBar(len(missing_files), self)
     # Download missing files from Google Drive
     for missing_file_name in missing_files:
         escaped_file_name = missing_file_name.replace("'", "\\'")
@@ -123,6 +125,8 @@ def download_missing_files_from_drive(folder_url: str, local_directory: str):
                 break
 
         if file_id:
+            if self:
+                progress.update_progress()
             download_file(service, file_id, missing_file_name, local_directory)
         else:
             logger.error(f"File '{missing_file_name}' not found on Google Drive.")
@@ -134,15 +138,12 @@ def main_download_stickers(self=None):
         (google_sticker_path2, sticker_path2),
         (google_sticker_path3, sticker_path3)
     ]
-    if self:
-        self.second_statusbar.showMessage(f'Скачивание стикеров', 100000)
-        progress = ProgressBar(3, self)
+
     for google_sticker_path, sticker_path in sticker_paths:
         folder_url = f"https://drive.google.com/drive/folders/{google_sticker_path}"
         local_directory = f"{sticker_path_all}"
-        download_missing_files_from_drive(folder_url, local_directory)
-        if self:
-            progress.update_progress()
+        download_missing_files_from_drive(folder_url, local_directory, self)
+
     if self:
         self.second_statusbar.showMessage(f'Скачивание стикеров завершено', 1000)
 
