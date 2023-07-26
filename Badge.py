@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 import qdarkstyle
@@ -24,7 +25,7 @@ from utils import enum_printers, read_excel_file, FilesOnPrint
 class GroupedRecordsDialog(QDialog):
     def __init__(self, parent, start_date, end_date):
         super(GroupedRecordsDialog, self).__init__(parent)
-        self.setWindowTitle('Grouped Records')
+        self.setWindowTitle('Статистика печати')
         self.start_date = start_date
         self.end_date = end_date
         self.layout = QVBoxLayout(self)
@@ -37,12 +38,13 @@ class GroupedRecordsDialog(QDialog):
 
     def populate_table(self):
         self.table_widget.setColumnCount(3)  # Add one more column for "Sum of nums"
-        self.table_widget.setHorizontalHeaderLabels(["Артикул", "Количество", "Общее количество значков"])
+        self.table_widget.setHorizontalHeaderLabels(["Артикул", "Количество", "Количество значков"])
+        end_date_inclusive = self.end_date.toPython() + timedelta(days=1)
+        records = Statistic.select().where(
+            (Statistic.created_at >= self.start_date.toPython()) &
+            (Statistic.created_at < end_date_inclusive)
+        )
 
-        # Make the query and retrieve records within the specified date range
-        records = Statistic.select().where(Statistic.created_at.between(self.start_date.toPython(), self.end_date.toPython()))
-
-        # Group the records by 'art' and get the count and sum of "nums" for each group
         grouped_records = records.group_by(Statistic.art).select(
             Statistic.art,
             fn.COUNT(Statistic.id).alias('count'),
@@ -60,13 +62,11 @@ class GroupedRecordsDialog(QDialog):
             self.table_widget.setItem(row, 2, sum_of_nums_item)
             row += 1
 
-        # Resize the columns to fit the content
         self.table_widget.resizeColumnsToContents()
 
     def adjust_dialog_size(self):
-        # Calculate the desired dialog size based on the table size
         table_width = self.table_widget.sizeHint().width()
-        dialog_width = max(table_width + 50, 400)  # Minimum width of 400 pixels
+        dialog_width = max(table_width + 50, 420)  # Minimum width of 400 pixels
         self.setFixedWidth(dialog_width)
         self.adjustSize()
 
@@ -503,28 +503,23 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 QMessageBox.information(self, 'Инфо', f'ошибка чтения xlsx {ex}')
 
     def evt_btn_create_files(self):
-        """Ивент на кнопку Сформировать очереди"""
+        """Ивент на кнопку Создать файлы"""
         if self.lineEdit.text():
             try:
-
-                try:
-                    counts_art = read_excel_file(self.lineEdit.text())
-                    for item in counts_art:
-                        status = Article.get_or_none(Article.art == item.art)
-                        if status:
-                            item.status = '✅'
-                except Exception as ex:
-                    logger.debug(ex)
-                try:
-                    logger.success(counts_art)
-                    if len(counts_art) > 0:
-                        dialog = QueueDialog(counts_art, 'Значки', self)
-                        self.dialogs.append(dialog)
-                        dialog.show()
-                except Exception as ex:
-                    logger.error(f'Ошибка формирования списков печати {ex}')
+                counts_art = read_excel_file(self.lineEdit.text())
+                for item in counts_art:
+                    status = Article.get_or_none(Article.art == item.art)
+                    if status:
+                        item.status = '✅'
             except Exception as ex:
                 logger.error(ex)
+            try:
+                if len(counts_art) > 0:
+                    dialog = QueueDialog(counts_art, 'Значки', self)
+                    self.dialogs.append(dialog)
+                    dialog.show()
+            except Exception as ex:
+                logger.error(f'Ошибка формирования списков печати {ex}')
         else:
             QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
 
@@ -605,14 +600,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
                     sum_of_nums = records.select(fn.SUM(Statistic.nums)).scalar()
                     logger.success(f'Количество артикулов: {count_of_records}\nКоличество значков: {sum_of_nums}')
-                    for i in records:
-                        print(i.art)
-
-                    grouped_records = records.group_by(Statistic.art).select(Statistic.art,
-                                                                             fn.COUNT(Statistic.id).alias('count'))
-                    for group in grouped_records:
-                        print(f"Art: {group.art}, Count of Records: {group.count}")
-
+                    QMessageBox.information(self, 'Общая статистика',
+                                            f'Количество артикулов: {count_of_records}\n'
+                                            f'Количество значков: {sum_of_nums}')
                     grouped_dialog = GroupedRecordsDialog(self, start_date, end_date)
                     grouped_dialog.exec_()
             except Exception as ex:

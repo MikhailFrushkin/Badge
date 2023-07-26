@@ -121,7 +121,7 @@ def read_excel_file(file: str) -> list:
         file_on_print = FilesOnPrint(art=row['Артикул продавца'], name=row['Название товара'], count=row['Количество'])
         files_on_print.append(file_on_print)
 
-    files_on_print = sorted(files_on_print, key=lambda x: x.count, reverse=True)
+    files_on_print = sorted(files_on_print, key=lambda x: x.status, reverse=True)
     return files_on_print
 
 

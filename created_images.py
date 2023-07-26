@@ -9,6 +9,7 @@ from pprint import pprint
 import cv2
 import numpy as np
 import pandas as pd
+from PyQt5.QtWidgets import QMessageBox
 from loguru import logger
 from peewee import fn
 from reportlab.lib.pagesizes import A4
@@ -253,6 +254,8 @@ def creared_good_images(all_arts, self):
 
             sets_of_orders = distribute_images(Orders.select().where(Orders.size == size), size_images_param)
             create_contact_sheet(sets_of_orders, size_images_param, size, self)
+        QMessageBox.information(self, 'Завершено', 'Создание файлов завершено!')
+
     except Exception as ex:
         logger.error(ex)
 
