@@ -58,7 +58,7 @@ def write_images_art(image, text1):
     draw = ImageDraw.Draw(image)
 
     # Calculate the font size based on the image width
-    font_size = int(width / 12)
+    font_size = int(width / 11)
     font = ImageFont.truetype("arial.ttf", font_size)
 
     # Добавляем надпись в правый верхний угол
@@ -88,48 +88,28 @@ def distribute_images(queryset, size_images_param):
                 if (current_count + (len(image_list) % nums)) <= nums and ((len(image_list) % nums) != 0):
                     current_set.extend(image_list[-(order[1] % nums):])
                     current_count += len(image_list) % nums
-
-                    logger.debug(order[1])
-                    logger.debug(nums)
-                    logger.debug(order[1] % nums)
-
                     full_lists = order[1] // nums
                     for i in range(full_lists):
                         sets_of_orders.append(image_list[nums * i:nums * i + nums])
-                        logger.error(image_list[nums * i:nums * i + nums])
                     list_arts.remove(order)
                 elif (order[1] > nums) and current_count == 0:
                     full_lists = order[1] // nums
                     for i in range(full_lists):
                         sets_of_orders.append(image_list[nums * i:nums * i + nums])
-                        logger.error((image_list[nums * i:nums * i + nums]))
                     if order[1] % nums != 0:
                         current_set.extend(image_list[-(order[1] % nums):])
-
-                        logger.debug(order[1])
-                        logger.debug(nums)
-                        logger.debug(order[1] % nums)
-                        logger.error(image_list[-(order[1] % nums):])
-
                     list_arts.remove(order)
                 else:
-                    logger.debug(current_set)
                     sets_of_orders.append(current_set)
                     current_set = []
                     current_count = 0
-
                     full_lists = order[1] // nums
                     for i in range(full_lists):
                         sets_of_orders.append(image_list[nums * i:nums * i + nums])
-                        logger.error((image_list[nums * i:nums * i + nums]))
 
                     if order[1] % nums != 0:
                         current_set.extend(image_list[-(order[1] % nums):])
                         current_count += len(image_list[-(order[1] % nums):])
-                    logger.debug(order[1])
-                    logger.debug(nums)
-                    logger.debug(order[1] % nums)
-
                     list_arts.remove(order)
 
             if (current_count + order[1]) <= nums:
@@ -139,14 +119,12 @@ def distribute_images(queryset, size_images_param):
                 list_arts.remove(order)
                 if current_count == nums:
                     sets_of_orders.append(current_set)
-                    logger.success(f'{current_set} , {current_count}')
                     current_set = []
                     current_count = 0
                     break
             continue
         if current_count != 0:
             sets_of_orders.append(current_set)
-            # logger.success(f'{current_set} , {current_count}')
         if len(list_arts) == 1:
             sets_of_orders.append([(i, list_arts[0][0]) for i in list_arts[0][2].split(',')])
             list_arts.remove(list_arts[0])

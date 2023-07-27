@@ -425,21 +425,21 @@ if __name__ == '__main__':
 
     # update_db()
     count = 0
-    #
-    # if not Article.table_exists():
-    #     Article.create_table(safe=True)
-    # for root, dirs, files in os.walk(rf'{dp_path}\Готовые'):
-    #     for dir in dirs:
-    #         if len(dir) > 6:
-    #             count += 1
-    #             Article.create_with_art(dir, os.path.join(root, dir), 'DP')
-    #             print(count)
-    # for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
-    #     for dir in dirs:
-    #         if len(dir) > 6:
-    #             count += 1
-    #             Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
-    #             print(count)
+
+    if not Article.table_exists():
+        Article.create_table(safe=True)
+    for root, dirs, files in os.walk(rf'{dp_path}\Готовые'):
+        for dir in dirs:
+            if len(dir) > 6:
+                count += 1
+                Article.create_with_art(dir, os.path.join(root, dir), 'DP')
+                print(count)
+    for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
+        for dir in dirs:
+            if len(dir) > 6:
+                count += 1
+                Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
+                print(count)
 
     print('Нет подложек')
     records = Article.select().where(Article.skin >> None)
@@ -455,7 +455,7 @@ if __name__ == '__main__':
     records = Article.select().where(Article.nums_in_folder != Article.nums)
     for i in records:
         print(os.path.abspath(i.folder))
-        # i.nums = i.nums_in_folder
-        # i.save()
+        i.nums = i.nums_in_folder
+        i.save()
         # subprocess.Popen(f'explorer {os.path.abspath(i.folder)}', shell=True)
         # time.sleep(3)

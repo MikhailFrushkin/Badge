@@ -511,6 +511,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     status = Article.get_or_none(Article.art == item.art)
                     if status:
                         item.status = '✅'
+                counts_art = sorted(counts_art, key=lambda x: x.status, reverse=True)
             except Exception as ex:
                 logger.error(ex)
             try:
@@ -540,6 +541,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             main_download_stickers(self)
 
             download_new_arts_in_comp(list_arts, self)
+            QMessageBox.information(self, 'Загрузка', 'Загрузка закончена')
         except Exception as ex:
             logger.error(ex)
 
