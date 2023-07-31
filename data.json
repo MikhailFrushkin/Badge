@@ -1,24 +1,24 @@
 {
     "25": {
-        "diameter": 35.2,
-        "nums": 48,
-        "ICONS_PER_ROW": 6,
-        "ICONS_PER_COL": 8
+        "diameter": 38,
+        "nums": 35,
+        "ICONS_PER_ROW": 5,
+        "ICONS_PER_COL": 7
     },
     "37": {
-        "diameter": 51.5,
+        "diameter": 51.7,
         "nums": 20,
         "ICONS_PER_ROW": 4,
         "ICONS_PER_COL": 5
     },
     "44": {
-        "diameter": 53.5,
+        "diameter": 57,
         "nums": 15,
         "ICONS_PER_ROW": 3,
         "ICONS_PER_COL": 5
     },
     "56": {
-        "diameter": 70.4,
+        "diameter": 70.5,
         "nums": 12,
         "ICONS_PER_ROW": 3,
         "ICONS_PER_COL": 4

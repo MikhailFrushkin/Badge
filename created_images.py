@@ -16,7 +16,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
 from config import path_root, ready_path
-from db import Article, Orders
+from db import Article, Orders, Statistic
 from utils import df_in_xlsx, ProgressBar
 from PIL import Image, ImageDraw, ImageFont
 
@@ -166,7 +166,11 @@ def create_contact_sheet(images=None, size_images_param=None, size=None, self=No
                         image = Image.open(img[i * size_images_param['ICONS_PER_ROW'] + j][0].strip())
                         image = write_images_art(image, f'#{img[i * size_images_param["ICONS_PER_ROW"] + j][1]}')
                         image = image.resize((image_width, image_height), Image.LANCZOS)
-                        contact_sheet.paste(image, (j * image_width, i * image_height))
+                        if size == 56:
+                            contact_sheet.paste(image, (j * image_width - 10, i * image_height + 10 * i))
+                        else:
+                            contact_sheet.paste(image, (j * image_width, i * image_height + 10 * i))
+
                     except IndexError as ex:
                         pass
             logger.success(f'Созданно изображение {index}.png')
@@ -235,6 +239,9 @@ def creared_good_images(all_arts, self):
             create_contact_sheet(sets_of_orders, size_images_param, size, self)
         QMessageBox.information(self, 'Завершено', 'Создание файлов завершено!')
 
+        records = Orders.select()
+        for record in records:
+            Statistic.create(art=record.art, nums=record.nums_in_folder)
     except Exception as ex:
         logger.error(ex)
 

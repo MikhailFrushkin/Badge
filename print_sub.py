@@ -71,9 +71,7 @@ def print_png_images(printers):
     file_list = []
     tuple_printing = tuple()
 
-    records = Orders.select()
-    for record in records:
-        Statistic.create(art=record.art, nums=record.nums_in_folder)
+
 
     for root, dirs, files in os.walk(ready_path):
         for file in files:
