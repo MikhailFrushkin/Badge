@@ -4,13 +4,14 @@ import subprocess
 import sys
 import time
 
+from PyQt5.QtWidgets import QMessageBox
 from loguru import logger
 
 from config import acrobat_path, ready_path
 from db import Orders, Statistic
 
 
-def print_pdf_sticker(printer_name):
+def print_pdf_sticker(printer_name, self=None):
     # Проверка, поддерживается ли печать через subprocess на вашей платформе
     if sys.platform != 'win32':
         print("Печать PDF поддерживается только в Windows.")
@@ -18,7 +19,7 @@ def print_pdf_sticker(printer_name):
     if not os.path.isfile(acrobat_path):
         print("Adobe Acrobat Reader не найден.")
         return
-
+    bad_list_arts = []
     arts = Orders.select().order_by('num_on_List')
     try:
         print_processes = []
@@ -34,7 +35,10 @@ def print_pdf_sticker(printer_name):
                 logger.success(f'Файл {i.sticker} отправлен на печать на принтер {printer_name}')
             else:
                 logger.error(f'Нет стикера на арт: {i.art}')
-
+                bad_list_arts.append(i.art)
+        if self and len(bad_list_arts) != 0:
+            text_arts = "\n".join(bad_list_arts)
+            QMessageBox.information(self, 'Отправка на печать', f'Нет стикеров на печать:\n{text_arts}')
     except Exception as e:
         logger.error(f'Возникла ошибка при печати файла: {e}')
 

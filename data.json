@@ -1,0 +1,26 @@
+{
+    "25": {
+        "diameter": 35,
+        "nums": 48,
+        "ICONS_PER_ROW": 6,
+        "ICONS_PER_COL": 8
+    },
+    "37": {
+        "diameter": 51,
+        "nums": 20,
+        "ICONS_PER_ROW": 4,
+        "ICONS_PER_COL": 5
+    },
+    "44": {
+        "diameter": 53,
+        "nums": 15,
+        "ICONS_PER_ROW": 3,
+        "ICONS_PER_COL": 5
+    },
+    "56": {
+        "diameter": 70,
+        "nums": 12,
+        "ICONS_PER_ROW": 3,
+        "ICONS_PER_COL": 4
+    }
+}

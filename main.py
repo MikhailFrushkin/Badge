@@ -1,5 +1,4 @@
 import os
-import re
 import shutil
 import subprocess
 import time
@@ -7,14 +6,12 @@ from pprint import pprint
 
 import cv2
 import numpy as np
-import pandas as pd
 import requests
-from PyQt5.QtWidgets import QMessageBox
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from loguru import logger
 
-from db import add_record_google_table, GoogleTable, Article
+from db import add_record_google_table, GoogleTable, Article, db
 from config import anikoya_path, dp_path, id_google_table_anikoya, id_google_table_DP, sticker_path_all
 from config import path_root
 from utils import df_in_xlsx, rename_files, move_ready_folder, ProgressBar
@@ -318,19 +315,27 @@ def download_new_arts(link, arts_list, shop, self=None):
             nums = int(folder.split('-')[-2])
 
             if len(list_image) == 1:
-                shutil.copy2(os.path.join(new_folder, list_image[0]), folder_art)
-                temp_list_skin_one_temp = []
-                if len(list_skin_one) != 0:
-                    temp_list_skin_one_temp.extend(list_skin_one)
+                if size == 1:
+                    shutil.copy2(os.path.join(new_folder, list_image[0]), folder_art)
+                    temp_list_skin_one_temp = []
+                    if len(list_skin_one) != 0:
+                        temp_list_skin_one_temp.extend(list_skin_one)
+                    else:
+                        temp_list_skin_one_temp.extend(list_skin)
+                    for j in temp_list_skin_one_temp:
+                        try:
+                            shutil.copy2(os.path.join(new_folder, j), folder_art)
+                            rename_files(os.path.join(folder_art, j), 'Подложка')
+                            break
+                        except Exception as ex:
+                            print(ex)
                 else:
-                    temp_list_skin_one_temp.extend(list_skin)
-                for j in temp_list_skin_one_temp:
-                    try:
-                        shutil.copy2(os.path.join(new_folder, j), folder_art)
-                        rename_files(os.path.join(folder_art, j), 'Подложка')
-                    except Exception as ex:
-                        print(ex)
-
+                    for q in range(size):
+                        try:
+                            shutil.copy2(os.path.join(new_folder, list_image[0]),
+                                         os.path.join(folder_art, f'{q}' + list_image[0]))
+                        except IOError as e:
+                            logger.error(f"Error copying the file: {e}")
             else:
                 if nums == 1:
                     for j in list_skin_one:
@@ -367,10 +372,12 @@ def download_new_arts(link, arts_list, shop, self=None):
                         if len(list_skin) == 1:
                             shutil.copy2(os.path.join(new_folder, j), folder_art)
                             rename_files(os.path.join(folder_art, j), 'Подложка')
+                            break
                         else:
                             if size in j:
                                 shutil.copy2(os.path.join(new_folder, j), folder_art)
                                 rename_files(os.path.join(folder_art, j), 'Подложка')
+                                break
 
 
 def update_db(self=None):
@@ -418,13 +425,14 @@ def download_new_arts_in_comp(list_arts, self=None):
         except Exception as ex:
             logger.error(f'{key}, {value}, {ex}')
 
-
-if __name__ == '__main__':
-    # Заполнение БД из файла
-    # add_rows_google_table()
-
-    # update_db()
+def update_arts_db():
     count = 0
+    try:
+        db.connect()
+        db.drop_tables([Article])
+        db.close()
+    except Exception as ex:
+        logger.error(ex)
 
     if not Article.table_exists():
         Article.create_table(safe=True)
@@ -459,3 +467,9 @@ if __name__ == '__main__':
         i.save()
         # subprocess.Popen(f'explorer {os.path.abspath(i.folder)}', shell=True)
         # time.sleep(3)
+
+
+if __name__ == '__main__':
+    # update_db()
+    update_arts_db()
+

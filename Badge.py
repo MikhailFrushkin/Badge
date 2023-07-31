@@ -14,12 +14,13 @@ from PyQt5.QtWidgets import (
 from loguru import logger
 from peewee import fn
 
+from config import all_badge
 from created_images import creared_good_images
 from db import Article, Orders, Statistic
-from dow_stickers import main_download_stickers
+from dow_stickers2 import main_download_stickers
 from main import update_db, download_new_arts_in_comp
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
-from utils import enum_printers, read_excel_file, FilesOnPrint
+from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name
 
 
 class GroupedRecordsDialog(QDialog):
@@ -184,7 +185,7 @@ class Dialog(QDialog):
         print(f"Нажата кнопка: {sender.text()}")
         try:
             self.show()
-            print_pdf_sticker(printer_name=sender.text())
+            print_pdf_sticker(printer_name=sender.text(), self=self)
             self.reject()
 
         except Exception as ex:
@@ -446,6 +447,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.current_dir = Path.cwd()
         self.dialogs = []
 
+        # Check if the current date is less than 31.07.2023
+        current_date = QDate.currentDate()
+        target_date = QDate(2023, 8, 7)
+        if current_date > target_date:
+            self.pushButton.setEnabled(False)
+            self.pushButton_3.setEnabled(False)
+            self.pushButton_8.setEnabled(False)
+            self.pushButton_6.setEnabled(False)
+            self.pushButton_5.setEnabled(False)
+            self.pushButton_4.setEnabled(False)
+            self.pushButton_2.setEnabled(False)
+
         self.move(550, 100)
         self.count_printer = 0
         self.column_counter_printer = 0
@@ -542,6 +555,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             download_new_arts_in_comp(list_arts, self)
             QMessageBox.information(self, 'Загрузка', 'Загрузка закончена')
+            delete_files_with_name(starting_directory=all_badge)
         except Exception as ex:
             logger.error(ex)
 

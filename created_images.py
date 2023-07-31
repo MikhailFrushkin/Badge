@@ -150,6 +150,7 @@ def create_contact_sheet(images=None, size_images_param=None, size=None, self=No
     mm_to_inch = 25.4
     image_width = int(image_width_mm * 300 / mm_to_inch)
     image_height = int(image_height_mm * 300 / mm_to_inch)
+
     if self:
         self.progress_label.setText(f"Прогресс: Создание изображений {size} mm.")
         self.progress_bar.setValue(0)

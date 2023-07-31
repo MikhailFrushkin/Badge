@@ -1,20 +1,16 @@
 import os
 import shutil
 from dataclasses import dataclass
-from pprint import pprint
 from typing import Optional
 
 import pandas as pd
+import win32print
 from loguru import logger
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
-import operator
 
-from db import Article
 from config import anikoya_path
-import win32api
-import win32con
-import win32print
+from db import Article
 
 
 class ProgressBar:
@@ -29,6 +25,17 @@ class ProgressBar:
 
     def __str__(self):
         return str(self.current)
+
+
+def delete_files_with_name(starting_directory, target_filename="Картинка1.png"):
+    count = 0
+    for root, _, files in os.walk(starting_directory):
+        for file in files:
+            if file == target_filename:
+                file_path = os.path.join(root, file)
+                os.remove(file_path)
+                count += 1
+                print(f"{count} Файл {file_path} удален.")
 
 
 def df_in_xlsx(df, filename, max_width=50):
@@ -59,11 +66,10 @@ def move_ready_folder(directory=rf'{anikoya_path}\Скаченные с диск
             for i in os.listdir(folder_path):
                 if os.path.isdir(os.path.join(folder_path, i)):
                     new_folder = os.path.join(folder_path, i)
-                    print(new_folder)
                     if not os.path.exists(os.path.join(target_directory, i)):
                         shutil.move(new_folder, target_directory)
                         Article.create_with_art(i, os.path.join(target_directory, i), shop=shop)
-                        logger.debug(f'Перенос из {folder_path} -> {os.path.join(target_directory, folder)}')
+                        # logger.debug(f'Перенос из {folder_path} -> {os.path.join(target_directory, folder)}')
 
             # shutil.rmtree(directory)
         except Exception as ex:
@@ -76,7 +82,7 @@ def rename_files(file_path, new_name):
         file_extension = os.path.splitext(file_path)[1]
         new_path = os.path.join(base_path, new_name + file_extension)
         os.rename(file_path, new_path)
-        logger.debug(f'Переименован файл {file_path} в {new_path}')
+        # logger.debug(f'Переименован файл {file_path} в {new_path}')
     except Exception as ex:
         logger.error(f'не удалось переименовать файл {file_path}\n{ex}')
     return new_path
@@ -119,7 +125,8 @@ def read_excel_file(file: str) -> list:
 
     files_on_print = []
     for index, row in df.iterrows():
-        file_on_print = FilesOnPrint(art=row['Артикул продавца'], name=row['Название товара'], count=row['Количество'])
+        file_on_print = FilesOnPrint(art=row['Артикул продавца'].strip(), name=row['Название товара'],
+                                     count=row['Количество'])
         files_on_print.append(file_on_print)
 
     return files_on_print
