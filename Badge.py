@@ -2,6 +2,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+import pandas as pd
 import qdarkstyle
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QTimer, Qt, QDate
@@ -20,7 +21,7 @@ from db import Article, Orders, Statistic
 from dow_stickers2 import main_download_stickers
 from main import update_db, download_new_arts_in_comp
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
-from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name
+from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx
 
 
 class GroupedRecordsDialog(QDialog):
@@ -48,10 +49,11 @@ class GroupedRecordsDialog(QDialog):
 
         grouped_records = records.group_by(Statistic.art).select(
             Statistic.art,
+            Statistic.size,
             fn.COUNT(Statistic.id).alias('count'),
             fn.SUM(Statistic.nums).alias('sum_of_nums')
         )
-
+        data = []
         row = 0
         for group in grouped_records:
             art_item = QTableWidgetItem(group.art)
@@ -62,7 +64,14 @@ class GroupedRecordsDialog(QDialog):
             self.table_widget.setItem(row, 1, count_item)
             self.table_widget.setItem(row, 2, sum_of_nums_item)
             row += 1
-
+            data.append({'Артикул': group.art, 'Размер': group.size, 'Количество': group.count,
+                         'Сумма значков': group.sum_of_nums})
+        df = pd.DataFrame(data)
+        size_list = df['Размер'].unique().tolist()
+        if size_list:
+            for size in size_list:
+                df_temp = df[df['Размер'] == str(size)]
+                df_in_xlsx(df_temp, f'Статистика {size}')
         self.table_widget.resizeColumnsToContents()
 
     def adjust_dialog_size(self):
@@ -606,11 +615,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 start_date = dialog.selected_dates[0]
                 end_date = dialog.selected_dates[1]
                 if start_date and end_date:
-                    print(start_date, end_date)
                     date1 = start_date
                     date2 = end_date
 
-                    records = Statistic.select().where(Statistic.created_at.between(date1.toPython(), date2.toPython()))
+                    end_date_inclusive = date2.toPython() + timedelta(days=1)
+                    records = Statistic.select().where(
+                        (Statistic.created_at >= date1.toPython()) &
+                        (Statistic.created_at < end_date_inclusive)
+                    )
                     count_of_records = records.count()
 
                     sum_of_nums = records.select(fn.SUM(Statistic.nums)).scalar()
@@ -618,6 +630,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     QMessageBox.information(self, 'Общая статистика',
                                             f'Количество артикулов: {count_of_records}\n'
                                             f'Количество значков: {sum_of_nums}')
+
                     grouped_dialog = GroupedRecordsDialog(self, start_date, end_date)
                     grouped_dialog.exec_()
             except Exception as ex:

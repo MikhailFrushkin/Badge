@@ -241,7 +241,7 @@ def creared_good_images(all_arts, self):
 
         records = Orders.select()
         for record in records:
-            Statistic.create(art=record.art, nums=record.nums_in_folder)
+            Statistic.create(art=record.art, nums=record.nums_in_folder, size=record.size)
     except Exception as ex:
         logger.error(ex)
 

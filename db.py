@@ -163,6 +163,7 @@ class Orders(Article):
 class Statistic(Model):
     art = CharField()
     nums = IntegerField()
+    size = CharField(null=True)
     created_at = DateTimeField(default=datetime.now)
 
     class Meta:
