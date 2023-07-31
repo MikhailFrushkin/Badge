@@ -277,7 +277,6 @@ class QueueDialog(QWidget):
             art = self.tableWidget.item(row.row(), 1).text()
             count = self.tableWidget.item(row.row(), 2).text()
             status = self.tableWidget.item(row.row(), 3).text()
-            print(status)
             if status == '✅':
                 data.append(FilesOnPrint(name=name, art=art, count=int(count), status='✅'))
         return data
