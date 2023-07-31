@@ -96,7 +96,7 @@ class Article(Model):
                 size = 56
             else:
                 size = 37
-        article = cls.create(art=art, folder=folder, nums=nums, size=size, shop=shop)
+        article = cls.create(art=os.path.abspath(art), folder=folder, nums=nums, size=size, shop=shop)
         article.fill_additional_columns()
         return article
 
