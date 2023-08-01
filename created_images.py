@@ -181,7 +181,7 @@ def create_contact_sheet(images=None, size_images_param=None, size=None, self=No
 
 
 def creared_good_images(all_arts, self):
-    with open('data.json', 'r') as file:
+    with open('Параметры значков.json', 'r') as file:
         dict_sizes_images = json.load(file)
     try:
         Orders.drop_table()
