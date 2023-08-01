@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QMessageBox
 from loguru import logger
 
 from config import acrobat_path, ready_path
-from db import Orders, Statistic
+from db import Orders
 
 
 def print_pdf_sticker(printer_name, self=None):
@@ -70,9 +70,6 @@ def print_pdf_skin(printers):
 def print_png_images(printers):
     file_list = []
     tuple_printing = tuple()
-
-
-
     for root, dirs, files in os.walk(ready_path):
         for file in files:
             if file.endswith('png'):

@@ -425,6 +425,7 @@ def download_new_arts_in_comp(list_arts, self=None):
         except Exception as ex:
             logger.error(f'{key}, {value}, {ex}')
 
+
 def update_arts_db():
     count = 0
     try:
