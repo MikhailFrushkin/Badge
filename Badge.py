@@ -563,6 +563,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             download_new_arts_in_comp(list_arts, self)
             QMessageBox.information(self, 'Загрузка', 'Загрузка закончена')
+            self.progress_bar.setValue(100)
             delete_files_with_name(starting_directory=all_badge)
         except Exception as ex:
             logger.error(ex)
