@@ -117,10 +117,14 @@ class FilesOnPrint:
 
 def read_excel_file(file: str) -> list:
     df = pd.read_excel(file)
+    if 'Название товара' not in df.columns:
+        # Если столбца нет, то создаем его и заполняем значениями "Нет названия"
+        df['Название товара'] = 'Нет названия'
     df = df.groupby('Артикул продавца').agg({
         'Название товара': 'first',
         'Стикер': 'count',
     }).reset_index()
+    df_in_xlsx(df, 'Сгруппированный заказ')
     df = df.rename(columns={'Стикер': 'Количество'})
 
     files_on_print = []

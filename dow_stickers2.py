@@ -59,7 +59,7 @@ def compare_files_with_local_directory(service, folder_url: str, local_directory
     missing_files = []
     for drive_file in drive_files:
         drive_file_name = drive_file['name']
-        if drive_file_name not in local_files:
+        if drive_file_name.endswith('.pdf') and drive_file_name not in local_files:
             missing_files.append(drive_file_name)
 
     return missing_files

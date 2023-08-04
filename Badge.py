@@ -202,11 +202,12 @@ class Dialog(QDialog):
 
 
 class QueueDialog(QWidget):
-    def __init__(self, files_on_print, title, sub_self, parent=None):
+    def __init__(self, files_on_print, title, name_doc, sub_self, parent=None):
         super().__init__(parent)
         self.files_on_print = files_on_print
         self.setWindowTitle(title)
         self.sub_self = sub_self
+        self.name_doc = os.path.abspath(name_doc).split('\\')[-1].replace('.xlsx', '')
 
         layout = QVBoxLayout(self)
 
@@ -537,7 +538,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 logger.error(ex)
             try:
                 if len(counts_art) > 0:
-                    dialog = QueueDialog(counts_art, 'Значки', self)
+                    dialog = QueueDialog(counts_art, 'Значки', self.lineEdit.text(), self)
                     self.dialogs.append(dialog)
                     dialog.show()
             except Exception as ex:

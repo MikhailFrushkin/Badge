@@ -100,15 +100,19 @@ class Article(Model):
         article.fill_additional_columns()
         return article
 
+
+    def find_skin_filename(self, folder_name):
+        lower_filenames = [filename.lower() for filename in os.listdir(folder_name)]
+        for filename in lower_filenames:
+            if "подлож" in filename or "один" in filename:
+                return filename
+
     def fill_additional_columns(self):
-        print(self.art)
-        print(os.path.abspath(self.folder))
-        folder_name = os.path.basename(self.folder)
+        folder_name = os.path.abspath(self.folder)
         # Заполнение столбца "Skin"
-        skin_filename = [filename for filename in os.listdir(self.folder) if "подлож" in filename.lower() or
-                         "один" in filename.lower()]
+        skin_filename = self.find_skin_filename(folder_name)
         if skin_filename:
-            self.skin = os.path.join(self.folder, skin_filename[0])
+            self.skin = os.path.join(folder_name, skin_filename)
 
         # Заполнение столбца "Images"
         image_filenames = []
@@ -128,20 +132,19 @@ class Article(Model):
         #             except OSError as ex:
         #                 pass
 
-        for index, filename in enumerate(os.listdir(self.folder), start=1):
+        for index, filename in enumerate(os.listdir(folder_name), start=1):
             if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
-                    and os.path.isfile(os.path.join(self.folder, filename)):
-                image_filenames.append(os.path.join(self.folder, f'{filename}'))
+                    and os.path.isfile(os.path.join(folder_name, filename)):
+                image_filenames.append(os.path.join(folder_name, f'{filename}'))
 
         self.images = ', '.join(image_filenames) if image_filenames else None
         self.nums_in_folder = len(image_filenames)
 
-        for root, _, files in os.walk(sticker_path_all):
-            for file in files:
-                if file == self.art + '.pdf':
-                    self.sticker = os.path.join(root, file)
+        sticker_list = os.listdir(sticker_path_all)
+        if self.art + '.pdf' in sticker_list:
+            self.sticker = os.path.join(sticker_path_all, self.art + '.pdf')
 
-        # if len(skin_filename) != 1 or int(folder_name.split('-')[-2]) != len(image_filenames):
+        # if int(folder_name.split('-')[-2]) != len(image_filenames):
         #     logger.error(f"Не записался артикул в базу, т.к. не соответствует число подложек или файлов {folder_name}")
         #     return
         self.save()

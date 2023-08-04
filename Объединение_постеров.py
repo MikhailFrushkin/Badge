@@ -66,16 +66,16 @@ def search_url(list_of_values):
     print(result)
 
 
-
 def merge_pdfs(input_paths, output_path):
     pdf_writer = PyPDF2.PdfWriter()
 
     # Calculate the number of groups needed based on the maximum of 10 elements per group
-    num_groups = math.ceil(len(input_paths) / 10)
+    count = 66
+    num_groups = math.ceil(len(input_paths) / count)
 
     for group_index in range(num_groups):
-        start_index = group_index * 10
-        end_index = (group_index + 1) * 10
+        start_index = group_index * count
+        end_index = (group_index + 1) * count
 
         # Get the paths for the current group
         current_group_paths = input_paths[start_index:end_index]
@@ -156,40 +156,53 @@ def main(filename):
     df = pd.read_excel(filename)
     df['Артикул продавца'] = df['Артикул продавца'].apply(lambda x: x.lower() + '.pdf')
     art_list2 = df['Артикул продавца'].to_list()
-    art_list_gloss = [i for i in art_list2 if '-gloss.' in i or '-gloss-' in i or '-glos' in i or '-clos' in i]
+    art_list_gloss = [i for i in art_list2 if
+                      '-gloss.' in i or '-gloss-' in i or '-glos' in i or '-clos' in i or '-glouss' in i]
     art_list_mat = [i for i in art_list2 if '-mat.' in i or '-mat-' in i]
 
     intersection = find_intersection(art_list_gloss, art_list_mat)
     logger.error(intersection)
     found_files_gloss, not_found_files = find_files_in_directory(target_directory, art_list_gloss)
 
+    # print("\nФайлы не найдены:")
+    # for file_name in not_found_files:
+    #     print(file_name.replace('.pdf', ''))
+    # print(f'Длина найденных артикулов {len(found_files_gloss)}')
+    # print(f'Длина не найденных артикулов {len(not_found_files)}')
+    #
+    # found_files_mat, not_found_files = find_files_in_directory(target_directory, art_list_mat)
+    #
+    # print("\nФайлы не найдены:")
+    # for file_name in not_found_files:
+    #     print(file_name.replace('.pdf', ''))
+    # print(f'Длина найденных артикулов {len(found_files_mat)}')
+    # print(f'Длина не найденных артикулов {len(not_found_files)}')
+
+    # output_path_gloss = r'E:\Новая база\8 раз на печать (артикула по 80шт)'
+    # merge_pdfs(found_files_gloss, output_path_gloss)
+    #
+    # output_path_mat = r'E:\Новая база\финсиб13 matt'
+    # merge_pdfs(found_files_mat, output_path_mat)
+    miss_arts = set(art_list2) - set(art_list_gloss) - set(art_list_mat)
+    print(miss_arts)
+
+    print(art_list2)
+    found_files_all, not_found_files = find_files_in_directory(target_directory, art_list2)
+
     print("\nФайлы не найдены:")
     for file_name in not_found_files:
         print(file_name.replace('.pdf', ''))
-    print(f'Длина найденных артикулов {len(found_files_gloss)}')
+    print(f'Длина найденных артикулов {len(found_files_all)}')
     print(f'Длина не найденных артикулов {len(not_found_files)}')
-
-    found_files_mat, not_found_files = find_files_in_directory(target_directory, art_list_mat)
-
-    print("\nФайлы не найдены:")
-    for file_name in not_found_files:
-        print(file_name.replace('.pdf', ''))
-    print(f'Длина найденных артикулов {len(found_files_mat)}')
-    print(f'Длина не найденных артикулов {len(not_found_files)}')
-
-    output_path_gloss = r'E:\Новая база\финсиб13 gloss'
-    merge_pdfs(found_files_gloss, output_path_gloss)
-
-    output_path_mat = r'E:\Новая база\финсиб13 matt'
-    merge_pdfs(found_files_mat, output_path_mat)
+    print(found_files_all)
 
 
 if __name__ == '__main__':
     # Сканирование артикулов из заказа и показ ненайденных
-    # main(r'C:\Users\454\Downloads\Финсиб13.xlsx')
+    main(r'10.xlsx')
 
     # Объеденение изображений в pdf из указанной папки
 
-    directory = r'E:\Новая база\сделать'
-    for i in os.listdir(directory):
-        one_pdf(folder_path=os.path.join(directory, i), filename=i)
+    # directory = r'E:\Новая база\сделать'
+    # for i in os.listdir(directory):
+    #     one_pdf(folder_path=os.path.join(directory, i), filename=i)

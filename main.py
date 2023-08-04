@@ -1,7 +1,7 @@
+import datetime
 import os
 import shutil
 import subprocess
-import time
 from pprint import pprint
 
 import cv2
@@ -11,10 +11,10 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from loguru import logger
 
-from db import add_record_google_table, GoogleTable, Article, db
 from config import anikoya_path, dp_path, id_google_table_anikoya, id_google_table_DP, sticker_path_all
 from config import path_root
-from utils import df_in_xlsx, rename_files, move_ready_folder, ProgressBar
+from db import add_record_google_table, GoogleTable, Article, db
+from utils import rename_files, move_ready_folder, ProgressBar
 
 
 def read_table_google(CREDENTIALS_FILE=f'{path_root}/google_acc.json',
@@ -205,7 +205,7 @@ def search_one_image(skin, images_list, output_folder):
             count += match.distance
         images_stat += ((target_image_path, count),)
     sorted_data = sorted(images_stat, key=lambda x: x[1])
-    logger.success(f"Найденна единичка в {sorted_data[0]} для {skin}")
+    # logger.success(f"Найденна единичка в {sorted_data[0]} для {skin}")
     shutil.copy2(sorted_data[0][0], output_folder)
     return sorted_data[0][0]
 
@@ -365,7 +365,6 @@ def download_new_arts(link, arts_list, shop, self=None):
                                     search_one_image(skin, images_list, folder_art)
                                     break
                 else:
-                    logger.debug(list_skin)
                     for i in list_image:
                         shutil.copy2(os.path.join(new_folder, i), folder_art)
                     for j in list_skin:
@@ -428,6 +427,7 @@ def download_new_arts_in_comp(list_arts, self=None):
 
 def update_arts_db():
     count = 0
+    start = datetime.datetime.now()
     try:
         db.connect()
         db.drop_tables([Article])
@@ -468,9 +468,9 @@ def update_arts_db():
         i.save()
         # subprocess.Popen(f'explorer {os.path.abspath(i.folder)}', shell=True)
         # time.sleep(3)
+    logger.debug(datetime.datetime.now() - start)
 
 
 if __name__ == '__main__':
     # update_db()
     update_arts_db()
-
