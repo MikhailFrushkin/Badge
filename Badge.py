@@ -458,7 +458,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Check if the current date is less than 31.07.2023
         current_date = QDate.currentDate()
-        target_date = QDate(2023, 8, 7)
+        target_date = QDate(2023, 8, 10)
         if current_date > target_date:
             self.pushButton.setEnabled(False)
             self.pushButton_3.setEnabled(False)
