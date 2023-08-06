@@ -8,7 +8,7 @@ from peewee import *
 
 from config import path_root, sticker_path_all
 
-db = SqliteDatabase(f'{path_root}\mydatabase.db')
+db = SqliteDatabase('mydatabase.db')
 
 
 def crop_to_content(image_path, output_path):

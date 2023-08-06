@@ -1,30 +1,20 @@
-import datetime
-import glob
+import json
 import json
 import os
 import shutil
-import subprocess
-from pprint import pprint
+import time
+from io import BytesIO
 
-import PyPDF2
-import cv2
-import numpy as np
-import pandas as pd
-from PyPDF2 import PdfReader, PdfWriter, PdfFileReader
+from PIL import Image, ImageDraw, ImageFont
+from PyPDF2 import PdfReader, PdfWriter
 from PyQt5.QtWidgets import QMessageBox
 from loguru import logger
 from peewee import fn
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib import colors
-from io import BytesIO
-from config import path_root, ready_path
+
 from db import Article, Orders, Statistic
-from utils import df_in_xlsx, ProgressBar
-from PIL import Image, ImageDraw, ImageFont
+from utils import ProgressBar
 
 
 def add_header_and_footer_to_pdf(pdf_file, footer_text):
@@ -46,8 +36,8 @@ def add_header_and_footer_to_pdf(pdf_file, footer_text):
         # Add the header text (centered) to the canvas
         can.setFont("Helvetica", 12)
         width, height = A4
-        can.drawCentredString(width - 70, height - 20, f"{footer_text} - Page {page_num + 1}")
-        can.drawCentredString(width - 70, height - 815, f"{footer_text} - Page {page_num + 1}")
+        can.drawCentredString(width - 90, height - 20, f"{footer_text} - Page {page_num + 1}")
+        can.drawCentredString(width - 90, height - 827, f"{footer_text} - Page {page_num + 1}")
 
         # Save the canvas to the packet and reset it
         can.save()
@@ -115,13 +105,10 @@ def write_images_art(image, text1):
 
 
 def write_images_art2(image, text):
-    width, height = image.size
-    print(width, height)
     draw = ImageDraw.Draw(image)
     font = ImageFont.truetype("arial.ttf", 50)
     x = 1900
-    y = 3410
-    print(x, y)
+    y = 3450
     draw.text((x, y), text, font=font, fill="black")
 
     return image
@@ -198,6 +185,7 @@ def distribute_images(queryset, size_images_param):
 
 
 def create_contact_sheet(images=None, size_images_param=None, size=None, self=None):
+    ready_path = 'Файлы на печать'
     a4_width = 2480
     a4_height = 3508
     image_width_mm = size_images_param['diameter']
@@ -252,15 +240,23 @@ def creared_good_images(all_arts, self):
     with open('Параметры значков.json', 'r') as file:
         dict_sizes_images = json.load(file)
     try:
+        ready_path2 = 'Файлы на печать'
         Orders.drop_table()
         if not Orders.table_exists():
             Orders.create_table(safe=True)
         bad_arts = []
-        shutil.rmtree(ready_path, ignore_errors=True)
-        os.makedirs(f'{ready_path}/25', exist_ok=True)
-        os.makedirs(f'{ready_path}/37', exist_ok=True)
-        os.makedirs(f'{ready_path}/44', exist_ok=True)
-        os.makedirs(f'{ready_path}/56', exist_ok=True)
+        try:
+            shutil.rmtree(ready_path2, ignore_errors=True)
+            time.sleep(1)
+        except:
+            pass
+        try:
+            os.makedirs(f'{ready_path2}\\25', exist_ok=True)
+            os.makedirs(f'{ready_path2}\\37', exist_ok=True)
+            os.makedirs(f'{ready_path2}\\44', exist_ok=True)
+            os.makedirs(f'{ready_path2}\\56', exist_ok=True)
+        except:
+            pass
 
         for art in all_arts:
             row = Article.get_or_none(Article.art == art.art)
@@ -297,7 +293,7 @@ def creared_good_images(all_arts, self):
 
             size_images_param = dict_sizes_images[str(size)]
 
-            combine_images_to_pdf(Orders.select().where(Orders.size == size), f"{ready_path}/{size}.pdf",
+            combine_images_to_pdf(Orders.select().where(Orders.size == size), f"{ready_path2}/{size}.pdf",
                                   progress, self)
             sum_result = Orders.select(fn.SUM(Orders.nums_in_folder)).where(Orders.size == size).scalar()
 

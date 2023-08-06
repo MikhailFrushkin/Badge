@@ -17,11 +17,13 @@ from db import add_record_google_table, GoogleTable, Article, db
 from utils import rename_files, move_ready_folder, ProgressBar
 
 
-def read_table_google(CREDENTIALS_FILE=f'{path_root}/google_acc.json',
+def read_table_google(CREDENTIALS_FILE='google_acc.json',
                       spreadsheet_id=id_google_table_anikoya,
                       shop='AniKoya', self=None):
     logger.debug(f'Читаю гугл таблицу {shop}')
-    self.second_statusbar.showMessage(f'Читаю гугл таблицу {shop}', 10000)
+    # self.second_statusbar.showMessage(f'Читаю гугл таблицу {shop}', 10000)
+    print(CREDENTIALS_FILE)
+
     try:
         credentials = service_account.Credentials.from_service_account_file(CREDENTIALS_FILE)
         service = build('sheets', 'v4', credentials=credentials)
@@ -51,7 +53,7 @@ def read_table_google(CREDENTIALS_FILE=f'{path_root}/google_acc.json',
         pprint(rows[0])
         print("Ошибка: количество столбцов не совпадает с количеством значений.")
     else:
-        progress = ProgressBar(len(rows), self)
+        # progress = ProgressBar(len(rows), self)
         for i in rows:
             if i[4] != '' and i[11] != '':
                 add_record_google_table(name=i[0],
@@ -68,7 +70,7 @@ def read_table_google(CREDENTIALS_FILE=f'{path_root}/google_acc.json',
                                         article=i[11],
                                         shop=shop,
                                         )
-            progress.update_progress()
+            # progress.update_progress()
 
 
 def download_file(url, local_path):
@@ -469,6 +471,49 @@ def update_arts_db():
     logger.debug(datetime.datetime.now() - start)
 
 
+def update_arts_db2():
+    count = 0
+    start = datetime.datetime.now()
+
+    if not Article.table_exists():
+        Article.create_table(safe=True)
+    for root, dirs, files in os.walk(rf'{dp_path}\Готовые'):
+        for dir in dirs:
+            if len(dir) > 6:
+                count += 1
+                Article.create_with_art(dir, os.path.join(root, dir), 'DP')
+                print(count)
+    for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
+        for dir in dirs:
+            if len(dir) > 6:
+                count += 1
+                Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
+                print(count)
+
+    print('Нет подложек')
+    records = Article.select().where(Article.skin >> None)
+    for i in records:
+        print(os.path.abspath(i.folder))
+        i.delete_instance()
+
+    print('Нет картинок с цифрами')
+    records = Article.select().where(Article.images >> None)
+    for i in records:
+        print(os.path.abspath(i.folder))
+        i.delete_instance()
+
+    print('НЕ соответствует число картинок с базой')
+    records = Article.select().where(Article.nums_in_folder != Article.nums)
+    for i in records:
+        print(os.path.abspath(i.folder))
+        i.nums = i.nums_in_folder
+        i.save()
+        # subprocess.Popen(f'explorer {os.path.abspath(i.folder)}', shell=True)
+        # time.sleep(3)
+    logger.debug(datetime.datetime.now() - start)
+
+
 if __name__ == '__main__':
     # update_db()
-    update_arts_db()
+    update_arts_db2()
+    # read_table_google()

@@ -19,7 +19,7 @@ from config import all_badge
 from created_images import creared_good_images
 from db import Article, Orders, Statistic
 from dow_stickers2 import main_download_stickers
-from main import update_db, download_new_arts_in_comp
+from main import update_db, download_new_arts_in_comp, update_arts_db2
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
 from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx
 
@@ -561,7 +561,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             dialog.exec_()
 
             main_download_stickers(self)
-
+            try:
+                update_arts_db2()
+            except Exception as ex:
+                logger.error(ex)
             download_new_arts_in_comp(list_arts, self)
             QMessageBox.information(self, 'Загрузка', 'Загрузка закончена')
             self.progress_bar.setValue(100)
