@@ -315,13 +315,11 @@ def download_new_arts(link, arts_list, shop, self=None):
             nums = int(folder.split('-')[-2])
 
             if len(list_image) == 1:
-                if size == 1:
+                if nums == 1:
                     shutil.copy2(os.path.join(new_folder, list_image[0]), folder_art)
                     temp_list_skin_one_temp = []
-                    if len(list_skin_one) != 0:
-                        temp_list_skin_one_temp.extend(list_skin_one)
-                    else:
-                        temp_list_skin_one_temp.extend(list_skin)
+                    temp_list_skin_one_temp.extend(list_skin_one)
+                    temp_list_skin_one_temp.extend(list_skin)
                     for j in temp_list_skin_one_temp:
                         try:
                             shutil.copy2(os.path.join(new_folder, j), folder_art)
@@ -330,7 +328,7 @@ def download_new_arts(link, arts_list, shop, self=None):
                         except Exception as ex:
                             print(ex)
                 else:
-                    for q in range(size):
+                    for q in range(nums):
                         try:
                             shutil.copy2(os.path.join(new_folder, list_image[0]),
                                          os.path.join(folder_art, f'{q}' + list_image[0]))
