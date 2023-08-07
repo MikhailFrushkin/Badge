@@ -563,13 +563,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             main_download_stickers(self)
 
             download_new_arts_in_comp(list_arts, self)
-            QMessageBox.information(self, 'Загрузка', 'Загрузка закончена')
-            self.progress_bar.setValue(100)
+
             delete_files_with_name(starting_directory=all_badge)
             try:
                 update_arts_db2()
             except Exception as ex:
                 logger.error(ex)
+            QMessageBox.information(self, 'Загрузка', 'Загрузка закончена')
+            self.progress_bar.setValue(100)
         except Exception as ex:
             logger.error(ex)
 
