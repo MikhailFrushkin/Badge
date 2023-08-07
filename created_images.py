@@ -21,10 +21,10 @@ def add_header_and_footer_to_pdf(pdf_file, footer_text):
     # Open the original PDF and extract its content
     with open(pdf_file, "rb") as pdf:
         pdf_content = BytesIO(pdf.read())
-    with open('Параметры значков.json', 'r', encoding='UTF-8') as file:
+    with open('Параметры значков.json', 'r') as file:
         config = json.load(file)
-    x1, y1 = config['Номер страницы на подложках вверх']['x'], config['Номер страницы на подложках вверх']['y']
-    x2, y2 = config['Номер страницы на подложках низ']['x'], config['Номер страницы на подложках низ']['y']
+    x1, y1 = config['pdf up']['x'], config['pdf up']['y']
+    x2, y2 = config['pdf down']['x'], config['pdf down']['y']
     # Load pages from the original PDF and add header and footer to each page
     reader = PdfReader(pdf_content)
     writer = PdfWriter()
@@ -118,7 +118,7 @@ def write_images_art2(image, text, x, y):
 
 
 def distribute_images(queryset, size):
-    with open('Параметры значков.json', 'r', encoding='UTF-8') as file:
+    with open('Параметры значков.json', 'r') as file:
         config = json.load(file)
     nums = config[f'{str(size)}']['nums']
     list_arts = [(i.num_on_list, i.nums_in_folder, i.images) for i in queryset]
@@ -194,7 +194,7 @@ def create_contact_sheet(images=None, size=None, self=None):
     a4_width = 2480
     a4_height = 3508
 
-    with open('Параметры значков.json', 'r', encoding='UTF-8') as file:
+    with open('Параметры значков.json', 'r') as file:
         config = json.load(file)
     image_width_mm = config[f'{str(size)}']['diameter']
     image_height_mm = config[f'{str(size)}']['diameter']
@@ -238,8 +238,8 @@ def create_contact_sheet(images=None, size=None, self=None):
             progress.update_progress()
             contact_sheet.save(f'{ready_path}/{size}/{index}.png')
             image = Image.open(f"{ready_path}/{size}/{index}.png")
-            x = config['Номер страницы на значках']['x']
-            y = config['Номер страницы на значках']['y']
+            x = config['number on badge']['x']
+            y = config['number on badge']['y']
             image = write_images_art2(image, f"{self.name_doc} Стр.{index}", x, y)
             image.save(f'{ready_path}/{size}/{index}.png')
         except Exception as ex:
