@@ -6,7 +6,7 @@
         "ICONS_PER_COL": 7
     },
     "37": {
-        "diameter": 54,
+        "diameter": 51.5,
         "nums": 20,
         "ICONS_PER_ROW": 4,
         "ICONS_PER_COL": 5
@@ -18,7 +18,7 @@
         "ICONS_PER_COL": 5
     },
     "56": {
-        "diameter": 74,
+        "diameter": 71,
         "nums": 12,
         "ICONS_PER_ROW": 3,
         "ICONS_PER_COL": 4
@@ -27,7 +27,7 @@
         "x": 1900,
         "y": 3450
     },
-    "Номер страницы на подложках верх": {
+    "Номер страницы на подложках вверх": {
         "x": 505,
         "y": 821
     },

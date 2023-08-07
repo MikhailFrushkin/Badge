@@ -21,9 +21,9 @@ def add_header_and_footer_to_pdf(pdf_file, footer_text):
     # Open the original PDF and extract its content
     with open(pdf_file, "rb") as pdf:
         pdf_content = BytesIO(pdf.read())
-    with open('Параметры значков.json', 'r') as file:
+    with open('Параметры значков.json', 'r', encoding='UTF-8') as file:
         config = json.load(file)
-    x1, y1 = config['Номер страницы на подложках верх']['x'], config['Номер страницы на подложках верх']['y']
+    x1, y1 = config['Номер страницы на подложках вверх']['x'], config['Номер страницы на подложках вверх']['y']
     x2, y2 = config['Номер страницы на подложках низ']['x'], config['Номер страницы на подложках низ']['y']
     # Load pages from the original PDF and add header and footer to each page
     reader = PdfReader(pdf_content)
@@ -118,7 +118,7 @@ def write_images_art2(image, text, x, y):
 
 
 def distribute_images(queryset, size):
-    with open('Параметры значков.json', 'r') as file:
+    with open('Параметры значков.json', 'r', encoding='UTF-8') as file:
         config = json.load(file)
     nums = config[f'{str(size)}']['nums']
     list_arts = [(i.num_on_list, i.nums_in_folder, i.images) for i in queryset]
@@ -194,7 +194,7 @@ def create_contact_sheet(images=None, size=None, self=None):
     a4_width = 2480
     a4_height = 3508
 
-    with open('Параметры значков.json', 'r') as file:
+    with open('Параметры значков.json', 'r', encoding='UTF-8') as file:
         config = json.load(file)
     image_width_mm = config[f'{str(size)}']['diameter']
     image_height_mm = config[f'{str(size)}']['diameter']
@@ -227,9 +227,9 @@ def create_contact_sheet(images=None, size=None, self=None):
                         image = write_images_art(image, f'#{img[i * config[f"{str(size)}"]["ICONS_PER_ROW"] + j][1]}')
                         image = image.resize((image_width, image_height), Image.LANCZOS)
                         if size == 56:
-                            contact_sheet.paste(image, (j * image_width - 10, i * image_height + 10 * i))
+                            contact_sheet.paste(image, (j * image_width - 10, i * image_height + 10 * (i + 1)))
                         else:
-                            contact_sheet.paste(image, (j * image_width, i * image_height + 10 * i))
+                            contact_sheet.paste(image, (j * image_width + 10, i * image_height + 10 * (i + 1)))
 
                     except IndexError as ex:
                         pass

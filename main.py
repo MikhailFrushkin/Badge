@@ -213,11 +213,12 @@ def search_one_image(skin, images_list, output_folder):
 
 def search_image_56(folder_skin, output_folder):
     """Вырезание круга с подложки"""
-    image = cv2.imread(folder_skin)
+    logger.debug(os.path.abspath(folder_skin))
+
+    image = cv2.imread(os.path.abspath(folder_skin))
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (5, 5), 0)
     # Детекция кругов на изображении
-
     circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, minDist=600,
                                param1=133, param2=35, minRadius=500, maxRadius=600)
     if circles is not None:
@@ -331,7 +332,7 @@ def download_new_arts(link, arts_list, shop, self=None):
                                 rename_files(os.path.join(folder_art, j), 'Подложка')
                                 break
                             except Exception as ex:
-                                print(ex)
+                                logger.error(ex)
                 else:
                     for q in range(nums):
                         try:
@@ -346,7 +347,7 @@ def download_new_arts(link, arts_list, shop, self=None):
                                 rename_files(os.path.join(folder_art, j), 'Подложка')
                                 break
                             except Exception as ex:
-                                print(ex)
+                                logger.error(ex)
             else:
                 if nums == 1:
                     for j in list_skin_one:
@@ -355,20 +356,26 @@ def download_new_arts(link, arts_list, shop, self=None):
                                 shutil.copy2(os.path.join(new_folder, j), folder_art)
                                 new_path_skin = rename_files(os.path.join(folder_art, j), 'Подложка')
                             except Exception as ex:
-                                print(ex)
-                            skin = search_image_56(folder_skin=new_path_skin,
-                                                   output_folder=folder_art)
-                            if skin:
-                                images_list = [os.path.join(new_folder, path) for path in list_image]
-                                search_one_image(skin, images_list, folder_art)
-                                break
+                                logger.error(ex)
+                            try:
+                                skin = search_image_56(folder_skin=new_path_skin,
+                                                       output_folder=folder_art)
+                            except Exception as ex:
+                                logger.error(ex)
+                            try:
+                                if skin:
+                                    images_list = [os.path.join(new_folder, path) for path in list_image]
+                                    search_one_image(skin, images_list, folder_art)
+                                    break
+                            except Exception as ex:
+                                logger.error(ex)
                         else:
                             if size in j:
                                 try:
                                     shutil.copy2(os.path.join(new_folder, j), folder_art)
                                     new_path_skin = rename_files(os.path.join(folder_art, j), 'Подложка')
                                 except Exception as ex:
-                                    print(ex)
+                                    logger.error(ex)
                                 skin = search_image_56(folder_skin=new_path_skin,
                                                        output_folder=folder_art)
                                 if skin:
@@ -420,6 +427,7 @@ def download_new_arts_in_comp(list_arts, self=None):
             record = GoogleTable.get(folder_link=key)
             record.status_download = True
             record.save()
+            print(value)
             download_new_arts(link=key, arts_list=value[0], shop=value[1], self=self)
             if value[1] == 'DP':
                 move_ready_folder(directory=rf'{dp_path}\Скаченные с диска',
@@ -526,5 +534,13 @@ def update_arts_db2():
 
 if __name__ == '__main__':
     # update_db()
-    update_arts_db2()
+    # update_arts_db()
     # read_table_google()
+    # search_image_56(
+    #     folder_skin=r'C:\Новая база значков\AniKoya\Скаченные с диска\зайчик мемы\TINYBUNNY_MEM-13NEW-1-37\Подложка.png',
+    #     output_folder=r'C:\Новая база значков\AniKoya\Скаченные с диска\зайчик мемы\TINYBUNNY_MEM-13NEW-1-37')
+    folder_skin = 'C:\Новая база значков\AniKoya\Скаченные с диска\зайчик мемы\TINYBUNNY_MEM-13NEW-1-37\Подложка.png'
+    print(os.path.exists(folder_skin))
+    image = cv2.imread(os.path.abspath(folder_skin))
+    print(image)
+    pass
