@@ -70,8 +70,7 @@ def move_ready_folder(directory=rf'{anikoya_path}\Скаченные с диск
                         shutil.move(new_folder, target_directory)
                         Article.create_with_art(i, os.path.join(target_directory, i), shop=shop)
                         # logger.debug(f'Перенос из {folder_path} -> {os.path.join(target_directory, folder)}')
-
-            # shutil.rmtree(directory)
+            shutil.rmtree(directory)
         except Exception as ex:
             logger.error(ex)
 

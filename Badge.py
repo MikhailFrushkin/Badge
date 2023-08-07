@@ -16,7 +16,7 @@ from loguru import logger
 from peewee import fn
 
 from config import all_badge
-from created_images import creared_good_images
+from created_images import created_good_images
 from db import Article, Orders, Statistic
 from dow_stickers2 import main_download_stickers
 from main import update_db, download_new_arts_in_comp, update_arts_db2
@@ -267,7 +267,7 @@ class QueueDialog(QWidget):
         selected_data = self.get_selected_data()
         if selected_data:
             logger.debug(selected_data)
-            creared_good_images(selected_data, self)
+            created_good_images(selected_data, self)
         else:
             QMessageBox.information(self, 'Отправка на печать', 'Ни одна строка не выбрана')
 
@@ -275,7 +275,7 @@ class QueueDialog(QWidget):
         all_data = self.get_all_data()
         if all_data:
             logger.debug(all_data)
-            creared_good_images(all_data, self)
+            created_good_images(all_data, self)
         else:
             QMessageBox.information(self, 'Отправка на печать', 'Таблица пуста')
 
@@ -561,14 +561,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             dialog.exec_()
 
             main_download_stickers(self)
-            try:
-                update_arts_db2()
-            except Exception as ex:
-                logger.error(ex)
+
             download_new_arts_in_comp(list_arts, self)
             QMessageBox.information(self, 'Загрузка', 'Загрузка закончена')
             self.progress_bar.setValue(100)
             delete_files_with_name(starting_directory=all_badge)
+            try:
+                update_arts_db2()
+            except Exception as ex:
+                logger.error(ex)
         except Exception as ex:
             logger.error(ex)
 

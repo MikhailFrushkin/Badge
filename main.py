@@ -21,8 +21,7 @@ def read_table_google(CREDENTIALS_FILE='google_acc.json',
                       spreadsheet_id=id_google_table_anikoya,
                       shop='AniKoya', self=None):
     logger.debug(f'Читаю гугл таблицу {shop}')
-    # self.second_statusbar.showMessage(f'Читаю гугл таблицу {shop}', 10000)
-    print(CREDENTIALS_FILE)
+    self.second_statusbar.showMessage(f'Читаю гугл таблицу {shop}', 10000)
 
     try:
         credentials = service_account.Credentials.from_service_account_file(CREDENTIALS_FILE)
@@ -53,7 +52,7 @@ def read_table_google(CREDENTIALS_FILE='google_acc.json',
         pprint(rows[0])
         print("Ошибка: количество столбцов не совпадает с количеством значений.")
     else:
-        # progress = ProgressBar(len(rows), self)
+        progress = ProgressBar(len(rows), self)
         for i in rows:
             if i[4] != '' and i[11] != '':
                 add_record_google_table(name=i[0],
@@ -70,7 +69,7 @@ def read_table_google(CREDENTIALS_FILE='google_acc.json',
                                         article=i[11],
                                         shop=shop,
                                         )
-            # progress.update_progress()
+            progress.update_progress()
 
 
 def download_file(url, local_path):
@@ -322,13 +321,17 @@ def download_new_arts(link, arts_list, shop, self=None):
                     temp_list_skin_one_temp = []
                     temp_list_skin_one_temp.extend(list_skin_one)
                     temp_list_skin_one_temp.extend(list_skin)
-                    for j in temp_list_skin_one_temp:
-                        try:
-                            shutil.copy2(os.path.join(new_folder, j), folder_art)
-                            rename_files(os.path.join(folder_art, j), 'Подложка')
-                            break
-                        except Exception as ex:
-                            print(ex)
+                    if len(temp_list_skin_one_temp) == 1:
+                        shutil.copy2(os.path.join(new_folder, temp_list_skin_one_temp[0]), folder_art)
+                        rename_files(os.path.join(folder_art, temp_list_skin_one_temp[0]), 'Подложка')
+                    for j in list_skin_one:
+                        if size in j:
+                            try:
+                                shutil.copy2(os.path.join(new_folder, j), folder_art)
+                                rename_files(os.path.join(folder_art, j), 'Подложка')
+                                break
+                            except Exception as ex:
+                                print(ex)
                 else:
                     for q in range(nums):
                         try:
@@ -336,6 +339,14 @@ def download_new_arts(link, arts_list, shop, self=None):
                                          os.path.join(folder_art, f'{q}' + list_image[0]))
                         except IOError as e:
                             logger.error(f"Error copying the file: {e}")
+                    for j in list_skin:
+                        if size in j:
+                            try:
+                                shutil.copy2(os.path.join(new_folder, j), folder_art)
+                                rename_files(os.path.join(folder_art, j), 'Подложка')
+                                break
+                            except Exception as ex:
+                                print(ex)
             else:
                 if nums == 1:
                     for j in list_skin_one:
