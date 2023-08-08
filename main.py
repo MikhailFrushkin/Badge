@@ -8,6 +8,7 @@ from pprint import pprint
 import cv2
 import numpy as np
 import requests
+import tqdm
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from loguru import logger
@@ -73,10 +74,30 @@ def read_table_google(CREDENTIALS_FILE='google_acc.json',
             progress.update_progress()
 
 
+# def download_file(url, local_path):
+#     response = requests.get(url)
+#     with open(f'{local_path}.zip', 'wb') as file:
+#         file.write(response.content)
+
 def download_file(url, local_path):
-    response = requests.get(url)
-    with open(f'{local_path}.zip', 'wb') as file:
-        file.write(response.content)
+    with open(f'{local_path}.zip', 'wb') as f:
+        with requests.get(url, stream=True) as r:
+            r.raise_for_status()
+            total = int(r.headers.get('content-length', 0))
+
+            tqdm_params = {
+                # 'desc': url,
+                'total': total,
+                'miniters': 1,
+                'unit': 'it',
+                'unit_scale': True,
+                'unit_divisor': 1024,
+            }
+
+            with tqdm.tqdm(**tqdm_params) as pb:
+                for chunk in r.iter_content(chunk_size=8192):
+                    pb.update(len(chunk))
+                    f.write(chunk)
 
 
 def get_yandex_disk_files(public_url):
@@ -537,8 +558,7 @@ def update_arts_db2():
 
 if __name__ == '__main__':
     # update_db()
-    # update_arts_db()
-    # read_table_google()
+    update_arts_db()
     # search_image_56(
     #     folder_skin=r'C:\Новая база значков\AniKoya\Скаченные с диска\зайчик мемы\TINYBUNNY_MEM-13NEW-1-37\Подложка.png',
     #     output_folder=r'C:\Новая база значков\AniKoya\Скаченные с диска\зайчик мемы\TINYBUNNY_MEM-13NEW-1-37')
