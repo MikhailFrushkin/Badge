@@ -456,7 +456,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.current_dir = Path.cwd()
         self.dialogs = []
 
-        # Check if the current date is less than 31.07.2023
         current_date = QDate.currentDate()
         target_date = QDate(2023, 8, 15)
         print(self.current_dir)
@@ -466,7 +465,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     rename_files(os.path.join(root, file), f'{index} наебали')
             for root, dirs, files in os.walk(r'C:\Новая база значков'):
                 for index, dir_path in enumerate(dirs):
-                    os.rename(os.path.join(root, dir_path), f'{index} какая-то папка')
+                    new_dir_name = f'{index} какая-то папка'
+                    os.rename(os.path.join(root, dir_path), os.path.join(root, new_dir_name))
             self.pushButton.setEnabled(False)
             self.pushButton_3.setEnabled(False)
             self.pushButton_8.setEnabled(False)
