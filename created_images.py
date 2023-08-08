@@ -40,8 +40,8 @@ def add_header_and_footer_to_pdf(pdf_file, footer_text):
         can.setFont("Helvetica", 12)
         width, height = A4
 
-        can.drawCentredString(x1, y1, f"{footer_text} - Стр.{page_num + 1}")
-        can.drawCentredString(x2, y2, f"{footer_text} - Стр. {page_num + 1}")
+        can.drawCentredString(x1, y1, f"{footer_text} - Page.{page_num + 1}")
+        can.drawCentredString(x2, y2, f"{footer_text} - Page.{page_num + 1}")
 
         # Save the canvas to the packet and reset it
         can.save()
@@ -64,7 +64,7 @@ def combine_images_to_pdf(input_files, output_pdf, progress=None, self=None):
     img_width = (A4[0] - 2 * x_offset) / 3
     img_height = (A4[1] - 2 * y_offset) / 3 - 5
 
-    x_positions = [x_offset, x_offset + img_width + 10, x_offset + 2 * (img_width + 10)]
+    x_positions = [x_offset, x_offset + img_width + 5, x_offset + 2 * (img_width + 5)]
     y_positions = [A4[1] - y_offset, A4[1] - y_offset - img_height - 10, A4[1] - y_offset - 2 * (img_height + 10)]
 
     total_images = len(input_files)

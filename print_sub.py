@@ -20,13 +20,11 @@ def print_pdf_sticker(printer_name, self=None):
         print("Adobe Acrobat Reader не найден.")
         return
     bad_list_arts = []
-    arts = Orders.select().order_by('num_on_List')
+    arts = Orders.select().order_by('num_on_list')
+    sorted_arts = sorted([i for i in arts], key=lambda x: x.num_on_list)
     try:
         print_processes = []
-        # Открытие PDF-файла с использованием PyPDF2
-        # with open(file_path, "rb") as f:
-        for i in arts:
-            # Формирование команды для печати файла
+        for i in sorted_arts:
             if i.sticker:
                 print_command = f'"{acrobat_path}" /N /T "{i.sticker}" "{printer_name}"'
                 print_process = subprocess.Popen(print_command, shell=True)
@@ -61,6 +59,7 @@ def print_pdf_skin(printers):
         try:
             print_processes = []
             print_command = f'"{acrobat_path}" /N /T "{file_path}" "{printer_name}"'
+            print_command += ' /P "A4 NoMargins"'
             print_process = subprocess.Popen(print_command, shell=True)
             print_processes.append(print_process)
             logger.success(f'Файл {file_path} отправлен на печать на принтер {printer_name}')
@@ -70,20 +69,17 @@ def print_pdf_skin(printers):
 
 def print_png_images(printers):
     file_list = []
-    tuple_printing = tuple()
     ready_path = 'Файлы на печать'
     for root, dirs, files in os.walk(ready_path):
         for file in files:
             if file.endswith('png'):
                 file_list.append(os.path.join(root, file))
 
-    for file, printer in zip(file_list, itertools.cycle(printers)):
-        tuple_printing += ((file, printer),)
+    tuple_printing = list(zip(file_list, itertools.cycle(printers)))
 
     for file_path, printer_name in tuple_printing:
-        # Проверка наличия файла
         try:
-            subprocess.run(['mspaint', '/pt', file_path, printer_name], check=True)
+            subprocess.run(['mspaint', '/pt', file_path, printer_name, '/p:a4'], check=True)
             logger.success(f'Файл {file_path} отправлен на печать на принтер {printer_name}')
         except subprocess.CalledProcessError:
             print("Ошибка при печати файла.")

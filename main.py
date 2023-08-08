@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import datetime
 import os
 import shutil
@@ -213,9 +214,11 @@ def search_one_image(skin, images_list, output_folder):
 
 def search_image_56(folder_skin, output_folder):
     """Вырезание круга с подложки"""
-    logger.debug(os.path.abspath(folder_skin))
+    filename = os.path.abspath(folder_skin)
+    logger.debug(filename)
 
-    image = cv2.imread(os.path.abspath(folder_skin))
+    image = cv2.imread(filename)
+    print(filename)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (5, 5), 0)
     # Детекция кругов на изображении
@@ -539,8 +542,14 @@ if __name__ == '__main__':
     # search_image_56(
     #     folder_skin=r'C:\Новая база значков\AniKoya\Скаченные с диска\зайчик мемы\TINYBUNNY_MEM-13NEW-1-37\Подложка.png',
     #     output_folder=r'C:\Новая база значков\AniKoya\Скаченные с диска\зайчик мемы\TINYBUNNY_MEM-13NEW-1-37')
-    folder_skin = 'C:\Новая база значков\AniKoya\Скаченные с диска\зайчик мемы\TINYBUNNY_MEM-13NEW-1-37\Подложка.png'
+    folder_skin = 'E:\Новая база значков\тесит\Подложка.jpg'
     print(os.path.exists(folder_skin))
-    image = cv2.imread(os.path.abspath(folder_skin))
+
+    from urllib.parse import quote, unquote
+
+    encoded_name = quote(folder_skin)
+    decoded_name = unquote(encoded_name)
+    print(encoded_name)
+    print(decoded_name)
+    image = cv2.imread(os.path.abspath(decoded_name))
     print(image)
-    pass
