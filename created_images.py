@@ -204,10 +204,6 @@ def create_contact_sheet(images=None, size=None, self=None):
     image_width = int(image_width_mm * 300 / mm_to_inch)
     image_height = int(image_height_mm * 300 / mm_to_inch)
 
-    # Create a font for page numbers
-    font_size = 30  # Adjust the font size as needed
-    font = ImageFont.truetype("arial.ttf", font_size)
-
     if self:
         self.progress_label.setText(f"Прогресс: Создание изображений {size} mm.")
         self.progress_bar.setValue(0)
@@ -228,6 +224,8 @@ def create_contact_sheet(images=None, size=None, self=None):
                         image = image.resize((image_width, image_height), Image.LANCZOS)
                         if size == 56:
                             contact_sheet.paste(image, (j * image_width - 10, i * image_height + 10 * (i + 1)))
+                        elif size == 25 or size == 44:
+                            contact_sheet.paste(image, (j * image_width + 100, i * image_height + 100 * (i + 1)))
                         else:
                             contact_sheet.paste(image, (j * image_width + 10, i * image_height + 10 * (i + 1)))
 

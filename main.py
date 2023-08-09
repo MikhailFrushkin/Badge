@@ -559,17 +559,3 @@ def update_arts_db2():
 if __name__ == '__main__':
     # update_db()
     update_arts_db()
-    # search_image_56(
-    #     folder_skin=r'C:\Новая база значков\AniKoya\Скаченные с диска\зайчик мемы\TINYBUNNY_MEM-13NEW-1-37\Подложка.png',
-    #     output_folder=r'C:\Новая база значков\AniKoya\Скаченные с диска\зайчик мемы\TINYBUNNY_MEM-13NEW-1-37')
-    folder_skin = 'E:\Новая база значков\тесит\Подложка.jpg'
-    print(os.path.exists(folder_skin))
-
-    from urllib.parse import quote, unquote
-
-    encoded_name = quote(folder_skin)
-    decoded_name = unquote(encoded_name)
-    print(encoded_name)
-    print(decoded_name)
-    image = cv2.imread(os.path.abspath(decoded_name))
-    print(image)

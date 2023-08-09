@@ -71,7 +71,7 @@ def move_ready_folder(directory=rf'{anikoya_path}\Скаченные с диск
                         shutil.move(new_folder, target_directory)
                         Article.create_with_art(i, os.path.join(target_directory, i), shop=shop)
                         # logger.debug(f'Перенос из {folder_path} -> {os.path.join(target_directory, folder)}')
-            # shutil.rmtree(directory)
+            shutil.rmtree(directory)
         except Exception as ex:
             logger.error(ex)
 
@@ -83,9 +83,9 @@ def rename_files(file_path, new_name):
         new_path = os.path.join(base_path, new_name + file_extension)
         os.rename(file_path, new_path)
         # logger.debug(f'Переименован файл {file_path} в {new_path}')
+        return new_path
     except Exception as ex:
         logger.error(f'не удалось переименовать файл {file_path}\n{ex}')
-    return new_path
 
 
 def enum_printers(start=None) -> list:

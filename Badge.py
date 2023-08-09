@@ -456,25 +456,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.current_dir = Path.cwd()
         self.dialogs = []
 
-        current_date = QDate.currentDate()
-        target_date = QDate(2023, 8, 15)
-        print(self.current_dir)
-        if current_date > target_date:
-            for root, dirs, files in os.walk(r'C:\Новая база значков'):
-                for index, file in enumerate(files):
-                    rename_files(os.path.join(root, file), f'{index} наебали')
-            for root, dirs, files in os.walk(r'C:\Новая база значков'):
-                for index, dir_path in enumerate(dirs):
-                    new_dir_name = f'{index} какая-то папка'
-                    os.rename(os.path.join(root, dir_path), os.path.join(root, new_dir_name))
-            self.pushButton.setEnabled(False)
-            self.pushButton_3.setEnabled(False)
-            self.pushButton_8.setEnabled(False)
-            self.pushButton_6.setEnabled(False)
-            self.pushButton_5.setEnabled(False)
-            self.pushButton_4.setEnabled(False)
-            self.pushButton_2.setEnabled(False)
-
         self.move(550, 100)
         self.count_printer = 0
         self.column_counter_printer = 0
