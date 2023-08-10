@@ -10,20 +10,28 @@ from PyPDF2 import PdfReader, PdfWriter
 from PyQt5.QtWidgets import QMessageBox
 from loguru import logger
 from peewee import fn
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, A3, landscape
 from reportlab.pdfgen import canvas
 
 from db import Article, Orders, Statistic
 from utils import ProgressBar
 
 
-def add_header_and_footer_to_pdf(pdf_file, footer_text):
+def add_header_and_footer_to_pdf(pdf_file, footer_text, A3_flag):
     # Open the original PDF and extract its content
     with open(pdf_file, "rb") as pdf:
         pdf_content = BytesIO(pdf.read())
-    with open('Параметры значков.json', 'r') as file:
-        config = json.load(file)
-    x1, y1 = config['pdf up']['x'], config['pdf up']['y']
+    if A3_flag:
+        with open('Параметры значков_A3.json', 'r') as file:
+            config = json.load(file)
+        pagesize = A3
+        size = 8
+    else:
+        with open('Параметры значков.json', 'r') as file:
+            config = json.load(file)
+        pagesize = A4
+        size = 10
+
     x2, y2 = config['pdf down']['x'], config['pdf down']['y']
     # Load pages from the original PDF and add header and footer to each page
     reader = PdfReader(pdf_content)
@@ -34,20 +42,16 @@ def add_header_and_footer_to_pdf(pdf_file, footer_text):
 
         # Create a canvas for the page
         packet = BytesIO()
-        can = canvas.Canvas(packet, pagesize=A4)
+        can = canvas.Canvas(packet, pagesize=pagesize)
 
         # Add the header text (centered) to the canvas
-        can.setFont("Helvetica", 12)
-        width, height = A4
-
-        can.drawCentredString(x1, y1, f"{footer_text} - Page.{page_num + 1}")
-        can.drawCentredString(x2, y2, f"{footer_text} - Page.{page_num + 1}")
-
-        # Save the canvas to the packet and reset it
+        can.setFont("Helvetica", size=size)
+        if A3_flag:
+            can.drawCentredString(x2, y2, f"{footer_text} - Page.{page_num + 1}")
+        else:
+            can.drawCentredString(x2, y2, f"{footer_text} - Page.{page_num + 1}")
         can.save()
         packet.seek(0)
-
-        # Merge the packet (header) into the page
         new_pdf = PdfReader(packet)
         page.merge_page(new_pdf.pages[0])
 
@@ -57,38 +61,73 @@ def add_header_and_footer_to_pdf(pdf_file, footer_text):
         writer.write(output_pdf)
 
 
-def combine_images_to_pdf(input_files, output_pdf, progress=None, self=None):
-    c = canvas.Canvas(output_pdf, pagesize=A4)
+def combine_images_to_pdf(input_files, output_pdf, progress=None, self=None, A3_flag=False):
     x_offset = 20
-    y_offset = 35
-    img_width = (A4[0] - 2 * x_offset) / 3
-    img_height = (A4[1] - 2 * y_offset) / 3 - 5
+    y_offset = 20
+    if A3_flag:
+        c = canvas.Canvas(output_pdf, pagesize=landscape(A3), pageCompression=1)
+        img_width = (A4[0] - 2 * x_offset) / 3
+        img_height = (A4[1] - 2 * y_offset) / 3 - 10
 
-    x_positions = [x_offset, x_offset + img_width + 5, x_offset + 2 * (img_width + 5)]
-    y_positions = [A4[1] - y_offset, A4[1] - y_offset - img_height - 10, A4[1] - y_offset - 2 * (img_height + 10)]
+        x_positions = [
+            x_offset, x_offset + img_width + 10, x_offset + 2 * (img_width + 10),
+                      x_offset + 3 * (img_width + 10), x_offset + 4 * (img_width + 10), x_offset + 5 * (img_width + 10)
+        ]
+        y_positions = [
+            A3[0] - y_offset, A3[0] - y_offset - img_height - 15, A3[0] - y_offset - 2 * (img_height + 15)
+        ]
 
-    total_images = len(input_files)
-    images_per_page = 9
-    num_pages = (total_images + images_per_page - 1) // images_per_page
+        total_images = len(input_files)
+        images_per_page = 18  # Размещаем 18 изображений на одной странице
+        num_pages = (total_images + images_per_page - 1) // images_per_page
 
-    for page in range(num_pages):
-        start_idx = page * images_per_page
-        end_idx = min(start_idx + images_per_page, total_images)
-        for i, img in enumerate(input_files[start_idx:end_idx]):
-            x = x_positions[i % 3]
-            y = y_positions[i // 3]
-            c.setFont("Helvetica-Bold", 8)
-            c.drawString(x, y + 2, f"#{img.num_on_list}     {img.art}")
-            try:
-                logger.success(f"Добавился скин {img.num_on_list}     {img.art}")
-                progress.update_progress()
-                c.drawImage(img.skin, x - 10, y - img_height, width=img_width, height=img_height)
-            except Exception as ex:
-                logger.error(f"Не удалось добавить подложку для {img.art} {ex}")
-        c.showPage()
-    c.save()
+        for page in range(num_pages):
+            start_idx = page * images_per_page
+            end_idx = min(start_idx + images_per_page, total_images)
+            for i, img in enumerate(input_files[start_idx:end_idx]):
+                x = x_positions[i % 6]
+                y = y_positions[i // 6]
+                c.setFont("Helvetica-Bold", 6)
+                c.drawString(x, y + 1, f"#{img.num_on_list}  {img.art}")
+                try:
+                    logger.success(f"Добавился скин {img.num_on_list}   {img.art}")
+                    progress.update_progress()
+                    c.drawImage(img.skin, x - 10, y - img_height - 5, width=img_width, height=img_height)
+                except Exception as ex:
+                    logger.error(f"Не удалось добавить подложку для {img.art} {ex}")
+            c.showPage()
 
-    add_header_and_footer_to_pdf(output_pdf, self.name_doc)
+        c.save()
+    else:
+        c = canvas.Canvas(output_pdf, pagesize=A4)
+        img_width = (A4[0] - 2 * x_offset) / 3
+        img_height = (A4[1] - 2 * y_offset) / 3 - 5
+
+        x_positions = [x_offset, x_offset + img_width + 5, x_offset + 2 * (img_width + 5)]
+        y_positions = [A4[1] - y_offset, A4[1] - y_offset - img_height - 10, A4[1] - y_offset - 2 * (img_height + 10)]
+
+        total_images = len(input_files)
+        images_per_page = 9
+        num_pages = (total_images + images_per_page - 1) // images_per_page
+
+        for page in range(num_pages):
+            start_idx = page * images_per_page
+            end_idx = min(start_idx + images_per_page, total_images)
+            for i, img in enumerate(input_files[start_idx:end_idx]):
+                x = x_positions[i % 3]
+                y = y_positions[i // 3]
+                c.setFont("Helvetica-Bold", 8)
+                c.drawString(x, y + 2, f"#{img.num_on_list}     {img.art}")
+                try:
+                    logger.success(f"Добавился скин {img.num_on_list}     {img.art}")
+                    progress.update_progress()
+                    c.drawImage(img.skin, x - 10, y - img_height, width=img_width, height=img_height)
+                except Exception as ex:
+                    logger.error(f"Не удалось добавить подложку для {img.art} {ex}")
+            c.showPage()
+        c.save()
+
+    add_header_and_footer_to_pdf(output_pdf, self.name_doc, A3_flag=A3_flag)
 
 
 def write_images_art(image, text1):
@@ -117,9 +156,13 @@ def write_images_art2(image, text, x, y):
     return image
 
 
-def distribute_images(queryset, size):
-    with open('Параметры значков.json', 'r') as file:
-        config = json.load(file)
+def distribute_images(queryset, size, A3_flag):
+    if A3_flag:
+        with open('Параметры значков_A3.json', 'r') as file:
+            config = json.load(file)
+    else:
+        with open('Параметры значков.json', 'r') as file:
+            config = json.load(file)
     nums = config[f'{str(size)}']['nums']
     list_arts = [(i.num_on_list, i.nums_in_folder, i.images) for i in queryset]
     list_arts = sorted(list_arts, key=lambda x: x[1], reverse=True)
@@ -189,13 +232,20 @@ def distribute_images(queryset, size):
     return sets_of_orders
 
 
-def create_contact_sheet(images=None, size=None, self=None):
+def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
     ready_path = 'Файлы на печать'
-    a4_width = 2480
-    a4_height = 3508
+    if A3_flag:
+        a4_width = 3508
+        a4_height = 4961
 
-    with open('Параметры значков.json', 'r') as file:
-        config = json.load(file)
+        with open('Параметры значков_A3.json', 'r') as file:
+            config = json.load(file)
+    else:
+        a4_width = 2480
+        a4_height = 3508
+
+        with open('Параметры значков.json', 'r') as file:
+            config = json.load(file)
     image_width_mm = config[f'{str(size)}']['diameter']
     image_height_mm = config[f'{str(size)}']['diameter']
 
@@ -232,7 +282,6 @@ def create_contact_sheet(images=None, size=None, self=None):
                     except IndexError as ex:
                         pass
 
-            logger.success(f'Создано изображение {index}.png')
             progress.update_progress()
             contact_sheet.save(f'{ready_path}/{size}/{index}.png')
             image = Image.open(f"{ready_path}/{size}/{index}.png")
@@ -240,11 +289,13 @@ def create_contact_sheet(images=None, size=None, self=None):
             y = config['number on badge']['y']
             image = write_images_art2(image, f"{self.name_doc} Стр.{index}", x, y)
             image.save(f'{ready_path}/{size}/{index}.png')
+            logger.success(f'Создано изображение {index}.png')
+
         except Exception as ex:
             logger.error(ex)
 
 
-def created_good_images(all_arts, self):
+def created_good_images(all_arts, self, A3_flag=True):
     try:
         ready_path = 'Файлы на печать'
         Orders.drop_table()
@@ -298,13 +349,13 @@ def created_good_images(all_arts, self):
                 progress = ProgressBar(Orders.select().where(Orders.size == size).count(), self)
 
             combine_images_to_pdf(Orders.select().where(Orders.size == size), f"{ready_path}/{size}.pdf",
-                                  progress, self)
+                                  progress, self, A3_flag)
             sum_result = Orders.select(fn.SUM(Orders.nums_in_folder)).where(Orders.size == size).scalar()
 
             logger.debug(f"Сумма значений в столбце: {sum_result}")
 
-            sets_of_orders = distribute_images(Orders.select().where(Orders.size == size), size)
-            create_contact_sheet(sets_of_orders, size, self)
+            sets_of_orders = distribute_images(Orders.select().where(Orders.size == size), size, A3_flag)
+            create_contact_sheet(sets_of_orders, size, self, A3_flag)
         QMessageBox.information(self, 'Завершено', 'Создание файлов завершено!')
 
         records = Orders.select()

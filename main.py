@@ -437,10 +437,8 @@ def download_new_arts_in_comp(list_arts, self=None):
     arts_dict = {}
 
     for art in list_arts:
-        article = Article.get_or_none(Article.art == art)
-        if article is None:
-            url = GoogleTable.select().where(GoogleTable.article.contains(art)).first()
-            arts_dict[url.folder_link] = (url.article, url.shop)
+        url = GoogleTable.select().where(GoogleTable.article.contains(art)).first()
+        arts_dict[url.folder_link] = (url.article, url.shop)
     if self:
         self.second_statusbar.showMessage(f'Скачивание артикулов', 10000)
         process = ProgressBar(len(arts_dict), self)
@@ -532,7 +530,7 @@ def update_arts_db2():
                 Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
                 print('\r', count, end='', flush=True)
 
-    print('Нет подложек')
+    print('\nНет подложек')
     records = Article.select().where(Article.skin >> None)
     for i in records:
         print(os.path.abspath(i.folder))
@@ -564,6 +562,7 @@ def update_sticker_path():
             if file_name == name_sticker or file_name.lower() == name_sticker:
                 row.sticker = os.path.join(sticker_path_all, file_name)
                 print('найден ШК: ', os.path.join(sticker_path_all, file_name))
+                row.save()
                 break
 
 
