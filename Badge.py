@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import qdarkstyle
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QTimer, Qt, QDate
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QTextEdit, QPushButton, QDialog, QMessageBox, QWidget, \
     QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView, QLabel, QCalendarWidget
@@ -17,11 +17,11 @@ from peewee import fn
 
 from config import all_badge
 from created_images import created_good_images
-from db import Article, Orders, Statistic
+from db import Article, Statistic
 from dow_stickers2 import main_download_stickers
-from main import update_db, download_new_arts_in_comp, update_arts_db2
+from main import update_db, download_new_arts_in_comp, update_arts_db2, update_sticker_path
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
-from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx, rename_files
+from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx
 
 
 class GroupedRecordsDialog(QDialog):
@@ -555,6 +555,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             delete_files_with_name(starting_directory=all_badge)
             try:
                 update_arts_db2()
+                update_sticker_path()
             except Exception as ex:
                 logger.error(ex)
             QMessageBox.information(self, 'Загрузка', 'Загрузка закончена')

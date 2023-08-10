@@ -6,7 +6,7 @@ from PIL import Image
 from loguru import logger
 from peewee import *
 
-from config import path_root, sticker_path_all
+from config import sticker_path_all
 
 db = SqliteDatabase('mydatabase.db')
 
@@ -124,14 +124,6 @@ class Article(Model):
         #         #     logger.error(ex)
         #         image_filenames.append(os.path.join(self.folder, f'{filename}'))
 
-        # for root, dirs, files in os.walk(self.folder):
-        #     for file in files:
-        #         if file.split('.')[0].isdigit() or file == 'Картинка1.png':
-        #             try:
-        #                 os.remove(os.path.join(root, file))
-        #             except OSError as ex:
-        #                 pass
-
         for index, filename in enumerate(os.listdir(folder_name), start=1):
             if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
                     and os.path.isfile(os.path.join(folder_name, filename)):
@@ -140,13 +132,16 @@ class Article(Model):
         self.images = ', '.join(image_filenames) if image_filenames else None
         self.nums_in_folder = len(image_filenames)
 
-        sticker_list = os.listdir(sticker_path_all)
-        if self.art + '.pdf' in sticker_list:
-            self.sticker = os.path.join(sticker_path_all, self.art + '.pdf')
+        name_sticker = self.art + '.pdf'
+        sticker_file_path = None
 
-        # if int(folder_name.split('-')[-2]) != len(image_filenames):
-        #     logger.error(f"Не записался артикул в базу, т.к. не соответствует число подложек или файлов {folder_name}")
-        #     return
+        # Поиск файла с учетом разных регистров
+        for file_name in os.listdir(sticker_path_all):
+            if file_name == name_sticker or file_name.lower() == name_sticker:
+                sticker_file_path = os.path.join(sticker_path_all, file_name)
+                break
+
+        self.sticker = sticker_file_path
         self.save()
 
 

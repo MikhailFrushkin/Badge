@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import datetime
 import os
 import shutil
@@ -14,7 +13,6 @@ from googleapiclient.discovery import build
 from loguru import logger
 
 from config import anikoya_path, dp_path, id_google_table_anikoya, id_google_table_DP, sticker_path_all
-from config import path_root
 from db import add_record_google_table, GoogleTable, Article, db
 from utils import rename_files, move_ready_folder, ProgressBar
 
@@ -485,13 +483,13 @@ def update_arts_db():
             if len(dir) > 6:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'DP')
-                print(count)
+                print('\r', count, end='', flush=True)
     for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
         for dir in dirs:
             if len(dir) > 6:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
-                print(count)
+                print('\r', count, end='', flush=True)
 
     print('Нет подложек')
     records = Article.select().where(Article.skin >> None)
@@ -515,6 +513,7 @@ def update_arts_db():
 
 
 def update_arts_db2():
+    print('Проверка базы: \n')
     count = 0
     start = datetime.datetime.now()
 
@@ -525,13 +524,13 @@ def update_arts_db2():
             if len(dir) > 6:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'DP')
-                print(count)
+                print('\r', count, end='', flush=True)
     for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
         for dir in dirs:
             if len(dir) > 6:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
-                print(count)
+                print('\r', count, end='', flush=True)
 
     print('Нет подложек')
     records = Article.select().where(Article.skin >> None)
@@ -556,6 +555,19 @@ def update_arts_db2():
     logger.debug(datetime.datetime.now() - start)
 
 
+def update_sticker_path():
+    no_stickers_rows = Article.select().where(Article.sticker >> None)
+    files_list = os.listdir(sticker_path_all)
+    for row in no_stickers_rows:
+        name_sticker = row.art + '.pdf'
+        for file_name in files_list:
+            if file_name == name_sticker or file_name.lower() == name_sticker:
+                row.sticker = os.path.join(sticker_path_all, file_name)
+                print('найден ШК: ', os.path.join(sticker_path_all, file_name))
+                break
+
+
 if __name__ == '__main__':
-    # update_db()
     update_arts_db()
+    # update_arts_db2()
+    # update_sticker_path()
