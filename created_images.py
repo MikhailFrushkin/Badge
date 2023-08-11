@@ -233,17 +233,17 @@ def distribute_images(queryset, size, A3_flag):
 
 
 def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
+    border_color = (0, 0, 0, 255)  # Черный цвет рамки
+    border_width = 1  # Ширина рамки в пикселях
     ready_path = 'Файлы на печать'
     if A3_flag:
         a4_width = 3508
         a4_height = 4961
-
         with open('Параметры значков_A3.json', 'r') as file:
             config = json.load(file)
     else:
         a4_width = 2480
         a4_height = 3508
-
         with open('Параметры значков.json', 'r') as file:
             config = json.load(file)
     image_width_mm = config[f'{str(size)}']['diameter']
@@ -258,12 +258,12 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
         self.progress_label.setText(f"Прогресс: Создание изображений {size} mm.")
         self.progress_bar.setValue(0)
         progress = ProgressBar(len(images), self)
-
     for index, img in enumerate(images, start=1):
         try:
             # Создаем пустой контейнер для объединения изображений (RGBA mode)
             contact_sheet = Image.new('RGBA', (a4_width, a4_height), (255, 255, 255, 0))  # 0 alpha for transparency
             draw = ImageDraw.Draw(contact_sheet)
+            # Добавление рамки вокруг изображения
 
             # Итерируемся по всем изображениям и размещаем их на листе
             for i in range(config[f'{str(size)}']['ICONS_PER_COL']):
@@ -272,12 +272,21 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
                         image = Image.open(img[i * config[f'{str(size)}']['ICONS_PER_ROW'] + j][0].strip())
                         image = write_images_art(image, f'#{img[i * config[f"{str(size)}"]["ICONS_PER_ROW"] + j][1]}')
                         image = image.resize((image_width, image_height), Image.LANCZOS)
+
                         if size == 56:
                             contact_sheet.paste(image, (j * image_width - 10, i * image_height + 10 * (i + 1)))
+                            border_rect = [(j * image_width - 10, i * image_height + 10 * (i + 1)),
+                                           ((j + 1) * image_width - 10, (i + 1) * image_height + 10 * (i + 1))]
                         elif size == 25 or size == 44:
-                            contact_sheet.paste(image, (j * image_width + 100, i * image_height + 100 * (i + 1)))
+                            contact_sheet.paste(image, (j * image_width + 100, i * image_height + 10 * (i + 1)))
+                            border_rect = [(j * image_width + 100, i * image_height + 10 * (i + 1)),
+                                           ((j + 1) * image_width + 100, (i + 1) * image_height + 10 * (i + 1))]
                         else:
                             contact_sheet.paste(image, (j * image_width + 10, i * image_height + 10 * (i + 1)))
+                            border_rect = [(j * image_width + 10, i * image_height + 10 * (i + 1)),
+                                           ((j + 1) * image_width + 10, (i + 1) * image_height + 10 * (i + 1))]
+
+                        draw.rectangle(border_rect, outline=border_color, width=border_width)
 
                     except IndexError as ex:
                         pass

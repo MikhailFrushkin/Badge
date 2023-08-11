@@ -478,13 +478,13 @@ def update_arts_db():
         Article.create_table(safe=True)
     for root, dirs, files in os.walk(rf'{dp_path}\Готовые'):
         for dir in dirs:
-            if len(dir) > 6:
+            if len(dir) > 10:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'DP')
                 print('\r', count, end='', flush=True)
     for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
         for dir in dirs:
-            if len(dir) > 6:
+            if len(dir) > 10:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
                 print('\r', count, end='', flush=True)
@@ -519,13 +519,13 @@ def update_arts_db2():
         Article.create_table(safe=True)
     for root, dirs, files in os.walk(rf'{dp_path}\Готовые'):
         for dir in dirs:
-            if len(dir) > 6:
+            if len(dir) > 10:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'DP')
                 print('\r', count, end='', flush=True)
     for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
         for dir in dirs:
-            if len(dir) > 6:
+            if len(dir) > 10:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
                 print('\r', count, end='', flush=True)
@@ -535,12 +535,17 @@ def update_arts_db2():
     for i in records:
         print(os.path.abspath(i.folder))
         i.delete_instance()
+        shutil.rmtree(i.folder)
+        # shutil.move(i.folder, r'E:\Новая база значков\Проблемные')
 
     print('Нет картинок с цифрами')
     records = Article.select().where(Article.images >> None)
     for i in records:
         print(os.path.abspath(i.folder))
         i.delete_instance()
+        shutil.rmtree(i.folder)
+        # shutil.move(i.folder, r'E:\Новая база значков\Проблемные')
+
 
     print('НЕ соответствует число картинок с базой')
     records = Article.select().where(Article.nums_in_folder != Article.nums)

@@ -585,7 +585,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             dialog = CustomDialog()
             dialog.set_text(mes)
             dialog.exec_()
-
+            logger.debug('Загрузка стикеров:')
             main_download_stickers(self)
 
             download_new_arts_in_comp(list_arts, self)
