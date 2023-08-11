@@ -202,11 +202,12 @@ class Dialog(QDialog):
 
 
 class QueueDialog(QWidget):
-    def __init__(self, files_on_print, title, name_doc, sub_self, parent=None):
+    def __init__(self, files_on_print, title, name_doc, sub_self, A3_flag=False, parent=None):
         super().__init__(parent)
         self.files_on_print = files_on_print
         self.setWindowTitle(title)
         self.sub_self = sub_self
+        self.A3_flag = A3_flag
         self.name_doc = os.path.abspath(name_doc).split('\\')[-1].replace('.xlsx', '')
 
         layout = QVBoxLayout(self)
@@ -267,7 +268,7 @@ class QueueDialog(QWidget):
         selected_data = self.get_selected_data()
         if selected_data:
             logger.debug(selected_data)
-            created_good_images(selected_data, self)
+            created_good_images(selected_data, self, self.A3_flag)
         else:
             QMessageBox.information(self, 'Отправка на печать', 'Ни одна строка не выбрана')
 
@@ -275,7 +276,7 @@ class QueueDialog(QWidget):
         all_data = self.get_all_data()
         if all_data:
             logger.debug(all_data)
-            created_good_images(all_data, self)
+            created_good_images(all_data, self, self.A3_flag)
         else:
             QMessageBox.information(self, 'Отправка на печать', 'Таблица пуста')
 
@@ -393,6 +394,7 @@ class Ui_MainWindow(object):
         self.pushButton_4.setFont(font)
         self.pushButton_4.setObjectName("pushButton_4")
         self.gridLayout_2.addWidget(self.pushButton_4, 2, 3, 1, 1)
+
         self.pushButton_8 = QtWidgets.QPushButton(self.centralwidget)
         font = QtGui.QFont()
         font.setFamily("Times New Roman")
@@ -403,6 +405,18 @@ class Ui_MainWindow(object):
         self.pushButton_8.setFont(font)
         self.pushButton_8.setObjectName("pushButton_8")
         self.gridLayout_2.addWidget(self.pushButton_8, 0, 2, 1, 1)
+        self.verticalLayout.addLayout(self.gridLayout_2)
+
+        self.pushButton_9 = QtWidgets.QPushButton(self.centralwidget)
+        font = QtGui.QFont()
+        font.setFamily("Times New Roman")
+        font.setPointSize(15)
+        font.setBold(True)
+        font.setItalic(False)
+        font.setWeight(75)
+        self.pushButton_9.setFont(font)
+        self.pushButton_9.setObjectName("pushButton_9")
+        self.gridLayout_2.addWidget(self.pushButton_9, 1, 2, 1, 1)
         self.verticalLayout.addLayout(self.gridLayout_2)
 
         self.listView = QtWidgets.QListView(self.centralwidget)
@@ -447,6 +461,7 @@ class Ui_MainWindow(object):
         self.pushButton_5.setText(_translate("MainWindow", "Печать обложек"))
         self.pushButton_4.setText(_translate("MainWindow", "Печать значков"))
         self.pushButton_8.setText(_translate("MainWindow", "Создать файлы"))
+        self.pushButton_9.setText(_translate("MainWindow", "Создать файлы A3"))
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -474,6 +489,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.pushButton.clicked.connect(self.evt_btn_update)
         self.pushButton_3.clicked.connect(self.evt_btn_open_file_clicked)
         self.pushButton_8.clicked.connect(self.evt_btn_create_files)
+        self.pushButton_9.clicked.connect(self.evt_btn_create_files_A3)
         self.pushButton_6.clicked.connect(self.evt_btn_print_stickers)
         self.pushButton_5.clicked.connect(self.evt_btn_print_skins)
         self.pushButton_4.clicked.connect(self.evt_btn_print_images)
@@ -527,6 +543,28 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             try:
                 if len(counts_art) > 0:
                     dialog = QueueDialog(counts_art, 'Значки', self.lineEdit.text(), self)
+                    self.dialogs.append(dialog)
+                    dialog.show()
+            except Exception as ex:
+                logger.error(f'Ошибка формирования списков печати {ex}')
+        else:
+            QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
+
+    def evt_btn_create_files_A3(self):
+        """Ивент на кнопку Создать файлы"""
+        if self.lineEdit.text():
+            try:
+                counts_art = read_excel_file(self.lineEdit.text())
+                for item in counts_art:
+                    status = Article.get_or_none(Article.art == item.art)
+                    if status:
+                        item.status = '✅'
+                counts_art = sorted(counts_art, key=lambda x: x.status, reverse=True)
+            except Exception as ex:
+                logger.error(ex)
+            try:
+                if len(counts_art) > 0:
+                    dialog = QueueDialog(counts_art, 'Значки', self.lineEdit.text(), self, True)
                     self.dialogs.append(dialog)
                     dialog.show()
             except Exception as ex:

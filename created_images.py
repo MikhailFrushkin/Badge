@@ -295,7 +295,7 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
             logger.error(ex)
 
 
-def created_good_images(all_arts, self, A3_flag=True):
+def created_good_images(all_arts, self, A3_flag=False):
     try:
         ready_path = 'Файлы на печать'
         Orders.drop_table()
