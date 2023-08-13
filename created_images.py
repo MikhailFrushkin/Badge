@@ -1,10 +1,12 @@
 import json
 import json
+import math
 import os
 import shutil
 import time
 from io import BytesIO
 
+import PyPDF2
 from PIL import Image, ImageDraw, ImageFont
 from PyPDF2 import PdfReader, PdfWriter
 from PyQt5.QtWidgets import QMessageBox
@@ -226,9 +228,9 @@ def distribute_images(queryset, size, A3_flag):
             current_count = list_arts[0][1]
             list_arts.remove(list_arts[0])
 
-    logger.debug(f'Сумма значков: {sum([len(i) for i in sets_of_orders])}')
-    logger.debug(f'Сумма значков на листах: {set([len(i) for i in sets_of_orders])}')
-    logger.debug(f'Количество листов: {len(sets_of_orders)}')
+    logger.info(f'Сумма значков: {sum([len(i) for i in sets_of_orders])}')
+    logger.info(f'Сумма значков на листах: {set([len(i) for i in sets_of_orders])}')
+    logger.info(f'Количество листов: {len(sets_of_orders)}')
     return sets_of_orders
 
 
@@ -304,6 +306,23 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
             logger.error(ex)
 
 
+def merge_pdfs_stickers(queryset, output_path):
+    pdf_writer = PyPDF2.PdfWriter()
+    input_paths = [i.sticker for i in queryset]
+    for index, input_path in enumerate(input_paths, start=1):
+        with open(input_path, 'rb') as pdf_file:
+            pdf_reader = PyPDF2.PdfReader(pdf_file)
+
+            # Add all pages from PdfReader to PdfWriter
+            for page in pdf_reader.pages:
+                pdf_writer.add_page(page)
+
+    current_output_path = f"{output_path}.pdf"
+    with open(current_output_path, 'wb') as output_file:
+        pdf_writer.write(output_file)
+    PyPDF2.PdfWriter()
+
+
 def created_good_images(all_arts, self, A3_flag=False):
     try:
         ready_path = 'Файлы на печать'
@@ -351,20 +370,36 @@ def created_good_images(all_arts, self, A3_flag=False):
         records = sorted([i.size for i in records])
 
         for size in records:
+            queryset = Orders.select().where(Orders.size == size)
+
             if self:
                 self.progress_bar.setValue(0)
                 self.progress_label.setText(f"Прогресс: Создание подложек {size} mm.")
 
-                progress = ProgressBar(Orders.select().where(Orders.size == size).count(), self)
+                progress = ProgressBar(queryset.count(), self)
 
-            combine_images_to_pdf(Orders.select().where(Orders.size == size), f"{ready_path}/{size}.pdf",
-                                  progress, self, A3_flag)
+            try:
+                logger.debug(f'Создание наклейки {size}')
+                combine_images_to_pdf(queryset, f"{ready_path}/{size}.pdf",
+                                      progress, self, A3_flag)
+            except Exception as ex:
+                logger.error(ex)
+
+            try:
+                logger.debug(f'Создание файла ШК {size}')
+                merge_pdfs_stickers(queryset, f'Файлы на печать\\{size}ШК')
+            except Exception as ex:
+                logger.error(ex)
+
             sum_result = Orders.select(fn.SUM(Orders.nums_in_folder)).where(Orders.size == size).scalar()
+            logger.info(f"Сумма значений в столбце: {sum_result}")
 
-            logger.debug(f"Сумма значений в столбце: {sum_result}")
-
-            sets_of_orders = distribute_images(Orders.select().where(Orders.size == size), size, A3_flag)
-            create_contact_sheet(sets_of_orders, size, self, A3_flag)
+            sets_of_orders = distribute_images(queryset, size, A3_flag)
+            try:
+                logger.debug(f'Создание листов со значками {size}')
+                create_contact_sheet(sets_of_orders, size, self, A3_flag)
+            except Exception as ex:
+                logger.error(ex)
         QMessageBox.information(self, 'Завершено', 'Создание файлов завершено!')
 
         records = Orders.select()

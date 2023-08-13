@@ -72,11 +72,6 @@ def read_table_google(CREDENTIALS_FILE='google_acc.json',
             progress.update_progress()
 
 
-# def download_file(url, local_path):
-#     response = requests.get(url)
-#     with open(f'{local_path}.zip', 'wb') as file:
-#         file.write(response.content)
-
 def download_file(url, local_path):
     with open(f'{local_path}.zip', 'wb') as f:
         with requests.get(url, stream=True) as r:

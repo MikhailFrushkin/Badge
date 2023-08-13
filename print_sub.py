@@ -48,7 +48,7 @@ def print_pdf_skin(printers):
 
     for file in os.listdir(f'{ready_path}'):
         if os.path.isfile(os.path.join(ready_path, file)):
-            if file.split('.')[1] == 'pdf':
+            if file.split('.')[1] == 'pdf' and file.split('.')[0].isdigit():
                 file_path = os.path.join(ready_path, file)
                 file_list.append(file_path)
 
@@ -59,7 +59,6 @@ def print_pdf_skin(printers):
         try:
             print_processes = []
             print_command = f'"{acrobat_path}" /N /T "{file_path}" "{printer_name}"'
-            print_command += ' /P "A4 NoMargins"'
             print_process = subprocess.Popen(print_command, shell=True)
             print_processes.append(print_process)
             logger.success(f'Файл {file_path} отправлен на печать на принтер {printer_name}')
