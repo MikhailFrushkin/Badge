@@ -99,7 +99,7 @@ def enum_printers(start=None) -> list:
 
     for printer in printers:
         for port in printer['pPortName'].split(','):
-            if not port.strip().startswith('USB'):
+            if port.strip().startswith('USB'):
                 usb_printers.append(printer['pPrinterName'])
 
     logger.info("Доступные принтеры, подключенные по USB: {}".format(", ".join(usb_printers)))

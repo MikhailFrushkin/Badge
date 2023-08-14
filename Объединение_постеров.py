@@ -70,7 +70,7 @@ def merge_pdfs(input_paths, output_path):
     pdf_writer = PyPDF2.PdfWriter()
 
     # Calculate the number of groups needed based on the maximum of 10 elements per group
-    count = 60
+    count = 57
     num_groups = math.ceil(len(input_paths) / count)
 
     for group_index in range(num_groups):
@@ -193,6 +193,7 @@ def main(filename):
         print(file_name.replace('.pdf', ''))
     print(f'Длина найденных артикулов {len(found_files_all)}')
     print(f'Длина не найденных артикулов {len(not_found_files)}')
+    #
     file_new_name = filename.split("\\")[-1]
     output_path_gloss = rf'E:\Новая база\{file_new_name}'
     merge_pdfs(found_files_all, output_path_gloss)
@@ -200,7 +201,8 @@ def main(filename):
 
 if __name__ == '__main__':
     # Сканирование артикулов из заказа и показ ненайденных
-    main(r'C:\Users\454\Downloads\сотка5.xlsx')
+
+    main(r'C:\Users\Михаил\Downloads\ПОСТЕРЫ115 ЗАКАЗ 3.xlsx')
 
     # Объеденение изображений в pdf из указанной папки
     #

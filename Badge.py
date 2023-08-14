@@ -18,7 +18,7 @@ from peewee import fn
 from config import all_badge
 from created_images import created_good_images
 from db import Article, Statistic
-from dow_stickers2 import main_download_stickers
+from dow_stickers import main_download_stickers
 from main import update_db, download_new_arts_in_comp, update_arts_db2, update_sticker_path
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
 from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx
