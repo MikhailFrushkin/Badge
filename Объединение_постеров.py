@@ -1,76 +1,77 @@
 import glob
+import io
 import math
 import os
 import tempfile
-from pprint import pprint
 
 import PyPDF2
+import fitz
 import pandas as pd
 from PIL import Image
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
 from loguru import logger
 from reportlab.lib.pagesizes import A3
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
-
-from utils import df_in_xlsx
-
-
-def read_table_google(CREDENTIALS_FILE='google_acc.json',
-                      spreadsheet_id='1IaXufU8CYTQsMDxEvynBzlRAFm_G43Kll0PO3lvQDxA'):
-    logger.debug(f'Читаю гугл таблицу')
-    try:
-        credentials = service_account.Credentials.from_service_account_file(CREDENTIALS_FILE)
-        service = build('sheets', 'v4', credentials=credentials)
-        # Пример чтения файла
-        values = service.spreadsheets().values().get(
-            spreadsheetId=spreadsheet_id,
-            range='Надо сделать!B1:M30000',
-        ).execute()
-
-    except Exception as ex:
-        logger.error(f'Ошибка чтения гуглтаблицы {ex}')
-    data = values.get('values', [])
-    headers = data[0]
-    for row in data:
-        missing_columns = len(headers) - len(row)
-        if missing_columns > 0:
-            row += [''] * missing_columns
-
-    headers = data[0]  # Заголовки столбцов из первого элемента списка значений
-    rows = data[1:]
-    if len(headers) != len(rows[0]):
-        pprint(headers)
-        print(len(headers), len(rows[0]))
-
-        pprint(rows[0])
-        print("Ошибка: количество столбцов не совпадает с количеством значений.")
-    else:
-        df = pd.DataFrame(rows, columns=headers)
-        df_in_xlsx(df, 'Таблица гугл')
+from tqdm import tqdm
 
 
-def search_url(list_of_values):
-    df = pd.read_excel('Таблица гугл.xlsx')
-    df['Артикул на ВБ'] = df['Артикул на ВБ'].str.lower()
-    list_of_values = [value.lower() for value in list_of_values]
-    # Создайте новый столбец, в котором будет найденное значение из списка, если оно присутствует в тексте столбца "Артикул на ВБ"
-    df['Найденное значение'] = df['Артикул на ВБ'].apply(
-        lambda x: next((value for value in list_of_values if value in x), None))
-    # Отфильтруйте строки, в которых найдено значение из списка
-    filtered_df = df[df['Найденное значение'].notnull()]
-    # Оставьте только столбцы "Артикул на ВБ", "Ссылка" и "Найденное значение"
-    result = filtered_df[['Артикул на ВБ', 'Ссылка', 'Найденное значение']]
-    # Вывод результата
-    df_in_xlsx(result, 'Ссылки на скачивание')
-    print(result)
+def compression_pdf(pdf_file_path, output_pdf_path):
+    pdf_document = fitz.open(pdf_file_path)
+    # Параметры сжатия изображений
+    image_compression_quality = 100  # Уровень качества JPEG
+    # Создаем новый PDF-документ
+    output_pdf = canvas.Canvas(output_pdf_path, pagesize=A3)
+    # Размеры страницы A3
+    a3_width, a3_height = A3
+    # Обходим страницы PDF
+    for page_num in tqdm(range(pdf_document.page_count), desc="Обработка страниц", unit="стр"):
+        page = pdf_document[page_num]
+        img_list = page.get_images(full=True)
+
+        # Создаем новую страницу (кроме первой)
+        if page_num != 0:
+            output_pdf.showPage()
+
+        # Обходим изображения на странице
+        for img_index, img in enumerate(img_list):
+            xref = img[0]
+            base_image = pdf_document.extract_image(xref)
+            img_data = base_image["image"]
+
+            # Сжимаем и сохраняем изображение
+            img_pil = Image.open(io.BytesIO(img_data))
+            img_pil.save('temp_img.jpg', format='JPEG', quality=image_compression_quality)
+
+            # Загружаем изображение с помощью ReportLab
+            img_width, img_height = img_pil.size
+
+            # Рассчитываем размеры и координаты для вставки изображения на странице A3
+            if img_width > a3_width or img_height > a3_height:
+                img_width, img_height = a3_width, a3_height
+            x_pos = (a3_width - img_width) / 2
+            y_pos = (a3_height - img_height) / 2
+
+            pdf_image = ImageReader('temp_img.jpg')
+
+            # Вставляем изображение на текущую страницу
+            output_pdf.drawImage(pdf_image, x_pos, y_pos, width=img_width, height=img_height)
+
+            # Удаляем временное изображение
+            img_pil.close()
+
+    # Закрываем PDF-документ
+    output_pdf.save()
+
+    # Закрываем исходный PDF
+    pdf_document.close()
+
+    print("Готово!")
 
 
 def merge_pdfs(input_paths, output_path):
     pdf_writer = PyPDF2.PdfWriter()
-
     # Calculate the number of groups needed based on the maximum of 10 elements per group
-    count = 57
+    count = 60
     num_groups = math.ceil(len(input_paths) / count)
 
     for group_index in range(num_groups):
@@ -84,7 +85,6 @@ def merge_pdfs(input_paths, output_path):
             print(index, input_path)
             with open(input_path, 'rb') as pdf_file:
                 pdf_reader = PyPDF2.PdfReader(pdf_file)
-
                 # Add all pages from PdfReader to PdfWriter
                 for page in pdf_reader.pages:
                     pdf_writer.add_page(page)
@@ -135,7 +135,6 @@ def one_pdf(folder_path, filename):
 def find_files_in_directory(directory_path, file_list):
     found_files = []
     not_found_files = []
-
     for file_name in file_list:
         file_path = os.path.join(directory_path, file_name)
         if os.path.exists(file_path):
@@ -152,7 +151,6 @@ def find_intersection(list1, list2):
 
 def main(filename):
     target_directory = r"E:\Новая база\Готовые pdf"
-
     df = pd.read_excel(filename)
     df['Артикул продавца'] = df['Артикул продавца'].apply(lambda x: x.lower() + '.pdf')
     art_list2 = df['Артикул продавца'].to_list()
@@ -193,19 +191,25 @@ def main(filename):
         print(file_name.replace('.pdf', ''))
     print(f'Длина найденных артикулов {len(found_files_all)}')
     print(f'Длина не найденных артикулов {len(not_found_files)}')
-    #
+
     file_new_name = filename.split("\\")[-1]
     output_path_gloss = rf'E:\Новая база\{file_new_name}'
     merge_pdfs(found_files_all, output_path_gloss)
 
 
 if __name__ == '__main__':
-    # Сканирование артикулов из заказа и показ ненайденных
-
-    main(r'C:\Users\Михаил\Downloads\ПОСТЕРЫ115 ЗАКАЗ 3.xlsx')
-
-    # Объеденение изображений в pdf из указанной папки
+    # # Сканирование артикулов из заказа и показ ненайденных
     #
-    directory = r'E:\Новая база\сделать'
-    for i in os.listdir(directory):
-        one_pdf(folder_path=os.path.join(directory, i), filename=i)
+    # main(r'C:\Users\Михаил\Downloads\ПОСТЕРЫ 175 ЗАКАЗ4.xlsx')
+    #
+    # # Объеденение изображений в pdf из указанной папки
+    # #
+    # directory = r'E:\Новая база\сделать'
+    # for i in os.listdir(directory):
+    #     one_pdf(folder_path=os.path.join(directory, i), filename=i)
+
+    directory = r'E:\Новая база\Готовые pdf'
+    output_directory = r'E:\Новая база\E:\Новая база\Готовые pdf сжатые'
+    for index, file in enumerate(os.listdir(directory)):
+        compression_pdf(pdf_file_path=os.path.join(directory, file),
+                        output_pdf_path=os.path.join(output_directory, file))

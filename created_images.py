@@ -7,6 +7,7 @@ import time
 from io import BytesIO
 
 import PyPDF2
+import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 from PyPDF2 import PdfReader, PdfWriter
 from PyQt5.QtWidgets import QMessageBox
@@ -16,7 +17,7 @@ from reportlab.lib.pagesizes import A4, A3, landscape
 from reportlab.pdfgen import canvas
 
 from db import Article, Orders, Statistic
-from utils import ProgressBar
+from utils import ProgressBar, df_in_xlsx
 
 
 def add_header_and_footer_to_pdf(pdf_file, footer_text, A3_flag):
@@ -277,18 +278,24 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
 
                         if size == 56:
                             contact_sheet.paste(image, (j * image_width - 10, i * image_height + 10 * (i + 1)))
-                            border_rect = [(j * image_width - 10, i * image_height + 10 * (i + 1)),
-                                           ((j + 1) * image_width - 10, (i + 1) * image_height + 10 * (i + 1))]
+                            border_rect = [j * image_width - 10, i * image_height + 10 * (i + 1),
+                                           (j + 1) * image_width - 10, (i + 1) * image_height + 10 * (i + 1)]
                         elif size == 25 or size == 44:
                             contact_sheet.paste(image, (j * image_width + 100, i * image_height + 10 * (i + 1)))
-                            border_rect = [(j * image_width + 100, i * image_height + 10 * (i + 1)),
-                                           ((j + 1) * image_width + 100, (i + 1) * image_height + 10 * (i + 1))]
+                            border_rect = [j * image_width + 100, i * image_height + 10 * (i + 1),
+                                           (j + 1) * image_width + 100, (i + 1) * image_height + 10 * (i + 1)]
                         else:
                             contact_sheet.paste(image, (j * image_width + 10, i * image_height + 10 * (i + 1)))
-                            border_rect = [(j * image_width + 10, i * image_height + 10 * (i + 1)),
-                                           ((j + 1) * image_width + 10, (i + 1) * image_height + 10 * (i + 1))]
-
-                        draw.rectangle(border_rect, outline=border_color, width=border_width)
+                            border_rect = [j * image_width + 10, i * image_height + 10 * (i + 1),
+                                           (j + 1) * image_width + 10, (i + 1) * image_height + 10 * (i + 1)]
+                        # Параметры круга
+                        circle_center = ((border_rect[0] + border_rect[2]) // 2, (border_rect[1] + border_rect[3]) // 2)
+                        circle_radius = min((border_rect[2] - border_rect[0]) // 2,
+                                            (border_rect[3] - border_rect[1]) // 2)
+                        draw.ellipse((circle_center[0] - circle_radius, circle_center[1] - circle_radius,
+                                      circle_center[0] + circle_radius, circle_center[1] + circle_radius),
+                                     outline=border_color, width=border_width)
+                        # draw.rectangle(border_rect, outline=border_color, width=border_width)
 
                     except IndexError as ex:
                         pass
@@ -330,6 +337,7 @@ def created_good_images(all_arts, self, A3_flag=False):
         if not Orders.table_exists():
             Orders.create_table(safe=True)
         bad_arts = []
+        bad_arts_stickers = []
         try:
             shutil.rmtree(ready_path, ignore_errors=True)
             time.sleep(1)
@@ -358,13 +366,20 @@ def created_good_images(all_arts, self, A3_flag=False):
                          }
                         ] * art.count
                 Orders.bulk_create([Orders(**item) for item in data])
-            else:
-                bad_arts.append((art.count, art.count))
-
         sorted_orders = Orders.sorted_records()
         for index, row in enumerate(sorted_orders, start=1):
             row.num_on_list = index
             row.save()
+            if not row.sticker:
+                bad_arts_stickers.append((row.art, row.size))
+                print((row.art, row.size))
+
+        # Запись ненайденных артикулов и с отсутсвующих стикеров в файл
+        try:
+            df_bad_sticker = pd.DataFrame(bad_arts_stickers, columns=['Артикул', 'Размер'])
+            df_in_xlsx(df_bad_sticker, 'Не найденные стикеры в заказе')
+        except Exception as ex:
+            logger.error(ex)
 
         records = Orders.select(Orders.size).order_by('-size').distinct()
         records = sorted([i.size for i in records])
@@ -384,12 +399,14 @@ def created_good_images(all_arts, self, A3_flag=False):
                                       progress, self, A3_flag)
             except Exception as ex:
                 logger.error(ex)
+                logger.error(f'Не удалось создать файл наклейнки {size}')
 
             try:
                 logger.debug(f'Создание файла ШК {size}')
                 merge_pdfs_stickers(queryset, f'Файлы на печать\\{size}ШК')
             except Exception as ex:
                 logger.error(ex)
+                logger.error(f'Не удалось создать файл ШК {size}, возможно не одного не найденно')
 
             sum_result = Orders.select(fn.SUM(Orders.nums_in_folder)).where(Orders.size == size).scalar()
             logger.info(f"Сумма значений в столбце: {sum_result}")

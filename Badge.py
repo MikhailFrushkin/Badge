@@ -538,6 +538,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     if status:
                         item.status = '✅'
                 counts_art = sorted(counts_art, key=lambda x: x.status, reverse=True)
+                try:
+                    bad_arts = [(i.art, i.count) for i in counts_art if i.status == '❌']
+                    df_bad = pd.DataFrame(bad_arts, columns=['Артикул', 'Количество'])
+                    df_in_xlsx(df_bad, 'Не найденные артикула в заказе')
+                except Exception as ex:
+                    logger.error(ex)
             except Exception as ex:
                 logger.error(ex)
             try:
