@@ -38,8 +38,22 @@ if __name__ == '__main__':
     #
     # df = pd.DataFrame(list_arts, columns=['Артикул продавца'])
     # df_in_xlsx(df, '1233')
+
+    # directory = r'E:\Новая база\сделать'
+    # ou_directory = r'E:\Новая база\Ready pdf compress'
+    # for file in os.listdir(directory):
+    #     compression_pdf(pdf_file_path=os.path.join(directory, file),
+    #                     output_pdf_path=os.path.join(ou_directory, file))
+    #
     directory = r'E:\Новая база\сделать'
-    ou_directory = r'E:\Новая база\Ready pdf compress'
-    for file in os.listdir(directory):
-        compression_pdf(pdf_file_path=os.path.join(directory, file),
-                        output_pdf_path=os.path.join(ou_directory, file))
+    out_directory = r'E:\Новая база\Ready pdf compress'
+    with open('проблемные пдф.txt', 'r') as f:
+        data = f.read()
+    paths = data.replace('Ready pdf compress', 'Готовые pdf').split('\n')
+    for i in paths:
+        if os.path.exists(i):
+            print(i)
+            filename = i.split('\\')[-1]
+            print(filename)
+            compression_pdf(pdf_file_path=i,
+                            output_pdf_path=os.path.join(out_directory, filename))
