@@ -315,15 +315,18 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
 
 def merge_pdfs_stickers(queryset, output_path):
     pdf_writer = PyPDF2.PdfWriter()
-    input_paths = [i.sticker for i in queryset]
+    input_paths = [i.sticker for i in queryset if i.sticker]
+    print(input_paths)
     for index, input_path in enumerate(input_paths, start=1):
-        with open(input_path, 'rb') as pdf_file:
-            pdf_reader = PyPDF2.PdfReader(pdf_file)
+        try:
+            with open(input_path, 'rb') as pdf_file:
+                pdf_reader = PyPDF2.PdfReader(pdf_file)
 
-            # Add all pages from PdfReader to PdfWriter
-            for page in pdf_reader.pages:
-                pdf_writer.add_page(page)
-
+                # Add all pages from PdfReader to PdfWriter
+                for page in pdf_reader.pages:
+                    pdf_writer.add_page(page)
+        except Exception:
+            pass
     current_output_path = f"{output_path}.pdf"
     with open(current_output_path, 'wb') as output_file:
         pdf_writer.write(output_file)

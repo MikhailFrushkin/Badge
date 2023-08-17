@@ -192,17 +192,18 @@ def main(filename):
         print(file_name.replace('.pdf', ''))
     print(f'Длина найденных артикулов {len(found_files_all)}')
     print(f'Длина не найденных артикулов {len(not_found_files)}')
-
-    file_new_name = filename.split("\\")[-1]
-    output_path_gloss = rf'E:\Новая база\{file_new_name}'
-    merge_pdfs(found_files_all, output_path_gloss)
+    #
+    # file_new_name = filename.split("\\")[-1]
+    # output_path_gloss = rf'E:\Новая база\{file_new_name}'
+    # merge_pdfs(found_files_all, output_path_gloss)
 
 
 if __name__ == '__main__':
     # # Сканирование артикулов из заказа и показ ненайденных
     #
-    # main(r'C:\Users\Михаил\Downloads\ПОСТЕРЫ 175 ЗАКАЗ4.xlsx')
-    #
+    # main(r'C:\Users\Михаил\Downloads\1608 новая 1.xlsx')
+
+
     # # Объеденение изображений в pdf из указанной папки
     # #
     # directory = r'E:\Новая база\сделать'
