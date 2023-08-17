@@ -17,6 +17,7 @@ from tqdm import tqdm
 
 
 def compression_pdf(pdf_file_path, output_pdf_path):
+    logger.debug(f'Сжатие файла {pdf_file_path}')
     pdf_document = fitz.open(pdf_file_path)
     # Параметры сжатия изображений
     image_compression_quality = 100  # Уровень качества JPEG
@@ -69,10 +70,8 @@ def compression_pdf(pdf_file_path, output_pdf_path):
     print("Готово!")
 
 
-def merge_pdfs(input_paths, output_path):
+def merge_pdfs(input_paths, output_path, count=100):
     pdf_writer = PyPDF2.PdfWriter()
-    # Calculate the number of groups needed based on the maximum of 10 elements per group
-    count = 60
     num_groups = math.ceil(len(input_paths) / count)
 
     for group_index in range(num_groups):
@@ -83,13 +82,19 @@ def merge_pdfs(input_paths, output_path):
         current_group_paths = input_paths[start_index:end_index]
 
         for index, input_path in enumerate(current_group_paths, start=1):
-            print(index, input_path)
-            with open(input_path, 'rb') as pdf_file:
-                pdf_reader = PyPDF2.PdfReader(pdf_file)
-                # Add all pages from PdfReader to PdfWriter
-                for page in pdf_reader.pages:
-                    pdf_writer.add_page(page)
-
+            try:
+                print(index, input_path)
+                with open(input_path, 'rb') as pdf_file:
+                    pdf_reader = PyPDF2.PdfReader(pdf_file)
+                    # Add all pages from PdfReader to PdfWriter
+                    for page in pdf_reader.pages:
+                        pdf_writer.add_page(page)
+            except Exception as ex:
+                os.remove(input_path)
+                logger.error(input_path)
+                with open('проблемные пдф.txt', "a") as file:
+                    # Записываем строки в файл
+                    file.writelines(f'{input_path}\n')
         # Write the merged pages to the output file with an index
         current_output_path = f"{output_path}_{group_index + 1}.pdf"
         with open(current_output_path, 'wb') as output_file:
@@ -101,6 +106,7 @@ def merge_pdfs(input_paths, output_path):
 
 def one_pdf(folder_path, filename):
     pdf_filename = fr'E:\Новая база\сделать\\{filename}.pdf'
+    pdf_filename_out = fr'E:\Новая база\Ready pdf compress\\{filename}.pdf'
     if os.path.exists(pdf_filename):
         logger.debug(f'Файл существует: {pdf_filename}')
     else:
@@ -131,6 +137,11 @@ def one_pdf(folder_path, filename):
                 c.showPage()
         c.save()
         logger.success(f'Создан файл: {pdf_filename}')
+    try:
+        compression_pdf(pdf_filename, pdf_filename_out)
+    except Exception as ex:
+        logger.error(ex)
+        logger.error(pdf_filename)
 
 
 def find_files_in_directory(directory_path, file_list):
@@ -151,40 +162,10 @@ def find_intersection(list1, list2):
 
 
 def main(filename):
-    target_directory = r"E:\Новая база\Готовые pdf"
+    target_directory = r"E:\Новая база\Ready pdf compress"
     df = pd.read_excel(filename)
     df['Артикул продавца'] = df['Артикул продавца'].apply(lambda x: x.lower() + '.pdf')
     art_list2 = df['Артикул продавца'].to_list()
-    # art_list_gloss = [i for i in art_list2 if
-    #                   '-gloss.' in i or '-gloss-' in i or '-glos' in i or '-clos' in i or '-glouss' in i]
-    # art_list_mat = [i for i in art_list2 if '-mat.' in i or '-mat-' in i]
-    #
-    # intersection = find_intersection(art_list_gloss, art_list_mat)
-    # logger.error(intersection)
-    #
-    # found_files_gloss, not_found_files = find_files_in_directory(target_directory, art_list_gloss)
-    # print("\nФайлы не найдены:")
-    # for file_name in not_found_files:
-    #     print(file_name.replace('.pdf', ''))
-    # print(f'Длина найденных артикулов {len(found_files_gloss)}')
-    # print(f'Длина не найденных артикулов {len(not_found_files)}')
-    #
-    # found_files_mat, not_found_files = find_files_in_directory(target_directory, art_list_mat)
-    #
-    # print("\nФайлы не найдены:")
-    # for file_name in not_found_files:
-    #     print(file_name.replace('.pdf', ''))
-    # print(f'Длина найденных артикулов {len(found_files_mat)}')
-    # print(f'Длина не найденных артикулов {len(not_found_files)}')
-
-    # output_path_gloss = r'E:\Новая база\8 раз на печать (артикула по 80шт)'
-    # merge_pdfs(found_files_gloss, output_path_gloss)
-    #
-    # output_path_mat = r'E:\Новая база\финсиб13 matt'
-    # merge_pdfs(found_files_mat, output_path_mat)
-    #
-    # miss_arts = set(art_list2) - set(art_list_gloss) - set(art_list_mat)
-    # print(miss_arts)
 
     found_files_all, not_found_files = find_files_in_directory(target_directory, art_list2)
     print("\nФайлы не найдены:")
@@ -192,35 +173,34 @@ def main(filename):
         print(file_name.replace('.pdf', ''))
     print(f'Длина найденных артикулов {len(found_files_all)}')
     print(f'Длина не найденных артикулов {len(not_found_files)}')
-    #
-    # file_new_name = filename.split("\\")[-1]
-    # output_path_gloss = rf'E:\Новая база\{file_new_name}'
-    # merge_pdfs(found_files_all, output_path_gloss)
+
+    file_new_name = filename.split("\\")[-1]
+    output_path_gloss = rf'E:\Новая база\{file_new_name}'
+    merge_pdfs(found_files_all[:100], output_path_gloss)
 
 
 if __name__ == '__main__':
     # # Сканирование артикулов из заказа и показ ненайденных
     #
-    # main(r'C:\Users\Михаил\Downloads\1608 новая 1.xlsx')
-
+    main(r'C:\Users\Михаил\Downloads\1708 новая 5.xlsx')
 
     # # Объеденение изображений в pdf из указанной папки
     # #
-    # directory = r'E:\Новая база\сделать'
-    # for i in os.listdir(directory):
-    #     one_pdf(folder_path=os.path.join(directory, i), filename=i)
+    directory = r'E:\Новая база\сделать'
+    for i in os.listdir(directory):
+        one_pdf(folder_path=os.path.join(directory, i), filename=i)
 
-    directory = r'E:\Новая база\Готовые pdf'
-    output_directory = r'E:\Новая база\Готовые pdf сжатые'
-    for index, file in enumerate(os.listdir(directory)):
-        try:
-            if not os.path.exists(os.path.join(output_directory, file)):
-                start = datetime.datetime.now()
-                compression_pdf(pdf_file_path=os.path.join(directory, file),
-                                output_pdf_path=os.path.join(output_directory, file))
-                print(f'Сжатие {os.path.join(directory, file)} - {datetime.datetime.now() - start}')
-            else:
-                print(f'Существует {os.path.join(output_directory, file)}')
-        except Exception as ex:
-            logger.error(os.path.join(directory, file))
-            logger.error(ex)
+    # directory = r'E:\Новая база\Готовые pdf'
+    # output_directory = r'E:\Новая база\Готовые pdf сжатые'
+    # for index, file in enumerate(os.listdir(directory)):
+    #     try:
+    #         if not os.path.exists(os.path.join(output_directory, file)):
+    #             start = datetime.datetime.now()
+    #             compression_pdf(pdf_file_path=os.path.join(directory, file),
+    #                             output_pdf_path=os.path.join(output_directory, file))
+    #             print(f'Сжатие {os.path.join(directory, file)} - {datetime.datetime.now() - start}')
+    #         else:
+    #             print(f'Существует {os.path.join(output_directory, file)}')
+    #     except Exception as ex:
+    #         logger.error(os.path.join(directory, file))
+    #         logger.error(ex)
