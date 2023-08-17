@@ -1,4 +1,3 @@
-import datetime
 import glob
 import io
 import math
@@ -176,20 +175,23 @@ def main(filename):
 
     file_new_name = filename.split("\\")[-1]
     output_path_gloss = rf'E:\Новая база\{file_new_name}'
-    merge_pdfs(found_files_all[:100], output_path_gloss)
+    merge_pdfs(found_files_all, output_path_gloss)
 
 
 if __name__ == '__main__':
     # # Сканирование артикулов из заказа и показ ненайденных
     #
-    main(r'C:\Users\Михаил\Downloads\1708 новая 5.xlsx')
+    # main(r'C:\Users\Михаил\Downloads\1708 новая 5.xlsx')
 
-    # # Объеденение изображений в pdf из указанной папки
-    # #
-    directory = r'E:\Новая база\сделать'
+    # Объеденение изображений в pdf из указанной папки
+    #
+    directory = r'E:\\Новая база\\сделать'
     for i in os.listdir(directory):
-        one_pdf(folder_path=os.path.join(directory, i), filename=i)
-
+        filename = f'E:\\Новая база\\сделать\\{i}.pdf'
+        if not os.path.exists(filename) and os.path.isdir(i):
+            one_pdf(folder_path=os.path.join(directory, i), filename=i)
+        else:
+            print(f'файл существует {filename}')
     # directory = r'E:\Новая база\Готовые pdf'
     # output_directory = r'E:\Новая база\Готовые pdf сжатые'
     # for index, file in enumerate(os.listdir(directory)):
