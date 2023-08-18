@@ -9,7 +9,7 @@ from loguru import logger
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 
-from config import anikoya_path
+from config import anikoya_path, all_badge
 from db import Article
 
 
@@ -56,8 +56,8 @@ def df_in_xlsx(df, filename, max_width=50):
     workbook.save(f"{filename}.xlsx")
 
 
-def move_ready_folder(directory=rf'{anikoya_path}\Скаченные с диска',
-                      target_directory=rf'{anikoya_path}\Готовые\Новые',
+def move_ready_folder(directory=f'{all_badge}\\Скаченные с диска',
+                      target_directory=f'{anikoya_path}',
                       shop='AniKoya'):
     for folder in os.listdir(directory):
 

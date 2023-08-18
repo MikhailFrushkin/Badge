@@ -371,11 +371,15 @@ def created_good_images(all_arts, self, A3_flag=False):
                 Orders.bulk_create([Orders(**item) for item in data])
         sorted_orders = Orders.sorted_records()
         for index, row in enumerate(sorted_orders, start=1):
-            row.num_on_list = index
-            row.save()
-            if not row.sticker:
-                bad_arts_stickers.append((row.art, row.size))
-                print((row.art, row.size))
+            if not os.path.exists(row.folder):
+                logger.error(f'Папка не найдена {row.folder}')
+                row.delete_instance()
+            else:
+                row.num_on_list = index
+                row.save()
+                if not row.sticker:
+                    bad_arts_stickers.append((row.art, row.size))
+                    print((row.art, row.size))
 
         # Запись ненайденных артикулов и с отсутсвующих стикеров в файл
         try:
@@ -389,10 +393,6 @@ def created_good_images(all_arts, self, A3_flag=False):
 
         for size in records:
             queryset = Orders.select().where(Orders.size == size)
-            for row in queryset:
-                if not os.path.exists(row.folder):
-                    logger.error(f'Папка не найдена {row.folder}')
-                    row.delete_instance()
             if self:
                 self.progress_bar.setValue(0)
                 self.progress_label.setText(f"Прогресс: Создание подложек {size} mm.")

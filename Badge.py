@@ -76,7 +76,7 @@ class GroupedRecordsDialog(QDialog):
 
     def adjust_dialog_size(self):
         table_width = self.table_widget.sizeHint().width()
-        dialog_width = max(table_width + 50, 420)  # Minimum width of 400 pixels
+        dialog_width = max(table_width + 270, 420)  # Minimum width of 400 pixels
         self.setFixedWidth(dialog_width)
         self.adjustSize()
 

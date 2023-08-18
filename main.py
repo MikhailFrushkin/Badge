@@ -12,7 +12,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from loguru import logger
 
-from config import anikoya_path, dp_path, id_google_table_anikoya, id_google_table_DP, sticker_path_all
+from config import anikoya_path, dp_path, id_google_table_anikoya, id_google_table_DP, sticker_path_all, all_badge
 from db import add_record_google_table, GoogleTable, Article, db
 from utils import rename_files, move_ready_folder, ProgressBar
 
@@ -174,10 +174,7 @@ def main_download(public_link, shop, self=None):
     try:
         local_path = r'C:\temp'
         os.makedirs(local_path, exist_ok=True)
-        if shop == "DP":
-            comp_path = rf'{dp_path}\Скаченные с диска'
-        else:
-            comp_path = rf'{anikoya_path}\Скаченные с диска'
+        comp_path = rf'{all_badge}\Скаченные с диска'
         os.makedirs(comp_path, exist_ok=True)
 
         folder_path = download_folder(public_link, local_path, comp_path, self)
@@ -445,13 +442,10 @@ def download_new_arts_in_comp(list_arts, self=None):
             print(value)
             download_new_arts(link=key, arts_list=value[0], shop=value[1], self=self)
             if value[1] == 'DP':
-                move_ready_folder(directory=rf'{dp_path}\Скаченные с диска',
-                                  target_directory=rf'{dp_path}\Готовые\Новые',
+                move_ready_folder(target_directory=f'{dp_path}',
                                   shop='DP')
             else:
-                move_ready_folder(directory=rf'{anikoya_path}\Скаченные с диска',
-                                  target_directory=rf'{anikoya_path}\Готовые\Новые',
-                                  shop='AniKoya')
+                move_ready_folder()
             if self:
                 process.update_progress()
 
@@ -471,13 +465,13 @@ def update_arts_db():
 
     if not Article.table_exists():
         Article.create_table(safe=True)
-    for root, dirs, files in os.walk(rf'{dp_path}\Готовые'):
+    for root, dirs, files in os.walk(rf'{dp_path}'):
         for dir in dirs:
             if len(dir) > 10:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'DP')
                 print('\r', count, end='', flush=True)
-    for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
+    for root, dirs, files in os.walk(rf'{anikoya_path}'):
         for dir in dirs:
             if len(dir) > 10:
                 count += 1
@@ -512,13 +506,13 @@ def update_arts_db2():
 
     if not Article.table_exists():
         Article.create_table(safe=True)
-    for root, dirs, files in os.walk(rf'{dp_path}\Готовые'):
+    for root, dirs, files in os.walk(rf'{dp_path}'):
         for dir in dirs:
             if len(dir) > 10:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'DP')
                 print('\r', count, end='', flush=True)
-    for root, dirs, files in os.walk(rf'{anikoya_path}\Готовые'):
+    for root, dirs, files in os.walk(rf'{anikoya_path}'):
         for dir in dirs:
             if len(dir) > 10:
                 count += 1
@@ -540,7 +534,6 @@ def update_arts_db2():
         i.delete_instance()
         shutil.rmtree(i.folder)
         # shutil.move(i.folder, r'E:\Новая база значков\Проблемные')
-
 
     print('НЕ соответствует число картинок с базой')
     records = Article.select().where(Article.nums_in_folder != Article.nums)
