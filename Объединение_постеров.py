@@ -188,7 +188,7 @@ if __name__ == '__main__':
     directory = r'E:\\Новая база\\сделать'
     for i in os.listdir(directory):
         filename = f'E:\\Новая база\\сделать\\{i}.pdf'
-        if not os.path.exists(filename) and os.path.isdir(i):
+        if not os.path.exists(filename) and os.path.isdir(os.path.join(directory, i)):
             one_pdf(folder_path=os.path.join(directory, i), filename=i)
         else:
             print(f'файл существует {filename}')

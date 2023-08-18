@@ -389,7 +389,10 @@ def created_good_images(all_arts, self, A3_flag=False):
 
         for size in records:
             queryset = Orders.select().where(Orders.size == size)
-
+            for row in queryset:
+                if not os.path.exists(row.folder):
+                    logger.error(f'Папка не найдена {row.folder}')
+                    row.delete_instance()
             if self:
                 self.progress_bar.setValue(0)
                 self.progress_label.setText(f"Прогресс: Создание подложек {size} mm.")

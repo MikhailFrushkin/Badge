@@ -323,10 +323,10 @@ def download_new_arts(link, arts_list, shop, self=None):
         if len(list_skin_one) == 0:
             list_skin_one = [i for i in list_skin if '1' in i.lower() or 'one' in i.lower() or 'мал' in i.lower()]
         list_skin = [i for i in list_skin if i not in list_skin_one]
-        print(article_list)
-        print(list_skin_one)
-        print(list_skin)
-        print(list_image)
+        print("Артикула: ", article_list)
+        print("Наклейки одиночки: ", list_skin_one)
+        print("Наклейки наборы: ", list_skin)
+        print("Изображения значков: ", list_image)
         for folder in article_list:
             folder_art = os.path.join(new_folder, folder)
             os.makedirs(folder_art, exist_ok=True)
