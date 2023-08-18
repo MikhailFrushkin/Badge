@@ -1,0 +1,165 @@
+import os
+from datetime import datetime
+
+from loguru import logger
+from peewee import *
+
+from config import sticker_path_all, dp_path, anikoya_path
+
+db = SqliteDatabase('mydatabase.db')
+
+
+class GoogleTable(Model):
+    name = CharField(null=True)
+    quantity = CharField(null=True)
+    designer = CharField(null=True)
+    date = DateField(null=True)
+    folder_link = CharField(null=True)
+    singles = BooleanField(null=True)
+    mockups = BooleanField(null=True)
+    packaging = BooleanField(null=True)
+    checked_by_katya = BooleanField(null=True)
+    added = BooleanField(null=True)
+    performer = CharField(null=True)
+    article = CharField(null=True)
+    status_download = BooleanField(default=False)
+    shop = CharField(null=True)
+    created_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        database = db
+
+
+class Article(Model):
+    art = CharField(null=True, index=True)
+    folder = CharField(null=True)
+    nums = IntegerField(null=True)
+    nums_in_folder = IntegerField(null=True)
+    size = IntegerField(null=True)
+    skin = CharField(null=True)
+    sticker = CharField(null=True)
+    images = TextField(null=True)
+    shop = CharField(null=True)
+    created_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        database = db
+
+    def __str__(self):
+        return self.art
+
+    @classmethod
+    def create_with_art(cls, art, folder, shop):
+        existing_article = cls.get_or_none(art=art)
+        if existing_article:
+            return existing_article
+        try:
+            nums, size = art.split('-')[-2:]
+            nums = int(nums)
+            size = int(size)
+        except (ValueError, IndexError):
+            nums = None
+            if art.endswith('56'):
+                size = 56
+            else:
+                size = 37
+        article = cls.create(art=art, folder=os.path.abspath(folder), nums=nums, size=size, shop=shop)
+        article.fill_additional_columns()
+        return article
+
+    def find_skin_filename(self, folder_name):
+        lower_filenames = [filename.lower() for filename in os.listdir(folder_name)]
+        for filename in lower_filenames:
+            if "подлож" in filename or "один" in filename:
+                return filename
+
+    def fill_additional_columns(self):
+        folder_name = os.path.abspath(self.folder)
+        # Заполнение столбца "Skin"
+        skin_filename = self.find_skin_filename(folder_name)
+        if skin_filename:
+            self.skin = os.path.join(folder_name, skin_filename)
+        # Заполнение столбца "Images"
+        image_filenames = [os.path.join(folder_name, f) for f in os.listdir(folder_name)
+                           if os.path.isfile(os.path.join(folder_name, f)) and
+                           (f.split('.')[0].startswith('!') or f.split('.')[0].isdigit())]
+        self.images = ', '.join(image_filenames) if image_filenames else None
+        self.nums_in_folder = len(image_filenames)
+
+        name_sticker = self.art + '.pdf'
+        sticker_file_path = None
+
+        # Поиск файла с учетом разных регистров
+        for file_name in os.listdir(sticker_path_all):
+            if file_name == name_sticker or file_name.lower() == name_sticker:
+                sticker_file_path = os.path.join(sticker_path_all, file_name)
+                break
+
+        self.sticker = sticker_file_path
+        self.save()
+
+
+class Orders(Article):
+    num_on_list = IntegerField(null=True)
+
+    class Meta:
+        database = db
+        ordering = ['size', 'art']
+
+    @classmethod
+    def sorted_records(cls):
+        # Метод класса для получения отсортированных записей
+        return cls.select().order_by(cls.size)
+
+
+class Statistic(Model):
+    art = CharField()
+    nums = IntegerField()
+    size = CharField(null=True)
+    created_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        database = db
+
+
+def update_arts_db(path, shop):
+    count = 0
+    start = datetime.now()
+    try:
+        with db.atomic():
+            db.drop_tables([Article])
+    except Exception as ex:
+        logger.error(ex)
+
+    if not Article.table_exists():
+        Article.create_table(safe=True)
+
+    for root, dirs, files in os.walk(path):
+        for dir in dirs:
+            if len(dir) > 10:
+                count += 1
+                Article.create_with_art(dir, os.path.join(root, dir), shop)
+                print('\r', count, end='', flush=True)
+
+    print('Нет подложек')
+    records = Article.select().where(Article.skin >> None)
+    for i in records:
+        print(os.path.abspath(i.folder))
+
+    print('Нет картинок с цифрами')
+    records = Article.select().where(Article.images >> None)
+    for i in records:
+        print(os.path.abspath(i.folder))
+
+    print('НЕ соответствует число картинок с базой')
+    records = Article.select().where(Article.nums_in_folder != Article.nums)
+    for i in records:
+        print(os.path.abspath(i.folder))
+        i.nums = i.nums_in_folder
+        i.save()
+    logger.debug(datetime.now() - start)
+
+
+if __name__ == '__main__':
+    update_arts_db(dp_path, 'DP')
+    update_arts_db(anikoya_path, 'AniKoya')
