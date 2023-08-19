@@ -1,4 +1,5 @@
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 from PIL import Image, ImageDraw, ImageOps
 from loguru import logger
@@ -32,17 +33,29 @@ def convert_square_to_circle(image_path, output_path, quality=95):
         print(f"Произошла ошибка: {e}")
 
 
+def process_image(filename):
+    try:
+        input_image_path = os.path.join(folder_name, filename)
+        new_name = filename.split('.')[0] + '.jpg'
+
+        output_image_path = os.path.join(folder_name, new_name)
+        convert_square_to_circle(input_image_path, output_image_path, quality=100)
+        os.remove(input_image_path)
+    except Exception as ex:
+        logger.error(f"Ошибка при обработке {filename}: {ex}")
+
+
 if __name__ == '__main__':
-    folder_name = r'C:\Users\Михаил\Desktop\archive'
-    for index, filename in enumerate(os.listdir(folder_name), start=1):
-        if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
-                and (os.path.isfile(os.path.join(folder_name, filename)) and (filename.endswith('.png'))):
-            print(filename)
-            new_name = filename.split('.')[0] + '.jpg'
-            input_image_path = fr'C:\Users\Михаил\Desktop\archive\{filename}'
-            output_image_path = fr'C:\Users\Михаил\Desktop\archive\{new_name}'
-            try:
-                convert_square_to_circle(input_image_path, output_image_path, quality=95)
-                os.remove(input_image_path)
-            except Exception as ex:
-                logger.error()
+    count = 0
+    directory = r'E:\База значков\AniKoya'
+    for i in os.listdir(directory):
+        count += 1
+        folder_name = os.path.join(directory, i)
+        if os.path.isdir(os.path.join(directory, i)):
+            print(count, folder_name)
+
+            with ThreadPoolExecutor(max_workers=4) as executor:  # Максимальное количество одновременных потоков
+                for filename in os.listdir(folder_name):
+                    if filename.endswith('.png') and (
+                            filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()):
+                        executor.submit(process_image, filename)

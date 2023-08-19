@@ -180,7 +180,7 @@ def main_download(public_link, shop, self=None):
         folder_path = download_folder(public_link, local_path, comp_path, self)
         if folder_path:
             new_folder = process_folder(folder_path, comp_path)
-            return new_folder
+            return os.path.abspath(new_folder)
         else:
             logger.error('Не скачался архив либо папка уже существует в директории')
 
@@ -226,8 +226,6 @@ def search_one_image(skin, images_list, output_folder):
 def search_image_56(folder_skin, output_folder):
     """Вырезание круга с подложки"""
     filename = os.path.abspath(folder_skin)
-    logger.debug(filename)
-
     image = cv2.imread(filename)
     print(filename)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -261,14 +259,10 @@ def search_image_56(folder_skin, output_folder):
 
 
 def download_new_arts(link, arts_list, shop, self=None):
-    new_folder: str = main_download(public_link=link, shop=shop, self=self)
+    main_download(public_link=link, shop=shop, self=self)
     logger.debug(link)
+    new_folder = os.path.join(f'{all_badge}\\Скаченные с диска', os.listdir(f'{all_badge}\\Скаченные с диска')[0])
     if new_folder:
-        if not os.path.exists(new_folder):
-            new_folder += '_'
-            logger.error(new_folder)
-        if not os.path.exists(new_folder):
-            logger.error(new_folder)
         article_list = []
         for i in arts_list.split('/'):
             article_list.append(i.strip())
@@ -439,7 +433,6 @@ def download_new_arts_in_comp(list_arts, self=None):
             record = GoogleTable.get(folder_link=key)
             record.status_download = True
             record.save()
-            print(value)
             download_new_arts(link=key, arts_list=value[0], shop=value[1], self=self)
             if value[1] == 'DP':
                 move_ready_folder(target_directory=f'{dp_path}',

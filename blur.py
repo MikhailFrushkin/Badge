@@ -57,7 +57,7 @@ def blur_image(image_path, output_path):
 
 
 if __name__ == '__main__':
-    folder_name = r'E:\test\2PAC-11NEW-6-56'
+    folder_name = r'E:\База значков\DP\JESUSAVGN-ART-13NEW-1-44'
     for index, filename in enumerate(os.listdir(folder_name), start=1):
         if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
                 and os.path.isfile(os.path.join(folder_name, filename)):

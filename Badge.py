@@ -535,7 +535,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 counts_art = read_excel_file(self.lineEdit.text())
                 for item in counts_art:
                     status = Article.get_or_none(Article.art == item.art)
-                    if status:
+                    if status and os.path.exists(status.folder):
                         item.status = '✅'
                 counts_art = sorted(counts_art, key=lambda x: x.status, reverse=True)
                 try:

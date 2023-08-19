@@ -125,15 +125,6 @@ class Statistic(Model):
 def update_arts_db(path, shop):
     count = 0
     start = datetime.now()
-    try:
-        with db.atomic():
-            db.drop_tables([Article])
-    except Exception as ex:
-        logger.error(ex)
-
-    if not Article.table_exists():
-        Article.create_table(safe=True)
-
     for root, dirs, files in os.walk(path):
         for dir in dirs:
             if len(dir) > 10:
@@ -161,5 +152,14 @@ def update_arts_db(path, shop):
 
 
 if __name__ == '__main__':
+    try:
+        with db.atomic():
+            db.drop_tables([Article])
+    except Exception as ex:
+        logger.error(ex)
+
+    if not Article.table_exists():
+        Article.create_table(safe=True)
+
     update_arts_db(dp_path, 'DP')
     update_arts_db(anikoya_path, 'AniKoya')

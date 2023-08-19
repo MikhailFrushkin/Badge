@@ -60,20 +60,21 @@ def move_ready_folder(directory=f'{all_badge}\\Скаченные с диска'
                       target_directory=f'{anikoya_path}',
                       shop='AniKoya'):
     for folder in os.listdir(directory):
-
         try:
             folder_path = os.path.abspath(os.path.join(directory, folder))
             target_directory = os.path.abspath(target_directory)
             for i in os.listdir(folder_path):
-                if os.path.isdir(os.path.join(folder_path, i)):
-                    new_folder = os.path.join(folder_path, i)
+
+                new_folder = os.path.join(folder_path, i)
+                if os.path.isdir(new_folder):
                     if not os.path.exists(os.path.join(target_directory, i)):
                         shutil.move(new_folder, target_directory)
                         Article.create_with_art(i, os.path.join(target_directory, i), shop=shop)
-                        # logger.debug(f'Перенос из {folder_path} -> {os.path.join(target_directory, folder)}')
-            shutil.rmtree(directory)
+
         except Exception as ex:
             logger.error(ex)
+        finally:
+            shutil.rmtree(directory)
 
 
 def rename_files(file_path, new_name):
