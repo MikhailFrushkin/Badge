@@ -1,10 +1,36 @@
+import datetime
 import os
 
 import cv2
 import numpy as np
+from loguru import logger
+from peewee import *
+
+from db import Article
+
+db = SqliteDatabase('mydatabase.db')
 
 
-def blur_image(image_path, output_path):
+class Article(Model):
+    art = CharField(null=True, index=True)
+    folder = CharField(null=True)
+    nums = IntegerField(null=True)
+    nums_in_folder = IntegerField(null=True)
+    size = IntegerField(null=True)
+    skin = CharField(null=True)
+    sticker = CharField(null=True)
+    images = TextField(null=True)
+    shop = CharField(null=True)
+    created_at = DateTimeField(default=datetime.datetime.now)
+
+    class Meta:
+        database = db
+
+    def __str__(self):
+        return self.art
+
+
+def blur_image(image_path, output_path, size):
     # Открываем изображение
     original_image = cv2.imread(image_path)
 
@@ -27,15 +53,15 @@ def blur_image(image_path, output_path):
     result_image[mask > 0] = original_image[mask > 0]
 
     # Примените размытие к круговой области
-    blurred_circle = cv2.GaussianBlur(result_image, (55, 55), 25)  # Измените параметры размытия по вашему усмотрению
+    blurred_circle = cv2.GaussianBlur(result_image, (71, 71), 30)  # Измените параметры размытия по вашему усмотрению
 
     # Создайте круговую маску для result_image
     circle_mask = np.zeros((result_image.shape[0], result_image.shape[1]), dtype=np.uint8)
     cv2.circle(circle_mask, (result_image.shape[1] // 2, result_image.shape[0] // 2), radius, (255), -1)
 
     # Вычислите новые размеры увеличенного изображения
-    new_height = int(result_image.shape[0] * 1.2)
-    new_width = int(result_image.shape[1] * 1.2)
+    new_height = int(result_image.shape[0] * size)
+    new_width = int(result_image.shape[1] * size)
 
     # Увеличьте изображение с размытым кругом
     enlarged_result = cv2.resize(blurred_circle, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
@@ -53,13 +79,52 @@ def blur_image(image_path, output_path):
 
     cv2.imwrite(output_path, enlarged_result)
 
-    print(f"Увеличенное изображение сохранено в: {output_path}")
+    print(f"Изображение сохранено в: {output_path}")
+
+
+def main():
+    # 25 - 1.38
+    # 37 - 1.28
+    start = datetime.datetime.now()
+    with open('да.txt', 'r') as f:
+        data = f.read()
+    art_list = data.split('\n')
+    print(len(art_list))
+    query = (Article
+             .select()
+             .where((Article.size == 37) & ~(Article.art << art_list)))
+
+    results = query.execute()
+    count = 0
+    list_db = []
+    for article in results:
+        count += 1
+        print(count, article.art)
+        list_db.append(article.art)
+        folder_name = article.folder
+        for index, filename in enumerate(os.listdir(folder_name), start=1):
+            if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
+                    and os.path.isfile(os.path.join(folder_name, filename)):
+                if os.path.exists(os.path.join(folder_name, filename)):
+                    try:
+                        blur_image(image_path=os.path.join(folder_name, filename),
+                                   output_path=os.path.join(folder_name, filename), size=1.29)
+                    except Exception as ex:
+                        logger.error(ex)
+                        logger.error(os.path.join(folder_name, filename))
+    print('Время: ', start - datetime.datetime.now())
 
 
 if __name__ == '__main__':
-    folder_name = r'E:\База значков\DP\JESUSAVGN-ART-13NEW-1-44'
+    # main()
+    folder_name = r'E:\База значков\AniKoya\BLACK_SPRING_NABOR-12NEW-40-37\Новая папка'
     for index, filename in enumerate(os.listdir(folder_name), start=1):
         if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
                 and os.path.isfile(os.path.join(folder_name, filename)):
-            blur_image(image_path=os.path.join(folder_name, filename),
-                       output_path=os.path.join(folder_name, '!' + filename))
+            if os.path.exists(os.path.join(folder_name, filename)):
+                try:
+                    blur_image(image_path=os.path.join(folder_name, filename),
+                               output_path=os.path.join(folder_name, filename), size=1.28)
+                except Exception as ex:
+                    logger.error(ex)
+                    logger.error(os.path.join(folder_name, filename))

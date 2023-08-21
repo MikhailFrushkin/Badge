@@ -38,7 +38,7 @@ def create_list_arts_in_folder():
 
 def create_list_arts_all():
     df = pd.read_excel(r'C:\Users\Михаил\Desktop\постеры.xlsx')
-    df_art_list = df['Артикул продавца'].apply(lambda x: x.strip()).tolist()
+    df_art_list = df['Артикул продавца'].apply(lambda x: x.strip().upper()).tolist()
     return df_art_list
 
 
