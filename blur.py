@@ -85,6 +85,8 @@ def blur_image(image_path, output_path, size):
 def main():
     # 25 - 1.38
     # 37 - 1.28
+    # 44 - 1.18
+    # 56 - 1.13
     start = datetime.datetime.now()
     with open('да.txt', 'r') as f:
         data = f.read()
@@ -117,14 +119,14 @@ def main():
 
 if __name__ == '__main__':
     # main()
-    folder_name = r'E:\База значков\AniKoya\BLACK_SPRING_NABOR-12NEW-40-37\Новая папка'
+    folder_name = r'E:\test\Новая папка'
     for index, filename in enumerate(os.listdir(folder_name), start=1):
         if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
                 and os.path.isfile(os.path.join(folder_name, filename)):
             if os.path.exists(os.path.join(folder_name, filename)):
                 try:
                     blur_image(image_path=os.path.join(folder_name, filename),
-                               output_path=os.path.join(folder_name, filename), size=1.28)
+                               output_path=os.path.join(folder_name, filename), size=1.13)
                 except Exception as ex:
                     logger.error(ex)
                     logger.error(os.path.join(folder_name, filename))
