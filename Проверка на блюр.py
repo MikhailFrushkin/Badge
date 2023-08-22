@@ -51,13 +51,13 @@ class ImageLabelApp(QMainWindow):
         self.current_article_index = 0
 
     def load_articles(self):
-        self.articles = Article.select().where(Article.size == 37)
+        self.articles = Article.select().where(Article.size == 56)
         print(self.articles.count())
         if self.articles.count() > 0:
             self.load_image(self.current_article_index)
 
     def load_image(self, article_index):
-        if 0 <= article_index < len(self.articles):
+        if 0 <= article_index < len(self.articles):     
             article = self.articles[article_index]
             image_paths = article.images.split(',')  # Предполагается, что пути разделены запятыми
 

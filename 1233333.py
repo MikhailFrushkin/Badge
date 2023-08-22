@@ -58,21 +58,16 @@ if __name__ == '__main__':
     # main()
     # arts_in_google = arts_in_google_table()
     all_arts = create_list_arts_all()
-    arts_in_folder = create_list_arts_in_folder()
+    arts_in_folder = create_Klist_arts_in_folder()
 
     result = sorted([i for i in all_arts if i not in arts_in_folder])
     print(len(result))
     print(result)
 
-    directory = r'E:\Новая база\сделать'
-    for i in result:
-        os.makedirs(os.path.join(directory, i), exist_ok=True)
-
     # directory = r'E:\Новая база\сделать'
-    # ou_directory = r'E:\Новая база\Ready pdf compress'
-    # for file in os.listdir(directory):
-    #     compression_pdf(pdf_file_path=os.path.join(directory, file),
-    #                     output_pdf_path=os.path.join(ou_directory, file))
+    # for i in result:
+    #     os.makedirs(os.path.join(directory, i), exist_ok=True)
+
 
     # directory = r'E:\Новая база\сделать'
     # out_directory = r'E:\Новая база\Ready pdf compress'
