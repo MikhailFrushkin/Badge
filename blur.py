@@ -6,8 +6,6 @@ import numpy as np
 from loguru import logger
 from peewee import *
 
-from db import Article
-
 db = SqliteDatabase('mydatabase.db')
 
 
@@ -79,22 +77,25 @@ def blur_image(image_path, output_path, size):
 
     cv2.imwrite(output_path, enlarged_result)
 
-    print(f"Изображение сохранено в: {output_path}")
+    logger.success(f"Изображение заблюрено: {output_path}")
 
 
-def main(file, size):
+def main(file, size_b, size_k):
     start = datetime.datetime.now()
     with open(file, 'r') as f:
         data = f.read()
     art_list = data.split('\n')
     print(len(art_list))
+
     query = (Article
              .select()
-             .where((Article.size == 37) & ~(Article.art << art_list)))
+             .where((Article.size == size_b) & ~(Article.art << art_list)))
 
     results = query.execute()
     count = 0
     list_db = []
+    print(len(results))
+    return
     for article in results:
         count += 1
         print(count, article.art)
@@ -106,7 +107,7 @@ def main(file, size):
                 if os.path.exists(os.path.join(folder_name, filename)):
                     try:
                         blur_image(image_path=os.path.join(folder_name, filename),
-                                   output_path=os.path.join(folder_name, filename), size=size)
+                                   output_path=os.path.join(folder_name, filename), size=size_k)
                     except Exception as ex:
                         logger.error(ex)
                         logger.error(os.path.join(folder_name, filename))
@@ -114,12 +115,12 @@ def main(file, size):
 
 
 if __name__ == '__main__':
-    # main(file='да25.txt, size=1.38)
-    # main(file='да37.txt, size=1.28)
-    # main(file='да44.txt, size=1.18)
-    # main(file='да56.txt, size=1.13)
+    main(file='да25.txt', size_b=25, size_k=1.40)
+    main(file='да37.txt', size_b=37, size_k=1.29)
+    main(file='да44.txt', size_b=44, size_k=1.18)
+    # main(file='да56.txt, size_b=56, size_k=1.13)
 
-    folder_name = r'E:\test\Новая папка'
+    folder_name = r'D:\База значков\AniKoya\$uicideboys-13NEW-6-56'
     for index, filename in enumerate(os.listdir(folder_name), start=1):
         if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
                 and os.path.isfile(os.path.join(folder_name, filename)):
@@ -130,3 +131,4 @@ if __name__ == '__main__':
                 except Exception as ex:
                     logger.error(ex)
                     logger.error(os.path.join(folder_name, filename))
+    pass
