@@ -82,13 +82,9 @@ def blur_image(image_path, output_path, size):
     print(f"Изображение сохранено в: {output_path}")
 
 
-def main():
-    # 25 - 1.38
-    # 37 - 1.28
-    # 44 - 1.18
-    # 56 - 1.13
+def main(file, size):
     start = datetime.datetime.now()
-    with open('да.txt', 'r') as f:
+    with open(file, 'r') as f:
         data = f.read()
     art_list = data.split('\n')
     print(len(art_list))
@@ -110,7 +106,7 @@ def main():
                 if os.path.exists(os.path.join(folder_name, filename)):
                     try:
                         blur_image(image_path=os.path.join(folder_name, filename),
-                                   output_path=os.path.join(folder_name, filename), size=1.29)
+                                   output_path=os.path.join(folder_name, filename), size=size)
                     except Exception as ex:
                         logger.error(ex)
                         logger.error(os.path.join(folder_name, filename))
@@ -118,7 +114,11 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
+    # main(file='да25.txt, size=1.38)
+    # main(file='да37.txt, size=1.28)
+    # main(file='да44.txt, size=1.18)
+    # main(file='да56.txt, size=1.13)
+
     folder_name = r'E:\test\Новая папка'
     for index, filename in enumerate(os.listdir(folder_name), start=1):
         if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
