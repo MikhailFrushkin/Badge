@@ -1,18 +1,18 @@
 {
     "25": {
-        "diameter": 38,
+        "diameter": 37,
         "nums": 35,
         "ICONS_PER_ROW": 5,
         "ICONS_PER_COL": 7
     },
     "37": {
-        "diameter": 51.5,
+        "diameter": 52,
         "nums": 20,
         "ICONS_PER_ROW": 4,
         "ICONS_PER_COL": 5
     },
     "44": {
-        "diameter": 57,
+        "diameter": 58,
         "nums": 15,
         "ICONS_PER_ROW": 3,
         "ICONS_PER_COL": 5
