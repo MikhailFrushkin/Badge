@@ -30,7 +30,13 @@ class Article(Model):
         return self.art
 
 
-def blur_image(image_path, output_path, size):
+def blur_image(image_path, output_path, size_b):
+    data_b = {
+        25: 1.40,
+        37: 1.29,
+        44: 1.18,
+        56: 1.13,
+    }
     # Открываем изображение
     original_image = cv2.imread(image_path)
 
@@ -60,8 +66,8 @@ def blur_image(image_path, output_path, size):
     cv2.circle(circle_mask, (result_image.shape[1] // 2, result_image.shape[0] // 2), radius, (255), -1)
 
     # Вычислите новые размеры увеличенного изображения
-    new_height = int(result_image.shape[0] * size)
-    new_width = int(result_image.shape[1] * size)
+    new_height = int(result_image.shape[0] * data_b[size_b])
+    new_width = int(result_image.shape[1] * data_b[size_b])
 
     # Увеличьте изображение с размытым кругом
     enlarged_result = cv2.resize(blurred_circle, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
@@ -82,7 +88,7 @@ def blur_image(image_path, output_path, size):
     print(f"Изображение сохранено в: {output_path}")
 
 
-def main(file, size_b, size_k):
+def main(file, size_b):
     start = datetime.datetime.now()
     with open(file, 'r') as f:
         data = f.read()
@@ -106,7 +112,7 @@ def main(file, size_b, size_k):
                 if os.path.exists(os.path.join(folder_name, filename)):
                     try:
                         blur_image(image_path=os.path.join(folder_name, filename),
-                                   output_path=os.path.join(folder_name, filename), size=size_k)
+                                   output_path=os.path.join(folder_name, filename), size_b=size_b)
                     except Exception as ex:
                         logger.error(ex)
                         logger.error(os.path.join(folder_name, filename))
@@ -114,19 +120,19 @@ def main(file, size_b, size_k):
 
 
 if __name__ == '__main__':
-    # main(file='да25.txt, size_b=25, size_k=1.40)
-    # main(file='да37.txt, size_b=37, size_k=1.29)
-    # main(file='да44.txt, size_b=44, size_k=1.18)
-    # main(file='да56.txt, size_b=56, size_k=1.13)
+    # main(file='да25.txt', size_b=25)
+    # main(file='да37.txt', size_b=37)
+    # main(file='да44.txt', size_b=44)
+    main(file='да56.txt', size_b=56)
 
-    folder_name = r'E:\test\Новая папка'
-    for index, filename in enumerate(os.listdir(folder_name), start=1):
-        if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
-                and os.path.isfile(os.path.join(folder_name, filename)):
-            if os.path.exists(os.path.join(folder_name, filename)):
-                try:
-                    blur_image(image_path=os.path.join(folder_name, filename),
-                               output_path=os.path.join(folder_name, filename), size=1.13)
-                except Exception as ex:
-                    logger.error(ex)
-                    logger.error(os.path.join(folder_name, filename))
+    # folder_name = r'E:\test\Новая папка'
+    # for index, filename in enumerate(os.listdir(folder_name), start=1):
+    #     if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
+    #             and os.path.isfile(os.path.join(folder_name, filename)):
+    #         if os.path.exists(os.path.join(folder_name, filename)):
+    #             try:
+    #                 blur_image(image_path=os.path.join(folder_name, filename),
+    #                            output_path=os.path.join(folder_name, filename), size_b=56)
+    #             except Exception as ex:
+    #                 logger.error(ex)
+    #                 logger.error(os.path.join(folder_name, filename))

@@ -9,6 +9,7 @@ from loguru import logger
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 
+from blur import blur_image
 from config import anikoya_path, all_badge
 from db import Article
 
@@ -70,6 +71,22 @@ def move_ready_folder(directory=f'{all_badge}\\Скаченные с диска'
                     if not os.path.exists(os.path.join(target_directory, i)):
                         shutil.move(new_folder, target_directory)
                         Article.create_with_art(i, os.path.join(target_directory, i), shop=shop)
+                        try:
+                            art = Article.get_or_none(Article.art == i)
+                            if art:
+                                folder_name = art.folder
+                                for index, filename in enumerate(os.listdir(folder_name), start=1):
+                                    if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
+                                            and os.path.isfile(os.path.join(folder_name, filename)):
+                                        if os.path.exists(os.path.join(folder_name, filename)):
+                                            try:
+                                                blur_image(image_path=os.path.join(folder_name, filename),
+                                                           output_path=os.path.join(folder_name, filename), size_b=art.size)
+                                            except Exception as ex:
+                                                logger.error(ex)
+                                                logger.error(os.path.join(folder_name, filename))
+                        except Exception as ex:
+                            logger.error(ex)
 
         except Exception as ex:
             logger.error(ex)

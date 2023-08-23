@@ -22,12 +22,14 @@ def main():
     df_in_xlsx(df, 'DP неанйденные артикула')
 
 
-def create_list_arts_in_folder():
-    directory = r'E:\Новая база\Ready pdf compress'
+def create_list_arts_in_folder(directory):
     list_arts = []
     for file in os.listdir(directory):
         try:
-            list_arts.append(('.'.join(file.split('.')[:-1])).upper())
+            if os.path.isdir(os.path.join(directory, file)):
+                list_arts.append(file)
+            else:
+                list_arts.append(('.'.join(file.split('.')[:-1])).upper())
         except:
             print(file)
 
@@ -37,7 +39,7 @@ def create_list_arts_in_folder():
 
 
 def create_list_arts_all():
-    df = pd.read_excel(r'C:\Users\Михаил\Desktop\постеры.xlsx')
+    df = pd.read_excel(r'C:\Users\Михаил\Desktop\значки.xlsx')
     df_art_list = df['Артикул продавца'].apply(lambda x: x.strip().upper()).tolist()
     return df_art_list
 
@@ -55,18 +57,21 @@ def arts_in_google_table():
 
 
 if __name__ == '__main__':
+    # directory = r'E:\Новая база\Ready pdf compress'
+    directory = r'E:\База значков\DP'
+
     # main()
     # arts_in_google = arts_in_google_table()
     all_arts = create_list_arts_all()
-    arts_in_folder = create_Klist_arts_in_folder()
+    arts_in_folder = create_list_arts_in_folder(directory)
 
     result = sorted([i for i in all_arts if i not in arts_in_folder])
     print(len(result))
     print(result)
 
-    # directory = r'E:\Новая база\сделать'
-    # for i in result:
-    #     os.makedirs(os.path.join(directory, i), exist_ok=True)
+    directory = r'E:\Новая база\сделать'
+    for i in result:
+        os.makedirs(os.path.join(directory, i), exist_ok=True)
 
 
     # directory = r'E:\Новая база\сделать'

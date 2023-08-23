@@ -179,8 +179,6 @@ def main(filename):
 
 
 if __name__ == '__main__':
-    # # Сканирование артикулов из заказа и показ ненайденных
-    #
     # main(r'C:\Users\Михаил\Downloads\1708 новая 5.xlsx')
 
     # Объеденение изображений в pdf из указанной папки
@@ -192,17 +190,3 @@ if __name__ == '__main__':
             one_pdf(folder_path=os.path.join(directory, i), filename=i)
         else:
             print(f'файл существует {filename}')
-    # directory = r'E:\Новая база\Готовые pdf'
-    # output_directory = r'E:\Новая база\Готовые pdf сжатые'
-    # for index, file in enumerate(os.listdir(directory)):
-    #     try:
-    #         if not os.path.exists(os.path.join(output_directory, file)):
-    #             start = datetime.datetime.now()
-    #             compression_pdf(pdf_file_path=os.path.join(directory, file),
-    #                             output_pdf_path=os.path.join(output_directory, file))
-    #             print(f'Сжатие {os.path.join(directory, file)} - {datetime.datetime.now() - start}')
-    #         else:
-    #             print(f'Существует {os.path.join(output_directory, file)}')
-    #     except Exception as ex:
-    #         logger.error(os.path.join(directory, file))
-    #         logger.error(ex)
