@@ -104,7 +104,7 @@ class Article(Model):
     def find_skin_filename(self, folder_name):
         lower_filenames = [filename.lower() for filename in os.listdir(folder_name)]
         for filename in lower_filenames:
-            if "подлож" in filename or "один" in filename:
+            if "подлож" in filename or "один" in filename or "главн" in filename:
                 return filename
 
     def fill_additional_columns(self):
@@ -116,13 +116,7 @@ class Article(Model):
 
         # Заполнение столбца "Images"
         image_filenames = []
-        # for index, filename in enumerate(os.listdir(self.folder), start=1):
-        #     if filename.split('.')[0].isdigit() and os.path.isfile(os.path.join(self.folder, filename)):
-        #         # try:
-        #         #     crop_to_content(os.path.join(self.folder, filename), os.path.join(self.folder, f'!{filename}'))
-        #         # except Exception as ex:
-        #         #     logger.error(ex)
-        #         image_filenames.append(os.path.join(self.folder, f'{filename}'))
+
 
         for index, filename in enumerate(os.listdir(folder_name), start=1):
             if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
