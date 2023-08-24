@@ -69,9 +69,9 @@ if __name__ == '__main__':
     print(len(result))
     print(result)
 
-    directory = r'E:\Новая база\сделать'
-    for i in result:
-        os.makedirs(os.path.join(directory, i), exist_ok=True)
+    # directory = r'E:\Новая база\сделать'
+    # for i in result:
+    #     os.makedirs(os.path.join(directory, i), exist_ok=True)
 
 
     # directory = r'E:\Новая база\сделать'

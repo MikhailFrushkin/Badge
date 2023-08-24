@@ -6,8 +6,6 @@ import numpy as np
 from loguru import logger
 from peewee import *
 
-from db import Article
-
 db = SqliteDatabase('mydatabase.db')
 
 
@@ -33,9 +31,9 @@ class Article(Model):
 def blur_image(image_path, output_path, size_b):
     data_b = {
         25: 1.40,
-        37: 1.29,
+        37: 1.30,
         44: 1.18,
-        56: 1.13,
+        56: 1.14,
     }
     # Открываем изображение
     original_image = cv2.imread(image_path)
@@ -123,18 +121,18 @@ if __name__ == '__main__':
     # main(file='да25.txt', size_b=25)
     # main(file='да37.txt', size_b=37)
     # main(file='да44.txt', size_b=44)
-    main(file='да56.txt', size_b=56)
+    # main(file='да56.txt', size_b=56)
 
-    # directory = r'E:\Новая база\сделать\!\!'
+    # directory = r'E:\База значков\as'
     # for i in os.listdir(directory):
-    #     folder_name = os.path.join(directory, i)
-    #     for index, filename in enumerate(os.listdir(folder_name), start=1):
-    #         if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
-    #                 and os.path.isfile(os.path.join(folder_name, filename)):
-    #             if os.path.exists(os.path.join(folder_name, filename)):
-    #                 try:
-    #                     blur_image(image_path=os.path.join(folder_name, filename),
-    #                                output_path=os.path.join(folder_name, filename), size_b=44)
-    #                 except Exception as ex:
-    #                     logger.error(ex)
-    #                     logger.error(os.path.join(folder_name, filename))
+    folder_name = r'E:\База значков\DP\KOROLEVA-DEADCELLS-13NEW-1-44'
+    for index, filename in enumerate(os.listdir(folder_name), start=1):
+        if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
+                and os.path.isfile(os.path.join(folder_name, filename)):
+            if os.path.exists(os.path.join(folder_name, filename)):
+                try:
+                    blur_image(image_path=os.path.join(folder_name, filename),
+                               output_path=os.path.join(folder_name, filename), size_b=44)
+                except Exception as ex:
+                    logger.error(ex)
+                    logger.error(os.path.join(folder_name, filename))
