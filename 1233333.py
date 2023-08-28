@@ -38,8 +38,8 @@ def create_list_arts_in_folder(directory):
     return list_arts
 
 
-def create_list_arts_all():
-    df = pd.read_excel(r'C:\Users\Михаил\Desktop\значки.xlsx')
+def create_list_arts_all(df):
+
     df_art_list = df['Артикул продавца'].apply(lambda x: x.strip().upper()).tolist()
     return df_art_list
 
@@ -58,31 +58,24 @@ def arts_in_google_table():
 
 if __name__ == '__main__':
     # directory = r'E:\Новая база\Ready pdf compress'
-    directory = r'E:\База значков\DP'
+    # directory = r'E:\База значков\DP'
+    directory = r'E:\База значков\AniKoya'
+
+    df = pd.read_excel(r'C:\Users\Михаил\Desktop\значки.xlsx')
+    # df = pd.read_excel(r'C:\Users\Михаил\Desktop\постеры.xlsx')
 
     # main()
     # arts_in_google = arts_in_google_table()
-    all_arts = create_list_arts_all()
+
+    all_arts = create_list_arts_all(df)
     arts_in_folder = create_list_arts_in_folder(directory)
 
     result = sorted([i for i in all_arts if i not in arts_in_folder])
+
+    result = [i for i in result if '13NEW' in i or '12NEW' in i or '11NEW' in i]
     print(len(result))
     print(result)
 
-    # directory = r'E:\Новая база\сделать'
-    # for i in result:
-    #     os.makedirs(os.path.join(directory, i), exist_ok=True)
-
-
-    # directory = r'E:\Новая база\сделать'
-    # out_directory = r'E:\Новая база\Ready pdf compress'
-    # with open('проблемные пдф.txt', 'r') as f:
-    #     data = f.read()
-    # paths = data.replace('Ready pdf compress', 'Готовые pdf').split('\n')
-    # for i in paths:
-    #     if os.path.exists(i):
-    #         print(i)
-    #         filename = i.split('\\')[-1]
-    #         print(filename)
-    #         compression_pdf(pdf_file_path=i,
-    #                         output_pdf_path=os.path.join(out_directory, filename))
+    directory = r'E:\Новая база\сделать'
+    for i in result:
+        os.makedirs(os.path.join(directory, i), exist_ok=True)

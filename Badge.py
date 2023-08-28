@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 import qdarkstyle
+import requests
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette
@@ -15,13 +16,37 @@ from PyQt5.QtWidgets import (
 from loguru import logger
 from peewee import fn
 
-from config import all_badge
+from config import all_badge, token
 from created_images import created_good_images
 from db import Article, Statistic
 from dow_stickers import main_download_stickers
 from main import update_db, download_new_arts_in_comp, update_arts_db2, update_sticker_path
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
 from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx
+
+
+def check_file(self):
+    headers = {
+        "Authorization": f"OAuth {token}"
+    }
+
+    params = {
+        "path": 'Программы',
+        "fields": "_embedded.items.name"  # Запрашиваем только имена файлов
+    }
+
+    response = requests.get("https://cloud-api.yandex.net/v1/disk/resources", headers=headers, params=params)
+
+    if response.status_code == 200:
+        files = response.json()["_embedded"]["items"]
+        print([file["name"] for file in files])
+        if 'Печать значков.txt' in [file["name"] for file in files]:
+            return True
+        else:
+            return False
+    else:
+        print("Error:", response.status_code)
+        return []
 
 
 class GroupedRecordsDialog(QDialog):
@@ -483,6 +508,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             printers_list = enum_printers()
             for printer in printers_list:
                 self.addPrinterCheckbox(printer)
+        except Exception as ex:
+            logger.debug(ex)
+
+        try:
+            if not check_file(self):
+                self.pushButton.setEnabled(False)
+                self.pushButton_3.setEnabled(False)
+                self.pushButton_8.setEnabled(False)
+                self.pushButton_9.setEnabled(False)
+                self.pushButton_6.setEnabled(False)
+                self.pushButton_5.setEnabled(False)
+                self.pushButton_4.setEnabled(False)
+                self.pushButton_2.setEnabled(False)
         except Exception as ex:
             logger.debug(ex)
 

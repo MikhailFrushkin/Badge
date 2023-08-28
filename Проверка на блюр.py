@@ -78,7 +78,7 @@ class ImageLabelApp(QMainWindow):
         self.image_label.setPixmap(scaled_pixmap)
 
     def on_yes_clicked(self):
-        self.save_to_file(self.articles[self.current_article_index].art, "да.txt")
+        self.save_to_file(self.articles[self.current_article_index].art, "ненужно/да.txt")
         self.next_article()
 
     def on_no_clicked(self):

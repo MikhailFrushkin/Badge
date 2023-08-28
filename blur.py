@@ -123,16 +123,16 @@ if __name__ == '__main__':
     # main(file='да44.txt', size_b=44)
     # main(file='да56.txt', size_b=56)
 
-    # directory = r'E:\База значков\as'
-    # for i in os.listdir(directory):
-    folder_name = r'E:\База значков\DP\KOROLEVA-DEADCELLS-13NEW-1-44'
-    for index, filename in enumerate(os.listdir(folder_name), start=1):
-        if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
-                and os.path.isfile(os.path.join(folder_name, filename)):
-            if os.path.exists(os.path.join(folder_name, filename)):
-                try:
-                    blur_image(image_path=os.path.join(folder_name, filename),
-                               output_path=os.path.join(folder_name, filename), size_b=44)
-                except Exception as ex:
-                    logger.error(ex)
-                    logger.error(os.path.join(folder_name, filename))
+    directory = r'E:\Новая база\сделать'
+    for i in os.listdir(directory):
+        folder_name = os.path.join(directory, i)
+        for index, filename in enumerate(os.listdir(folder_name), start=1):
+            if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
+                    and os.path.isfile(os.path.join(folder_name, filename)):
+                if os.path.exists(os.path.join(folder_name, filename)):
+                    try:
+                        blur_image(image_path=os.path.join(folder_name, filename),
+                                   output_path=os.path.join(folder_name, filename), size_b=44)
+                    except Exception as ex:
+                        logger.error(ex)
+                        logger.error(os.path.join(folder_name, filename))
