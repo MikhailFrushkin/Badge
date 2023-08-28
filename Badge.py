@@ -1,3 +1,4 @@
+import asyncio
 import os
 from datetime import timedelta
 from pathlib import Path
@@ -22,6 +23,7 @@ from db import Article, Statistic
 from dow_stickers import main_download_stickers
 from main import update_db, download_new_arts_in_comp, update_arts_db2, update_sticker_path
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
+from upload_files import upload_statistic_files_async
 from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx
 
 
@@ -93,15 +95,16 @@ class GroupedRecordsDialog(QDialog):
                          'Сумма значков': group.sum_of_nums})
         df = pd.DataFrame(data)
         size_list = df['Размер'].unique().tolist()
+        os.makedirs('Файлы статистики', exist_ok=True)
         if size_list:
             for size in size_list:
                 df_temp = df[df['Размер'] == str(size)]
-                df_in_xlsx(df_temp, f'Статистика {size}')
+                df_in_xlsx(df_temp, f'Файлы статистики\\Статистика {size}')
         self.table_widget.resizeColumnsToContents()
 
     def adjust_dialog_size(self):
         table_width = self.table_widget.sizeHint().width()
-        dialog_width = max(table_width + 270, 420)  # Minimum width of 400 pixels
+        dialog_width = max(table_width + 280, 420)  # Minimum width of 400 pixels
         self.setFixedWidth(dialog_width)
         self.adjustSize()
 
@@ -711,6 +714,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
                     grouped_dialog = GroupedRecordsDialog(self, start_date, end_date)
                     grouped_dialog.exec_()
+                    asyncio.run(upload_statistic_files_async())
+
             except Exception as ex:
                 print(ex)
 
