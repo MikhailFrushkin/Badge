@@ -19,7 +19,7 @@ from peewee import fn
 
 from config import all_badge, token
 from created_images import created_good_images
-from db import Article, Statistic
+from db import Article, Statistic, update_base_postgresql
 from dow_stickers import main_download_stickers
 from main import update_db, download_new_arts_in_comp, update_arts_db2, update_sticker_path
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
@@ -41,7 +41,6 @@ def check_file(self):
 
     if response.status_code == 200:
         files = response.json()["_embedded"]["items"]
-        print([file["name"] for file in files])
         if 'Печать значков.txt' in [file["name"] for file in files]:
             return True
         else:
@@ -237,6 +236,7 @@ class QueueDialog(QWidget):
         self.sub_self = sub_self
         self.A3_flag = A3_flag
         self.name_doc = os.path.abspath(name_doc).split('\\')[-1].replace('.xlsx', '')
+        self.list_on_print = 0
 
         layout = QVBoxLayout(self)
 
@@ -641,6 +641,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             try:
                 update_arts_db2()
                 update_sticker_path()
+            except Exception as ex:
+                logger.error(ex)
+            try:
+                update_base_postgresql()
             except Exception as ex:
                 logger.error(ex)
             QMessageBox.information(self, 'Загрузка', 'Загрузка закончена')

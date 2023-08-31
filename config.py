@@ -9,6 +9,12 @@ env.read_env()
 
 token = env.str('token')
 
+machine_name = env.str('machine_name')
+dbname = env.str('dbname')
+user = env.str('user')
+password = env.str('password')
+host = env.str('host')
+
 all_badge = env.str('all_badge')
 anikoya_path = env.str('anikoya_path')
 dp_path = env.str('dp_path')
@@ -23,4 +29,3 @@ google_sticker_path3 = env.str('google_sticker_path3')
 
 id_google_table_DP = env.str('id_google_table_DP')
 id_google_table_anikoya = env.str('id_google_table_anikoya')
-

@@ -16,7 +16,7 @@ from peewee import fn
 from reportlab.lib.pagesizes import A4, A3, landscape
 from reportlab.pdfgen import canvas
 
-from db import Article, Orders, Statistic
+from db import Article, Orders, Statistic, files_base_postgresql, orders_base_postgresql
 from utils import ProgressBar, df_in_xlsx
 
 
@@ -159,7 +159,7 @@ def write_images_art2(image, text, x, y):
     return image
 
 
-def distribute_images(queryset, size, A3_flag):
+def distribute_images(queryset, size, A3_flag, self=None):
     if A3_flag:
         with open('Параметры значков_A3.json', 'r') as file:
             config = json.load(file)
@@ -232,6 +232,8 @@ def distribute_images(queryset, size, A3_flag):
     logger.info(f'Сумма значков: {sum([len(i) for i in sets_of_orders])}')
     logger.info(f'Сумма значков на листах: {set([len(i) for i in sets_of_orders])}')
     logger.info(f'Количество листов: {len(sets_of_orders)}')
+    if self:
+        self.list_on_print += len(sets_of_orders)
     return sets_of_orders
 
 
@@ -417,12 +419,23 @@ def created_good_images(all_arts, self, A3_flag=False):
             sum_result = Orders.select(fn.SUM(Orders.nums_in_folder)).where(Orders.size == size).scalar()
             logger.info(f"Сумма значений в столбце: {sum_result}")
 
-            sets_of_orders = distribute_images(queryset, size, A3_flag)
+            sets_of_orders = distribute_images(queryset, size, A3_flag, self)
             try:
                 logger.debug(f'Создание листов со значками {size}')
                 create_contact_sheet(sets_of_orders, size, self, A3_flag)
             except Exception as ex:
                 logger.error(ex)
+        try:
+            files_base_postgresql(self)
+        except Exception as ex:
+            logger.error(ex)
+
+        try:
+            orders_base_postgresql(self)
+        except Exception as ex:
+            logger.error(ex)
+
+        self.list_on_print = 0
         QMessageBox.information(self, 'Завершено', 'Создание файлов завершено!')
 
         records = Orders.select()

@@ -1,14 +1,134 @@
 import os
 from datetime import datetime
+import psycopg2
 
 import pandas as pd
 from PIL import Image
 from loguru import logger
 from peewee import *
 
-from config import sticker_path_all
+from config import sticker_path_all, dbname, user, password, host, machine_name
 
 db = SqliteDatabase('mydatabase.db')
+
+
+def update_base_postgresql():
+    db_params = {
+        "host": host,
+        "database": dbname,
+        "user": user,
+        "password": password
+    }
+
+    arts_value = Article.select().count()
+
+    # Создание подключения и контекстного менеджера
+    with psycopg2.connect(**db_params) as connection:
+        # Создание таблицы, если она не существует
+        create_table_query = '''
+        CREATE TABLE IF NOT EXISTS Update_base (
+            machin VARCHAR,
+            update_timestamp TIMESTAMP DEFAULT current_timestamp,
+            arts INT
+        );
+        '''
+        with connection.cursor() as cursor:
+            cursor.execute(create_table_query)
+
+            cursor.execute("SELECT * FROM Update_base WHERE machin = %s;", (machine_name,))
+
+            existing_record = cursor.fetchone()
+            if existing_record:
+                # Обновление существующей записи
+                update_query = "UPDATE Update_base SET update_timestamp = %s, arts = %s WHERE machin = %s;"
+                update_values = (datetime.now(), arts_value, machine_name)
+                cursor.execute(update_query, update_values)
+            else:
+                # Вставка новой записи
+                insert_query = "INSERT INTO Update_base (machin, update_timestamp, arts) VALUES (%s, %s, %s);"
+                insert_values = (machine_name, datetime.now(), arts_value)
+                cursor.execute(insert_query, insert_values)
+
+        # Подтверждение изменений (commit) выполняется один раз
+        connection.commit()
+
+
+def files_base_postgresql(self):
+    db_params = {
+        "host": host,
+        "database": dbname,
+        "user": user,
+        "password": password
+    }
+
+    # Создание подключения и контекстного менеджера
+    with psycopg2.connect(**db_params) as connection:
+        # Создание таблицы, если она не существует
+        create_table_query = '''
+        CREATE TABLE IF NOT EXISTS files (
+            machin VARCHAR,
+            update_timestamp TIMESTAMP DEFAULT current_timestamp,
+            name_file VARCHAR,
+            found_arts INT,
+            num_badges INT,
+            num_lists INT
+        );
+        '''
+        with connection.cursor() as cursor:
+            cursor.execute(create_table_query)
+
+            name_file = self.name_doc
+            found_arts = Orders.select().count()
+            num_badges = Orders.select(fn.SUM(Orders.nums_in_folder)).scalar()
+            num_lists = self.list_on_print
+
+            insert_query = ("INSERT INTO files (machin, update_timestamp, "
+                            "name_file, found_arts, num_badges, num_lists) "
+                            "VALUES (%s, %s, %s, %s, %s, %s);")
+            insert_values = (machine_name, datetime.now(), name_file, found_arts, num_badges, num_lists)
+            cursor.execute(insert_query, insert_values)
+
+        # Подтверждение изменений (commit) выполняется один раз
+        connection.commit()
+
+
+def orders_base_postgresql(self):
+    db_params = {
+        "host": host,
+        "database": dbname,
+        "user": user,
+        "password": password
+    }
+
+    # Создание подключения и контекстного менеджера
+    with psycopg2.connect(**db_params) as connection:
+        # Создание таблицы, если она не существует
+        create_table_query = '''
+        CREATE TABLE IF NOT EXISTS orders (
+            art VARCHAR,
+            num INT,
+            size INT, 
+            machin VARCHAR,
+            name_file VARCHAR,
+            update_timestamp TIMESTAMP DEFAULT current_timestamp
+        );
+        '''
+        with connection.cursor() as cursor:
+            cursor.execute(create_table_query)
+
+            name_file = self.name_doc
+            orders = []
+            query = Orders.select()
+            for order in query:
+                orders.append((order.art, order.nums_in_folder, order.size, machine_name, name_file, datetime.now()))
+            insert_data_query = (
+                "INSERT INTO orders (art, num, size, machin, name_file, update_timestamp)"                            
+                "VALUES (%s, %s, %s, %s, %s, %s);")
+
+            cursor.executemany(insert_data_query, orders)
+
+        # Подтверждение изменений (commit) выполняется один раз
+        connection.commit()
 
 
 def crop_to_content(image_path, output_path):
@@ -100,7 +220,6 @@ class Article(Model):
         article.fill_additional_columns()
         return article
 
-
     def find_skin_filename(self, folder_name):
         lower_filenames = [filename.lower() for filename in os.listdir(folder_name)]
         for filename in lower_filenames:
@@ -116,7 +235,6 @@ class Article(Model):
 
         # Заполнение столбца "Images"
         image_filenames = []
-
 
         for index, filename in enumerate(os.listdir(folder_name), start=1):
             if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
@@ -245,3 +363,17 @@ db.create_tables([Statistic])
 # Закрытие соединения с базой данных (необязательно, но рекомендуется)
 db.close()
 
+if __name__ == '__main__':
+    update_base_postgresql()
+    # db_params = {
+    #     "host": host,
+    #     "database": dbname,
+    #     "user": user,
+    #     "password": password
+    # }
+    # with psycopg2.connect(**db_params) as connection:
+    #     # Удаление таблицы, если она существует
+    #     with connection.cursor() as cursor:
+    #         drop_table_query = "DROP TABLE IF EXISTS employees;"
+    #         cursor.execute(drop_table_query)
+    #         print('Таблица удалена')
