@@ -57,12 +57,12 @@ def arts_in_google_table():
 
 
 if __name__ == '__main__':
-    # directory = r'E:\Новая база\Ready pdf compress'
+    directory = r'E:\Новая база\Готовые pdf'
     # directory = r'E:\База значков\DP'
-    directory = r'E:\База значков\AniKoya'
+    # directory = r'E:\База значков\AniKoya'
 
-    df = pd.read_excel(r'C:\Users\Михаил\Desktop\значки.xlsx')
-    # df = pd.read_excel(r'C:\Users\Михаил\Desktop\постеры.xlsx')
+    # df = pd.read_excel(r'C:\Users\Михаил\Desktop\значки.xlsx')
+    df = pd.read_excel(r'C:\Users\Михаил\Desktop\постеры.xlsx')
 
     # main()
     # arts_in_google = arts_in_google_table()
@@ -72,9 +72,9 @@ if __name__ == '__main__':
 
     result = sorted([i for i in all_arts if i not in arts_in_folder])
 
-    result = [i for i in result if '13NEW' in i or '12NEW' in i or '11NEW' in i]
-    print(len(result))
-    print(result)
+    # result = [i for i in result if '13NEW' in i or '12NEW' in i or '11NEW' in i]
+    # print(len(result))
+    # print(result)
 
     directory = r'E:\Новая база\сделать'
     for i in result:

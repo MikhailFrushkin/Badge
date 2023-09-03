@@ -105,7 +105,7 @@ def merge_pdfs(input_paths, output_path, count=100):
 
 def one_pdf(folder_path, filename):
     pdf_filename = fr'E:\Новая база\сделать\\{filename}.pdf'
-    pdf_filename_out = fr'E:\Новая база\Ready pdf compress\\{filename}.pdf'
+    pdf_filename_out = fr'E:\Новая база\Готовые pdf\\{filename}.pdf'
     if os.path.exists(pdf_filename):
         logger.debug(f'Файл существует: {pdf_filename}')
     else:
@@ -161,7 +161,7 @@ def find_intersection(list1, list2):
 
 
 def main(filename):
-    target_directory = r"E:\Новая база\Ready pdf compress"
+    target_directory = r"E:\Новая база\Готовые pdf"
     df = pd.read_excel(filename)
     df['Артикул продавца'] = df['Артикул продавца'].apply(lambda x: x.lower() + '.pdf')
     art_list2 = df['Артикул продавца'].to_list()

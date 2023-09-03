@@ -364,16 +364,18 @@ db.create_tables([Statistic])
 db.close()
 
 if __name__ == '__main__':
-    update_base_postgresql()
-    # db_params = {
-    #     "host": host,
-    #     "database": dbname,
-    #     "user": user,
-    #     "password": password
-    # }
-    # with psycopg2.connect(**db_params) as connection:
-    #     # Удаление таблицы, если она существует
-    #     with connection.cursor() as cursor:
-    #         drop_table_query = "DROP TABLE IF EXISTS employees;"
-    #         cursor.execute(drop_table_query)
-    #         print('Таблица удалена')
+    # update_base_postgresql()
+    db_params = {
+        "host": host,
+        "database": dbname,
+        "user": user,
+        "password": password
+    }
+    with psycopg2.connect(**db_params) as connection:
+        # Удаление таблицы, если она существует
+        with connection.cursor() as cursor:
+            drop_table_query = ("DROP TABLE IF EXISTS Update_base;"
+                                "DROP TABLE IF EXISTS files;"
+                                "DROP TABLE IF EXISTS orders;")
+            cursor.execute(drop_table_query)
+            print('Таблица удалена')
