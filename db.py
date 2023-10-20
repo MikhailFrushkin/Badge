@@ -122,7 +122,7 @@ def orders_base_postgresql(self):
             for order in query:
                 orders.append((order.art, order.nums_in_folder, order.size, machine_name, name_file, datetime.now()))
             insert_data_query = (
-                "INSERT INTO orders (art, num, size, machin, name_file, update_timestamp)"                            
+                "INSERT INTO orders (art, num, size, machin, name_file, update_timestamp)"
                 "VALUES (%s, %s, %s, %s, %s, %s);")
 
             cursor.executemany(insert_data_query, orders)
@@ -164,19 +164,10 @@ def crop_to_content(image_path, output_path):
 
 class GoogleTable(Model):
     name = CharField(null=True)
-    quantity = CharField(null=True)
-    designer = CharField(null=True)
-    date = DateField(null=True)
     folder_link = CharField(null=True)
-    singles = BooleanField(null=True)
-    mockups = BooleanField(null=True)
-    packaging = BooleanField(null=True)
-    checked_by_katya = BooleanField(null=True)
-    added = BooleanField(null=True)
-    performer = CharField(null=True)
     article = CharField(null=True)
-    status_download = BooleanField(default=False)
     shop = CharField(null=True)
+    status_download = BooleanField(default=False)
     created_at = DateTimeField(default=datetime.now)
 
     class Meta:
@@ -313,30 +304,13 @@ def add_rows_google_table():
         record.save()
 
 
-def add_record_google_table(name, quantity, designer, date, folder_link, singles,
-                            mockups, packaging, checked_by_katya, added, performer, article, shop):
+def add_record_google_table(name, folder_link, article, shop):
     """Добавление записи в таблицу с гугла"""
-    if pd.isnull(date):
-        date = None
-    elif len(date) == 10:
-        date = datetime.strptime(date, '%d.%m.%Y').date()
-    elif len(date) == 8:
-        date = datetime.strptime(date, '%d.%m.%y').date()
-    else:
-        date = None
+
     record, created = GoogleTable.get_or_create(
         folder_link=folder_link,
         defaults={
             'name': name,
-            'quantity': quantity,
-            'designer': designer,
-            'date': date,
-            'singles': bool(singles) if not pd.isnull(singles) else None,
-            'mockups': bool(mockups) if not pd.isnull(mockups) else None,
-            'packaging': bool(packaging) if not pd.isnull(packaging) else None,
-            'checked_by_katya': bool(checked_by_katya) if not pd.isnull(checked_by_katya) else None,
-            'added': bool(added) if not pd.isnull(added) else None,
-            'performer': performer,
             'article': article,
             'shop': shop
         }
@@ -357,12 +331,8 @@ def print_records_by_month(month, year):
     return records
 
 
-db.connect()
-db.create_tables([Statistic])
-
-# Закрытие соединения с базой данных (необязательно, но рекомендуется)
-db.close()
-
 if __name__ == '__main__':
-    pass
+    db.connect()
+    db.create_tables([Statistic, GoogleTable, Orders, Article])
+    db.close()
     # update_base_postgresql()

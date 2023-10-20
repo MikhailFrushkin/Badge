@@ -25,12 +25,12 @@ def add_header_and_footer_to_pdf(pdf_file, footer_text, A3_flag):
     with open(pdf_file, "rb") as pdf:
         pdf_content = BytesIO(pdf.read())
     if A3_flag:
-        with open('Параметры значков_A3.json', 'r') as file:
+        with open('Настройки\\Параметры значков_A3.json', 'r') as file:
             config = json.load(file)
         pagesize = A3
         size = 8
     else:
-        with open('Параметры значков.json', 'r') as file:
+        with open('Настройки\\Параметры значков.json', 'r') as file:
             config = json.load(file)
         pagesize = A4
         size = 10
@@ -161,10 +161,10 @@ def write_images_art2(image, text, x, y):
 
 def distribute_images(queryset, size, A3_flag, self=None):
     if A3_flag:
-        with open('Параметры значков_A3.json', 'r') as file:
+        with open('Настройки\\Параметры значков_A3.json', 'r') as file:
             config = json.load(file)
     else:
-        with open('Параметры значков.json', 'r') as file:
+        with open('Настройки\\Параметры значков.json', 'r') as file:
             config = json.load(file)
     nums = config[f'{str(size)}']['nums']
     list_arts = [(i.num_on_list, i.nums_in_folder, i.images) for i in queryset]
@@ -244,12 +244,12 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
     if A3_flag:
         a4_width = 3508
         a4_height = 4961
-        with open('Параметры значков_A3.json', 'r') as file:
+        with open('Настройки\\Параметры значков_A3.json', 'r') as file:
             config = json.load(file)
     else:
         a4_width = 2480
         a4_height = 3508
-        with open('Параметры значков.json', 'r') as file:
+        with open('Настройки\\Параметры значков.json', 'r') as file:
             config = json.load(file)
     image_width_mm = config[f'{str(size)}']['diameter']
     image_height_mm = config[f'{str(size)}']['diameter']

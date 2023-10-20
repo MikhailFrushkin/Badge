@@ -9,27 +9,6 @@ from config import sticker_path_all, dp_path, anikoya_path
 db = SqliteDatabase('mydatabase.db')
 
 
-class GoogleTable(Model):
-    name = CharField(null=True)
-    quantity = CharField(null=True)
-    designer = CharField(null=True)
-    date = DateField(null=True)
-    folder_link = CharField(null=True)
-    singles = BooleanField(null=True)
-    mockups = BooleanField(null=True)
-    packaging = BooleanField(null=True)
-    checked_by_katya = BooleanField(null=True)
-    added = BooleanField(null=True)
-    performer = CharField(null=True)
-    article = CharField(null=True)
-    status_download = BooleanField(default=False)
-    shop = CharField(null=True)
-    created_at = DateTimeField(default=datetime.now)
-
-    class Meta:
-        database = db
-
-
 class Article(Model):
     art = CharField(null=True, index=True)
     folder = CharField(null=True)
@@ -98,28 +77,6 @@ class Article(Model):
         self.sticker = sticker_file_path
         self.save()
 
-
-class Orders(Article):
-    num_on_list = IntegerField(null=True)
-
-    class Meta:
-        database = db
-        ordering = ['size', 'art']
-
-    @classmethod
-    def sorted_records(cls):
-        # Метод класса для получения отсортированных записей
-        return cls.select().order_by(cls.size)
-
-
-class Statistic(Model):
-    art = CharField()
-    nums = IntegerField()
-    size = CharField(null=True)
-    created_at = DateTimeField(default=datetime.now)
-
-    class Meta:
-        database = db
 
 
 def update_arts_db(path, shop):

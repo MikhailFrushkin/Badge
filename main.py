@@ -6,8 +6,10 @@ from pprint import pprint
 
 import cv2
 import numpy as np
+import pandas as pd
 import requests
 import tqdm
+from PyQt5.QtWidgets import QMessageBox
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from loguru import logger
@@ -17,11 +19,16 @@ from db import add_record_google_table, GoogleTable, Article, db
 from utils import rename_files, move_ready_folder, ProgressBar
 
 
-def read_table_google(CREDENTIALS_FILE='google_acc.json',
+def read_table_google(CREDENTIALS_FILE='Настройки\\google_acc.json',
                       spreadsheet_id=id_google_table_anikoya,
                       shop='AniKoya', self=None):
+    if shop == 'AniKoya':
+        art_name_col = 'АРТИКУЛ ВБ'
+    else:
+        art_name_col = 'Артикул ВБ'
     logger.debug(f'Читаю гугл таблицу {shop}')
-    self.second_statusbar.showMessage(f'Читаю гугл таблицу {shop}', 10000)
+    if self:
+        self.second_statusbar.showMessage(f'Читаю гугл таблицу {shop}', 10000)
 
     try:
         credentials = service_account.Credentials.from_service_account_file(CREDENTIALS_FILE)
@@ -29,47 +36,43 @@ def read_table_google(CREDENTIALS_FILE='google_acc.json',
         # Пример чтения файла
         values = service.spreadsheets().values().get(
             spreadsheetId=spreadsheet_id,
-            range='2023!B1:M30000',
+            range='2023',
         ).execute()
-
     except Exception as ex:
         logger.error(f'Ошибка чтения гуглтаблицы {ex}')
+        if self:
+            QMessageBox.warning(self, 'Ошибка', f'Ошибка чтения гуглтаблицы \n{ex}')
     data = values.get('values', [])
-    headers = data[0]
+    rows = data[1:]
+    headers = [i for i in data[0]]
+    headers.append(' ')
     for row in data:
         missing_columns = len(headers) - len(row)
         if missing_columns > 0:
             row += [''] * missing_columns
+    df = pd.DataFrame(data[1:], columns=headers)
 
-    headers = data[0]  # Заголовки столбцов из первого элемента списка значений
-    rows = data[1:]
-    # Проверка количества столбцов и создание DataFrame
-    lines_list = []
     if len(headers) != len(rows[0]):
-        pprint(headers)
         print(len(headers), len(rows[0]))
-
-        pprint(rows[0])
-        print("Ошибка: количество столбцов не совпадает с количеством значений.")
+        print(headers)
+        print(rows[0])
+        logger.error("Ошибка: количество столбцов не совпадает с количеством значений.")
     else:
-        progress = ProgressBar(len(rows), self)
-        for i in rows:
-            if i[4] != '' and i[11] != '':
-                add_record_google_table(name=i[0],
-                                        quantity=i[1],
-                                        designer=i[2],
-                                        date=i[3],
-                                        folder_link=i[4],
-                                        singles=i[5],
-                                        mockups=i[6],
-                                        packaging=i[7],
-                                        checked_by_katya=i[8],
-                                        added=i[9],
-                                        performer=i[10],
-                                        article=i[11],
+        if self:
+            progress = ProgressBar(len(rows), self)
+        for index, row in df.iterrows():
+            try:
+                if row[art_name_col] == '' and '-' not in row[art_name_col]:
+                    continue
+                add_record_google_table(name=row['Наименование'],
+                                        folder_link=row['Ссылка на папку'],
+                                        article=row[art_name_col],
                                         shop=shop,
                                         )
-            progress.update_progress()
+                if self:
+                    progress.update_progress()
+            except Exception as ex:
+                QMessageBox.warning(self, 'Ошибка', f'Ошибка записы ссылки в базу\n{index}{ex}')
 
 
 def download_file(url, local_path):
@@ -264,9 +267,16 @@ def download_new_arts(link, arts_list, shop, self=None):
     new_folder = os.path.join(f'{all_badge}\\Скаченные с диска', os.listdir(f'{all_badge}\\Скаченные с диска')[0])
     if new_folder:
         article_list = []
-        for i in arts_list.split('/'):
+        if '/' in arts_list:
+            temp_list = [i.strip() for i in arts_list.split('/') if (len(i) < 50 and len(i) > 5)]
+        elif '\\' in arts_list:
+            temp_list = [i.strip() for i in arts_list.split('\\') if (len(i) < 50 and len(i) > 5)]
+        elif '|' in arts_list:
+            temp_list = [i.strip() for i in arts_list.split('|') if (len(i) < 50 and len(i) > 5)]
+        else:
+            temp_list = [i.strip() for i in arts_list.split() if (len(i) < 50 and len(i) > 5)]
+        for i in temp_list:
             article_list.append(i.strip())
-        article_list = [article for article in article_list if len(article) > 6]
 
         list_image = []
         list_skin_one = []
@@ -407,13 +417,26 @@ def download_new_arts(link, arts_list, shop, self=None):
 
 def update_db(self=None):
     # Чтение гугл таблицы
-    read_table_google(spreadsheet_id=id_google_table_anikoya, shop='AniKoya', self=self)
-    read_table_google(spreadsheet_id=id_google_table_DP, shop='DP', self=self)
-
+    try:
+        read_table_google(spreadsheet_id=id_google_table_anikoya, shop='AniKoya', self=self)
+        read_table_google(spreadsheet_id=id_google_table_DP, shop='DP', self=self)
+    except Exception as ex:
+        logger.error(ex)
+        QMessageBox.warning(self, 'Ошибка', f'Ошибка сканирования гугл таблицы\n {ex}')
     records = GoogleTable.select().where(~GoogleTable.status_download)
     list_arts = []
     for row in records:
-        temp_list = [i.strip() for i in row.article.split('/') if len(i) < 50]
+        if '/' in row.article:
+            temp_list = [i.strip() for i in row.article.split('/') if (len(i) < 50 and len(i) > 5)]
+        elif '\\' in row.article:
+            temp_list = [i.strip() for i in row.article.split('\\') if (len(i) < 50 and len(i) > 5)]
+        elif '|' in row.article:
+            temp_list = [i.strip() for i in row.article.split('|') if (len(i) < 50 and len(i) > 5)]
+        else:
+            temp_list = [i.strip() for i in row.article.split() if (len(i) < 50 and len(i) > 5)]
+        if len(temp_list) > 4:
+            logger.debug(f'{row.id}: {temp_list}')
+
         if len(temp_list) < 5:
             list_arts.extend(temp_list)
     return list_arts
@@ -431,8 +454,7 @@ def download_new_arts_in_comp(list_arts, self=None):
     for key, value in arts_dict.items():
         try:
             record = GoogleTable.get(folder_link=key)
-            record.status_download = True
-            record.save()
+
             download_new_arts(link=key, arts_list=value[0], shop=value[1], self=self)
             if value[1] == 'DP':
                 move_ready_folder(target_directory=f'{dp_path}',
@@ -441,6 +463,8 @@ def download_new_arts_in_comp(list_arts, self=None):
                 move_ready_folder()
             if self:
                 process.update_progress()
+            record.status_download = True
+            record.save()
 
         except Exception as ex:
             logger.error(f'{key}, {value}, {ex}')
@@ -553,6 +577,5 @@ def update_sticker_path():
 
 
 if __name__ == '__main__':
-    update_arts_db()
-    # update_arts_db2()
-    # update_sticker_path()
+    read_table_google()
+    # read_table_google(spreadsheet_id=id_google_table_DP, shop='DP')

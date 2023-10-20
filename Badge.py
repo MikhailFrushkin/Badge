@@ -19,7 +19,7 @@ from peewee import fn
 
 from config import all_badge, token
 from created_images import created_good_images
-from db import Article, Statistic, update_base_postgresql
+from db import Article, Statistic, update_base_postgresql, GoogleTable, Orders, db
 from dow_stickers import main_download_stickers
 from main import update_db, download_new_arts_in_comp, update_arts_db2, update_sticker_path
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
@@ -632,21 +632,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             dialog = CustomDialog()
             dialog.set_text(mes)
             dialog.exec_()
-            logger.debug('Загрузка стикеров:')
-            main_download_stickers(self)
+            # logger.debug('Загрузка стикеров:')
+            # main_download_stickers(self)
 
             download_new_arts_in_comp(list_arts, self)
 
-            delete_files_with_name(starting_directory=all_badge)
-            try:
-                update_arts_db2()
-                update_sticker_path()
-            except Exception as ex:
-                logger.error(ex)
-            try:
-                update_base_postgresql()
-            except Exception as ex:
-                logger.error(ex)
+            # delete_files_with_name(starting_directory=all_badge)
+            # try:
+            #     update_arts_db2()
+            #     update_sticker_path()
+            # except Exception as ex:
+            #     logger.error(ex)
+            # try:
+            #     update_base_postgresql()
+            # except Exception as ex:
+            #     logger.error(ex)
             QMessageBox.information(self, 'Загрузка', 'Загрузка закончена')
             self.progress_bar.setValue(100)
         except Exception as ex:
@@ -726,6 +726,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 if __name__ == '__main__':
     import sys
+
+    db.connect()
+    db.create_tables([Statistic, GoogleTable, Orders, Article])
+    db.close()
 
     app = QtWidgets.QApplication(sys.argv)
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())

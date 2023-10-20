@@ -67,7 +67,7 @@ def compare_files_with_local_directory(service, folder_url: str, local_directory
 async def download_missing_files_from_drive(folder_url: str, local_directory: str, self=None):
     """Download missing files from Google Drive to the specified local directory asynchronously."""
     # Authenticate and create the Drive service
-    credentials = service_account.Credentials.from_service_account_file('google_acc.json')
+    credentials = service_account.Credentials.from_service_account_file('Настройки\\google_acc.json')
     service = build('drive', 'v3', credentials=credentials, static_discovery=False)
 
     # Get the list of missing files
