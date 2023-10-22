@@ -67,10 +67,11 @@ def add_header_and_footer_to_pdf(pdf_file, footer_text, A3_flag):
 def combine_images_to_pdf(input_files, output_pdf, progress=None, self=None, A3_flag=False):
     x_offset = 20
     y_offset = 20
-    logger.debug(input_files)
-    dig_list_skin = []
+    big_list_skin = []
     for i in input_files:
-        print(i)
+        if i.nums_in_folder >= 6:
+            big_list_skin.append(i)
+    input_files = [i for i in input_files if i not in big_list_skin]
     if A3_flag:
         c = canvas.Canvas(output_pdf, pagesize=landscape(A3), pageCompression=1)
         img_width = (A4[0] - 2 * x_offset) / 3
@@ -134,6 +135,26 @@ def combine_images_to_pdf(input_files, output_pdf, progress=None, self=None, A3_
             c.showPage()
         c.save()
 
+    if big_list_skin:
+        c = canvas.Canvas(f"Файлы на печать/big.pdf", pagesize=A4)
+        img_width = 210
+        img_height = 280
+        logger.info(img_width)
+        logger.info(img_height)
+        for i, img in enumerate(big_list_skin):
+            x = 0
+            y = 0
+            c.setFont("Helvetica-Bold", 8)
+            c.drawString(x, y + 2, f"#{img.num_on_list}     {img.art}")
+            try:
+                logger.success(f"Добавился скин {img.num_on_list}     {img.art}")
+                progress.update_progress()
+                logger.debug(img.skin)
+                c.drawImage(img.skin, 20, 20, width=img_width, height=img_height)
+            except Exception as ex:
+                logger.error(f"Не удалось добавить подложку для {img.art} {ex}")
+            c.showPage()
+        c.save()
     add_header_and_footer_to_pdf(output_pdf, self.name_doc, A3_flag=A3_flag)
 
 
@@ -437,10 +458,10 @@ def created_good_images(all_arts, self, A3_flag=False):
         # except Exception as ex:
         #     logger.error(ex)
 
-        try:
-            orders_base_postgresql(self)
-        except Exception as ex:
-            logger.error(ex)
+        # try:
+        #     orders_base_postgresql(self)
+        # except Exception as ex:
+        #     logger.error(ex)
 
         self.list_on_print = 0
         QMessageBox.information(self, 'Завершено', 'Создание файлов завершено!')
