@@ -632,21 +632,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             dialog = CustomDialog()
             dialog.set_text(mes)
             dialog.exec_()
-            # logger.debug('Загрузка стикеров:')
-            # main_download_stickers(self)
+            logger.debug('Загрузка стикеров:')
+            main_download_stickers(self)
 
             download_new_arts_in_comp(list_arts, self)
 
-            # delete_files_with_name(starting_directory=all_badge)
-            # try:
-            #     update_arts_db2()
-            #     update_sticker_path()
-            # except Exception as ex:
-            #     logger.error(ex)
-            # try:
-            #     update_base_postgresql()
-            # except Exception as ex:
-            #     logger.error(ex)
+            delete_files_with_name(starting_directory=all_badge)
+            try:
+                update_arts_db2()
+                update_sticker_path()
+            except Exception as ex:
+                logger.error(ex)
+            try:
+                update_base_postgresql()
+            except Exception as ex:
+                logger.error(ex)
             QMessageBox.information(self, 'Загрузка', 'Загрузка закончена')
             self.progress_bar.setValue(100)
         except Exception as ex:

@@ -64,12 +64,12 @@ def add_header_and_footer_to_pdf(pdf_file, footer_text, A3_flag):
         writer.write(output_pdf)
 
 
-def combine_images_to_pdf(input_files, output_pdf, progress=None, self=None, A3_flag=False):
+def combine_images_to_pdf(input_files, output_pdf, size=None, progress=None, self=None, A3_flag=False):
     x_offset = 20
     y_offset = 20
     big_list_skin = []
     for i in input_files:
-        if i.nums_in_folder >= 6:
+        if i.nums_in_folder >= 40:
             big_list_skin.append(i)
     input_files = [i for i in input_files if i not in big_list_skin]
     if A3_flag:
@@ -136,21 +136,20 @@ def combine_images_to_pdf(input_files, output_pdf, progress=None, self=None, A3_
         c.save()
 
     if big_list_skin:
-        c = canvas.Canvas(f"Файлы на печать/big.pdf", pagesize=A4)
-        img_width = 210
-        img_height = 280
+        c = canvas.Canvas(f"Файлы на печать/Большие подложки {size}.pdf", pagesize=A4)
+        img_width = 505
+        img_height = 674
         logger.info(img_width)
         logger.info(img_height)
         for i, img in enumerate(big_list_skin):
-            x = 0
-            y = 0
             c.setFont("Helvetica-Bold", 8)
-            c.drawString(x, y + 2, f"#{img.num_on_list}     {img.art}")
+            c.drawString(30, 30, f"#{img.num_on_list}     {img.art}")
             try:
                 logger.success(f"Добавился скин {img.num_on_list}     {img.art}")
                 progress.update_progress()
                 logger.debug(img.skin)
-                c.drawImage(img.skin, 20, 20, width=img_width, height=img_height)
+
+                c.drawImage(img.skin, 40, 100, width=img_width, height=img_height)
             except Exception as ex:
                 logger.error(f"Не удалось добавить подложку для {img.art} {ex}")
             c.showPage()
@@ -343,7 +342,6 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
 def merge_pdfs_stickers(queryset, output_path):
     pdf_writer = PyPDF2.PdfWriter()
     input_paths = [i.sticker for i in queryset if i.sticker]
-    print(input_paths)
     for index, input_path in enumerate(input_paths, start=1):
         try:
             with open(input_path, 'rb') as pdf_file:
@@ -408,7 +406,6 @@ def created_good_images(all_arts, self, A3_flag=False):
                 row.save()
                 if not row.sticker:
                     bad_arts_stickers.append((row.art, row.size))
-                    print((row.art, row.size))
 
         # Запись ненайденных артикулов и с отсутсвующих стикеров в файл
         try:
@@ -431,8 +428,7 @@ def created_good_images(all_arts, self, A3_flag=False):
 
             try:
                 logger.debug(f'Создание наклейки {size}')
-                combine_images_to_pdf(queryset, f"{ready_path}/{size}.pdf",
-                                      progress, self, A3_flag)
+                combine_images_to_pdf(queryset, f"{ready_path}/{size}.pdf", size, progress, self, A3_flag)
             except Exception as ex:
                 logger.error(ex)
                 logger.error(f'Не удалось создать файл наклейнки {size}')
