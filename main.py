@@ -1,5 +1,6 @@
 import datetime
 import os
+import re
 import shutil
 import subprocess
 from pprint import pprint
@@ -62,15 +63,16 @@ def read_table_google(CREDENTIALS_FILE='Настройки\\google_acc.json',
             progress = ProgressBar(len(rows), self)
         for index, row in df.iterrows():
             try:
-                if row[art_name_col] == '' and '-' not in row[art_name_col]:
+                if row[art_name_col] == '' or '-' not in row[art_name_col] or not row['Ссылка на папку'].startswith('https://disk'):
                     continue
-                add_record_google_table(name=row['Наименование'],
-                                        folder_link=row['Ссылка на папку'],
-                                        article=row[art_name_col],
-                                        shop=shop,
-                                        )
-                if self:
-                    progress.update_progress()
+                else:
+                    add_record_google_table(name=row['Наименование'],
+                                            folder_link=row['Ссылка на папку'],
+                                            article=row[art_name_col],
+                                            shop=shop,
+                                            )
+                    if self:
+                        progress.update_progress()
             except Exception as ex:
                 QMessageBox.warning(self, 'Ошибка', f'Ошибка записы ссылки в базу\n{index}{ex}')
 
@@ -262,22 +264,16 @@ def search_image_56(folder_skin, output_folder):
 
 
 def download_new_arts(link, arts_list, shop, self=None):
+    logger.debug(arts_list)
     main_download(public_link=link, shop=shop, self=self)
     logger.debug(link)
     new_folder = os.path.join(f'{all_badge}\\Скаченные с диска', os.listdir(f'{all_badge}\\Скаченные с диска')[0])
+    logger.debug(new_folder)
     if new_folder:
-        article_list = []
-        if '/' in arts_list:
-            temp_list = [i.strip() for i in arts_list.split('/') if (len(i) < 50 and len(i) > 5)]
-        elif '\\' in arts_list:
-            temp_list = [i.strip() for i in arts_list.split('\\') if (len(i) < 50 and len(i) > 5)]
-        elif '|' in arts_list:
-            temp_list = [i.strip() for i in arts_list.split('|') if (len(i) < 50 and len(i) > 5)]
-        else:
-            temp_list = [i.strip() for i in arts_list.split() if (len(i) < 50 and len(i) > 5)]
-        for i in temp_list:
-            article_list.append(i.strip())
-
+        delimiters = r'[\\/|, ]'
+        substrings = re.split(delimiters, arts_list)
+        arts_list = [substring.strip() for substring in substrings if substring.strip()]
+        logger.debug(arts_list)
         list_image = []
         list_skin_one = []
         list_skin_names = ['подлож', 'главная', 'nabor']
@@ -324,11 +320,11 @@ def download_new_arts(link, arts_list, shop, self=None):
         if len(list_skin_one) == 0:
             list_skin_one = [i for i in list_skin if '1' in i.lower() or 'one' in i.lower() or 'мал' in i.lower()]
         list_skin = [i for i in list_skin if i not in list_skin_one]
-        print("Артикула: ", article_list)
+        print("Артикула: ", arts_list)
         print("Наклейки одиночки: ", list_skin_one)
         print("Наклейки наборы: ", list_skin)
         print("Изображения значков: ", list_image)
-        for folder in article_list:
+        for folder in arts_list:
             folder_art = os.path.join(new_folder, folder)
             os.makedirs(folder_art, exist_ok=True)
             size = folder.split('-')[-1]
@@ -425,20 +421,19 @@ def update_db(self=None):
         QMessageBox.warning(self, 'Ошибка', f'Ошибка сканирования гугл таблицы\n {ex}')
     records = GoogleTable.select().where(~GoogleTable.status_download)
     list_arts = []
-    for row in records:
-        if '/' in row.article:
-            temp_list = [i.strip() for i in row.article.split('/') if (len(i) < 50 and len(i) > 5)]
-        elif '\\' in row.article:
-            temp_list = [i.strip() for i in row.article.split('\\') if (len(i) < 50 and len(i) > 5)]
-        elif '|' in row.article:
-            temp_list = [i.strip() for i in row.article.split('|') if (len(i) < 50 and len(i) > 5)]
-        else:
-            temp_list = [i.strip() for i in row.article.split() if (len(i) < 50 and len(i) > 5)]
-        if len(temp_list) > 4:
-            logger.debug(f'{row.id}: {temp_list}')
+    try:
+        for row in records:
+            delimiters = r'[\\/|, ]'
+            substrings = re.split(delimiters, row.article)
+            temp_list = [substring.strip() for substring in substrings if substring.strip()]
+            logger.debug(temp_list)
+            if len(temp_list) > 4:
+                logger.debug(f'{row.id}: {temp_list}')
 
-        if len(temp_list) < 5:
-            list_arts.extend(temp_list)
+            if len(temp_list) < 5:
+                list_arts.extend(temp_list)
+    except Exception as ex:
+        logger.error(ex)
     return list_arts
 
 
@@ -578,4 +573,4 @@ def update_sticker_path():
 
 if __name__ == '__main__':
     read_table_google()
-    # read_table_google(spreadsheet_id=id_google_table_DP, shop='DP')
+    read_table_google(spreadsheet_id=id_google_table_DP, shop='DP')

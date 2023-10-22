@@ -61,6 +61,7 @@ def move_ready_folder(directory=f'{all_badge}\\Скаченные с диска'
         try:
             folder_path = os.path.abspath(os.path.join(directory, folder))
             target_directory = os.path.abspath(target_directory)
+
             for i in os.listdir(folder_path):
 
                 new_folder = os.path.join(folder_path, i)
@@ -78,13 +79,15 @@ def move_ready_folder(directory=f'{all_badge}\\Скаченные с диска'
                                         if os.path.exists(os.path.join(folder_name, filename)):
                                             try:
                                                 blur_image(image_path=os.path.join(folder_name, filename),
-                                                           output_path=os.path.join(folder_name, filename), size_b=art.size)
+                                                           output_path=os.path.join(folder_name, filename),
+                                                           size_b=art.size)
                                             except Exception as ex:
                                                 logger.error(ex)
                                                 logger.error(os.path.join(folder_name, filename))
                         except Exception as ex:
                             logger.error(ex)
-
+                    else:
+                        logger.error(f'{os.path.join(target_directory, i)} существует')
         except Exception as ex:
             logger.error(ex)
         finally:

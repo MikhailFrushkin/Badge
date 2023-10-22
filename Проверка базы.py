@@ -78,16 +78,15 @@ class Article(Model):
         self.save()
 
 
-
 def update_arts_db(path, shop):
     count = 0
     start = datetime.now()
-    for root, dirs, files in os.walk(path):
-        for dir in dirs:
-            if len(dir) > 10:
-                count += 1
-                Article.create_with_art(dir, os.path.join(root, dir), shop)
-                print('\r', count, end='', flush=True)
+    # for root, dirs, files in os.walk(path):
+    #     for dir in dirs:
+    #         if len(dir) > 10:
+    #             count += 1
+    #             Article.create_with_art(dir, os.path.join(root, dir), shop)
+    #             print('\r', count, end='', flush=True)
 
     print('Нет подложек')
     records = Article.select().where(Article.skin >> None)
@@ -109,14 +108,14 @@ def update_arts_db(path, shop):
 
 
 if __name__ == '__main__':
-    try:
-        with db.atomic():
-            db.drop_tables([Article])
-    except Exception as ex:
-        logger.error(ex)
+    # try:
+    #     with db.atomic():
+    #         db.drop_tables([Article])
+    # except Exception as ex:
+    #     logger.error(ex)
 
     if not Article.table_exists():
         Article.create_table(safe=True)
 
-    update_arts_db(dp_path, 'DP')
+    # update_arts_db(dp_path, 'DP')
     update_arts_db(anikoya_path, 'AniKoya')

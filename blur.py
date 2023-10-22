@@ -122,8 +122,9 @@ if __name__ == '__main__':
     # main(file='да37.txt', size_b=37)
     # main(file='да44.txt', size_b=44)
     # main(file='да56.txt', size_b=56)
+    size = 56
 
-    directory = r'E:\База значков\сделать\44'
+    directory = fr'E:\База значков\сделать\{size}'
     for i in os.listdir(directory):
         # folder_name = r'E:\База значков\MEM_KOT-13NEW-1-56'
         folder_name = os.path.join(directory, i)
@@ -133,7 +134,7 @@ if __name__ == '__main__':
                 if os.path.exists(os.path.join(folder_name, filename)):
                     try:
                         blur_image(image_path=os.path.join(folder_name, filename),
-                                   output_path=os.path.join(folder_name, filename), size_b=44)
+                                   output_path=os.path.join(folder_name, filename), size_b=size)
                     except Exception as ex:
                         logger.error(ex)
                         logger.error(os.path.join(folder_name, filename))
