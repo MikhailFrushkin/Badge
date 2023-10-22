@@ -67,6 +67,10 @@ def add_header_and_footer_to_pdf(pdf_file, footer_text, A3_flag):
 def combine_images_to_pdf(input_files, output_pdf, progress=None, self=None, A3_flag=False):
     x_offset = 20
     y_offset = 20
+    logger.debug(input_files)
+    dig_list_skin = []
+    for i in input_files:
+        print(i)
     if A3_flag:
         c = canvas.Canvas(output_pdf, pagesize=landscape(A3), pageCompression=1)
         img_width = (A4[0] - 2 * x_offset) / 3
@@ -371,6 +375,8 @@ def created_good_images(all_arts, self, A3_flag=False):
                          }
                         ] * art.count
                 Orders.bulk_create([Orders(**item) for item in data])
+
+        # Присваивание номера записям Orders
         sorted_orders = Orders.sorted_records()
         for index, row in enumerate(sorted_orders, start=1):
             if not os.path.exists(row.folder):
@@ -395,6 +401,7 @@ def created_good_images(all_arts, self, A3_flag=False):
 
         for size in records:
             queryset = Orders.select().where(Orders.size == size)
+
             if self:
                 self.progress_bar.setValue(0)
                 self.progress_label.setText(f"Прогресс: Создание подложек {size} mm.")
@@ -425,10 +432,10 @@ def created_good_images(all_arts, self, A3_flag=False):
                 create_contact_sheet(sets_of_orders, size, self, A3_flag)
             except Exception as ex:
                 logger.error(ex)
-        try:
-            files_base_postgresql(self)
-        except Exception as ex:
-            logger.error(ex)
+        # try:
+        #     files_base_postgresql(self)
+        # except Exception as ex:
+        #     logger.error(ex)
 
         try:
             orders_base_postgresql(self)
