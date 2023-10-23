@@ -1,4 +1,5 @@
 import os
+import subprocess
 from datetime import datetime
 
 from loguru import logger
@@ -61,7 +62,7 @@ class Article(Model):
         # Заполнение столбца "Images"
         image_filenames = [os.path.join(folder_name, f) for f in os.listdir(folder_name)
                            if os.path.isfile(os.path.join(folder_name, f)) and
-                           (f.split('.')[0].startswith('!') or f.split('.')[0].isdigit())]
+                           (f.split('.')[0].startswith('!') or f.split('.')[0].strip().isdigit())]
         self.images = ', '.join(image_filenames) if image_filenames else None
         self.nums_in_folder = len(image_filenames)
 
@@ -99,9 +100,19 @@ def update_arts_db(path, shop):
         print(os.path.abspath(i.folder))
 
     print('НЕ соответствует число картинок с базой')
+    count = 0
     records = Article.select().where(Article.nums_in_folder != Article.nums)
     for i in records:
+        count += 1
+        print(count)
         print(os.path.abspath(i.folder))
+        # if os.path.exists(os.path.abspath(i.folder)):
+        #     try:
+        #         subprocess.Popen(['explorer', os.path.abspath(i.folder)], shell=True)
+        #     except Exception as e:
+        #         print(f"Не удалось открыть папку: {e}")
+        # else:
+        #     print("Указанной папки не существует")
         i.nums = i.nums_in_folder
         i.save()
     logger.debug(datetime.now() - start)
@@ -117,5 +128,5 @@ if __name__ == '__main__':
     if not Article.table_exists():
         Article.create_table(safe=True)
 
-    # update_arts_db(dp_path, 'DP')
+    update_arts_db(dp_path, 'DP')
     update_arts_db(anikoya_path, 'AniKoya')

@@ -48,7 +48,7 @@ def print_pdf_skin(printers):
 
     for file in os.listdir(f'{ready_path}'):
         if os.path.isfile(os.path.join(ready_path, file)):
-            if file.split('.')[1] == 'pdf' and file.split('.')[0].isdigit():
+            if file.split('.')[1] == 'pdf' and file.split('.')[0].strip().isdigit():
                 file_path = os.path.join(ready_path, file)
                 file_list.append(file_path)
 

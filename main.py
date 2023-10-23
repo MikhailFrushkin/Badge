@@ -284,10 +284,11 @@ def download_new_arts(link, arts_list, shop, self=None):
         for file in os.listdir(new_folder):
             if os.path.isfile(os.path.join(new_folder, file)):
                 if file.split('.')[1] == 'png' or file.split('.')[1] == 'jpg':
-                    if file.split('.')[0].isdigit():
+                    if file.split('.')[0].strip().isdigit():
                         list_image.append(file)
-                elif file.split('.')[1] == 'pdf':
+                elif file.endswith('.pdf'):
                     try:
+                        logger.success(f'Найден стикер {file}\nСкопирован в папку {sticker_path_all}')
                         shutil.copy2(os.path.join(new_folder, file), sticker_path_all)
                     except Exception as ex:
                         logger.error(ex)

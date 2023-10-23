@@ -228,7 +228,7 @@ class Article(Model):
         image_filenames = []
 
         for index, filename in enumerate(os.listdir(folder_name), start=1):
-            if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
+            if (filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()) \
                     and os.path.isfile(os.path.join(folder_name, filename)):
                 image_filenames.append(os.path.join(folder_name, f'{filename}'))
 

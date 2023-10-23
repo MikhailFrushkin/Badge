@@ -254,7 +254,7 @@ def distribute_images(queryset, size, A3_flag, self=None):
             list_arts.remove(list_arts[0])
 
     logger.info(f'Сумма значков: {sum([len(i) for i in sets_of_orders])}')
-    logger.info(f'Сумма значков на листах: {set([len(i) for i in sets_of_orders])}')
+    # logger.info(f'Сумма значков на листах: {set([len(i) for i in sets_of_orders])}')
     logger.info(f'Количество листов: {len(sets_of_orders)}')
     if self:
         self.list_on_print += len(sets_of_orders)
@@ -364,7 +364,6 @@ def created_good_images(all_arts, self, A3_flag=False):
         Orders.drop_table()
         if not Orders.table_exists():
             Orders.create_table(safe=True)
-        bad_arts = []
         bad_arts_stickers = []
         try:
             shutil.rmtree(ready_path, ignore_errors=True)
@@ -439,9 +438,6 @@ def created_good_images(all_arts, self, A3_flag=False):
             except Exception as ex:
                 logger.error(ex)
                 logger.error(f'Не удалось создать файл ШК {size}, возможно не одного не найденно')
-
-            sum_result = Orders.select(fn.SUM(Orders.nums_in_folder)).where(Orders.size == size).scalar()
-            logger.info(f"Сумма значений в столбце: {sum_result}")
 
             sets_of_orders = distribute_images(queryset, size, A3_flag, self)
             try:

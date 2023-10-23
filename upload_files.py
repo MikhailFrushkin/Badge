@@ -1,6 +1,8 @@
 import os
 import asyncio
 import aiohttp
+from loguru import logger
+
 from config import token
 
 
@@ -29,18 +31,18 @@ async def upload_file(session, file_path, destination_path):
             print(f"Произошла ошибка при получении URL для загрузки файла {destination_path}: {upload_data}")
 
 
-async def upload_statistic_files_async():
+async def upload_statistic_files_async(order=None):
     current_directory = os.getcwd()
-    directory = os.path.join(current_directory, 'Файлы статистики')
+    directory = os.path.join(current_directory, 'Файлы связанные с заказом')
     tasks = []
 
     async with aiohttp.ClientSession() as session:
         for file in os.listdir(directory):
-            file_path = os.path.join(directory, file)
-            file_name = file_path.replace('\\', '_').replace(':', '_')
-            destination_path = f"/Отчеты/{file_name}"
-            task = upload_file(session, file_path, destination_path)
-            tasks.append(task)
+            if order in file:
+                file_path = os.path.join(directory, file)
+                destination_path = f"/Отчеты/{file}"
+                task = upload_file(session, file_path, destination_path)
+                tasks.append(task)
 
         await asyncio.gather(*tasks)
 

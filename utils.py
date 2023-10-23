@@ -39,7 +39,7 @@ def delete_files_with_name(starting_directory, target_filename="Картинка
                 print(f"{count} Файл {file_path} удален.")
 
 
-def df_in_xlsx(df, filename, max_width=50):
+def df_in_xlsx(df, filename, directory='Файлы связанные с заказом', max_width=50):
     workbook = Workbook()
     sheet = workbook.active
     for row in dataframe_to_rows(df, index=False, header=True):
@@ -50,8 +50,8 @@ def df_in_xlsx(df, filename, max_width=50):
         adjusted_width = min(max_length + 2, max_width)
         sheet.column_dimensions[column_letter].width = adjusted_width
 
-    os.makedirs('Файлы связанные с заказом', exist_ok=True)
-    workbook.save(f"Файлы связанные с заказом\\{filename}.xlsx")
+    os.makedirs(directory, exist_ok=True)
+    workbook.save(f"{directory}\\{filename}.xlsx")
 
 
 def move_ready_folder(directory=f'{all_badge}\\Скаченные с диска',
@@ -74,7 +74,7 @@ def move_ready_folder(directory=f'{all_badge}\\Скаченные с диска'
                             if art:
                                 folder_name = art.folder
                                 for index, filename in enumerate(os.listdir(folder_name), start=1):
-                                    if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
+                                    if (filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()) \
                                             and os.path.isfile(os.path.join(folder_name, filename)):
                                         if os.path.exists(os.path.join(folder_name, filename)):
                                             try:

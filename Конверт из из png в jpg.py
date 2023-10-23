@@ -57,5 +57,5 @@ if __name__ == '__main__':
             with ThreadPoolExecutor(max_workers=4) as executor:  # Максимальное количество одновременных потоков
                 for filename in os.listdir(folder_name):
                     if filename.endswith('.png') and (
-                            filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()):
+                            filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()):
                         executor.submit(process_image, filename)

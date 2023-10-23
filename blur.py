@@ -105,7 +105,7 @@ def main(file, size_b):
         list_db.append(article.art)
         folder_name = article.folder
         for index, filename in enumerate(os.listdir(folder_name), start=1):
-            if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
+            if (filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()) \
                     and os.path.isfile(os.path.join(folder_name, filename)):
                 if os.path.exists(os.path.join(folder_name, filename)):
                     try:
@@ -118,10 +118,22 @@ def main(file, size_b):
 
 
 if __name__ == '__main__':
-    # main(file='да25.txt', size_b=25)
-    # main(file='да37.txt', size_b=37)
-    # main(file='да44.txt', size_b=44)
-    # main(file='да56.txt', size_b=56)
+    size = 37
+
+    directory = fr'E:\База значков\сделать\{size}'
+    for i in os.listdir(directory):
+        # folder_name = r'E:\База значков\MEM_KOT-13NEW-1-56'
+        folder_name = os.path.join(directory, i)
+        for index, filename in enumerate(os.listdir(folder_name), start=1):
+            if (filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()) \
+                    and os.path.isfile(os.path.join(folder_name, filename)):
+                if os.path.exists(os.path.join(folder_name, filename)):
+                    try:
+                        blur_image(image_path=os.path.join(folder_name, filename),
+                                   output_path=os.path.join(folder_name, filename), size_b=size)
+                    except Exception as ex:
+                        logger.error(ex)
+                        logger.error(os.path.join(folder_name, filename))
     size = 56
 
     directory = fr'E:\База значков\сделать\{size}'
@@ -129,7 +141,7 @@ if __name__ == '__main__':
         # folder_name = r'E:\База значков\MEM_KOT-13NEW-1-56'
         folder_name = os.path.join(directory, i)
         for index, filename in enumerate(os.listdir(folder_name), start=1):
-            if (filename.split('.')[0].startswith('!') or filename.split('.')[0].isdigit()) \
+            if (filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()) \
                     and os.path.isfile(os.path.join(folder_name, filename)):
                 if os.path.exists(os.path.join(folder_name, filename)):
                     try:

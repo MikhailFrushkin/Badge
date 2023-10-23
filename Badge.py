@@ -98,7 +98,7 @@ class GroupedRecordsDialog(QDialog):
         if size_list:
             for size in size_list:
                 df_temp = df[df['Размер'] == str(size)]
-                df_in_xlsx(df_temp, f'Файлы статистики\\Статистика {size}')
+                df_in_xlsx(df_temp, f'Статистика {size}', directory='Файлы статистики')
         self.table_widget.resizeColumnsToContents()
 
     def adjust_dialog_size(self):
@@ -571,9 +571,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def evt_btn_create_files(self):
         """Ивент на кнопку Создать файлы"""
-        if self.lineEdit.text():
+        filename = self.lineEdit.text()
+        if filename:
+            logger.success(filename)
             try:
-                counts_art = read_excel_file(self.lineEdit.text())
+                counts_art = read_excel_file(filename)
                 for item in counts_art:
                     status = Article.get_or_none(Article.art == item.art)
                     if status and os.path.exists(status.folder):
@@ -582,14 +584,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 try:
                     bad_arts = [(i.art, i.count) for i in counts_art if i.status == '❌']
                     df_bad = pd.DataFrame(bad_arts, columns=['Артикул', 'Количество'])
-                    df_in_xlsx(df_bad, 'Не найденные артикула в заказе')
+                    df_in_xlsx(df_bad, f'Не найденные артикула в заказе {os.path.basename(filename)}')
+                    try:
+                        asyncio.run(upload_statistic_files_async(os.path.basename(filename)))
+                    except Exception as ex:
+                        logger.error(ex)
                 except Exception as ex:
                     logger.error(ex)
             except Exception as ex:
                 logger.error(ex)
             try:
                 if len(counts_art) > 0:
-                    dialog = QueueDialog(counts_art, 'Значки', self.lineEdit.text(), self)
+                    dialog = QueueDialog(counts_art, 'Значки', filename, self)
                     self.dialogs.append(dialog)
                     dialog.show()
             except Exception as ex:
@@ -718,7 +724,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
                     grouped_dialog = GroupedRecordsDialog(self, start_date, end_date)
                     grouped_dialog.exec_()
-                    asyncio.run(upload_statistic_files_async())
+
 
             except Exception as ex:
                 print(ex)
