@@ -558,10 +558,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def evt_btn_open_file_clicked(self):
         """Ивент на кнопку загрузить файл"""
-        res, _ = QFileDialog.getOpenFileName(self, 'Загрузить файл', str(self.current_dir), 'Лист XLSX (*.xlsx)')
-        if res:
+        file_name, _ = QFileDialog.getOpenFileName(self, 'Загрузить файл', str(self.current_dir),
+                                                   'CSV файлы (*.csv *.xlsx)')
+        if file_name:
             try:
-                self.lineEdit.setText(res)
+                self.lineEdit.setText(file_name)
                 counts_art = read_excel_file(self.lineEdit.text())
                 values = [f"{item.art}: {item.count} шт." for item in counts_art]
                 self.update_list_view(values)
@@ -585,10 +586,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     bad_arts = [(i.art, i.count) for i in counts_art if i.status == '❌']
                     df_bad = pd.DataFrame(bad_arts, columns=['Артикул', 'Количество'])
                     df_in_xlsx(df_bad, f'Не найденные артикула в заказе {os.path.basename(filename)}')
-                    try:
-                        asyncio.run(upload_statistic_files_async(os.path.basename(filename)))
-                    except Exception as ex:
-                        logger.error(ex)
+
                 except Exception as ex:
                     logger.error(ex)
             except Exception as ex:
@@ -598,8 +596,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     dialog = QueueDialog(counts_art, 'Значки', filename, self)
                     self.dialogs.append(dialog)
                     dialog.show()
+                    try:
+                        asyncio.run(upload_statistic_files_async(os.path.basename(filename)))
+                    except Exception as ex:
+                        logger.error(ex)
             except Exception as ex:
                 logger.error(f'Ошибка формирования списков печати {ex}')
+
         else:
             QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
 

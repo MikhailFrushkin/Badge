@@ -134,23 +134,47 @@ class FilesOnPrint:
 
 
 def read_excel_file(file: str) -> list:
-    df = pd.read_excel(file)
-    if 'Название товара' not in df.columns:
-        # Если столбца нет, то создаем его и заполняем значениями "Нет названия"
-        df['Название товара'] = 'Нет названия'
-    df = df.groupby('Артикул продавца').agg({
-        'Название товара': 'first',
-        'Стикер': 'count',
-    }).reset_index()
+    df = pd.DataFrame()
+    if file.endswith('.csv'):
+        try:
+            df = pd.read_csv(file, delimiter=';')
+            if 'Название товара' not in df.columns:
+                df['Название товара'] = 'Нет названия'
+            df = df.groupby('Артикул').agg({
+                'Название товара': 'first',
+                'Номер заказа': 'count',
+            }).reset_index()
+
+            mask = ~df['Артикул'].str.startswith('POSTER')
+            df = df[mask]
+
+            df = df.rename(columns={'Номер заказа': 'Количество', 'Артикул': 'Артикул продавца'})
+            print(df.columns)
+        except Exception as ex:
+            logger.error(ex)
+    else:
+        try:
+            df = pd.read_excel(file)
+            if 'Название товара' not in df.columns:
+                df['Название товара'] = 'Нет названия'
+            df = df.groupby('Артикул продавца').agg({
+                'Название товара': 'first',
+                'Стикер': 'count',
+            }).reset_index()
+            df = df.rename(columns={'Стикер': 'Количество'})
+        except Exception as ex:
+            logger.error(ex)
+
     df_in_xlsx(df, 'Сгруппированный заказ')
-    df = df.rename(columns={'Стикер': 'Количество'})
 
     files_on_print = []
-    for index, row in df.iterrows():
-        file_on_print = FilesOnPrint(art=row['Артикул продавца'].strip(), name=row['Название товара'],
-                                     count=row['Количество'])
-        files_on_print.append(file_on_print)
-
+    try:
+        for index, row in df.iterrows():
+            file_on_print = FilesOnPrint(art=row['Артикул продавца'].strip(), name=row['Название товара'],
+                                         count=row['Количество'])
+            files_on_print.append(file_on_print)
+    except Exception as ex:
+        logger.error(ex)
     return files_on_print
 
 

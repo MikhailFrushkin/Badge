@@ -427,10 +427,8 @@ def update_db(self=None):
             delimiters = r'[\\/|, ]'
             substrings = re.split(delimiters, row.article)
             temp_list = [substring.strip() for substring in substrings if substring.strip()]
-            logger.debug(temp_list)
             if len(temp_list) > 4:
                 logger.debug(f'{row.id}: {temp_list}')
-
             if len(temp_list) < 5:
                 list_arts.extend(temp_list)
     except Exception as ex:
