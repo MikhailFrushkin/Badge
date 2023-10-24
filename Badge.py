@@ -301,8 +301,13 @@ class QueueDialog(QWidget):
             QMessageBox.information(self, 'Отправка на печать', 'Ни одна строка не выбрана')
 
     def evt_btn_print_all_clicked(self):
+        logger.debug(self.name_doc)
         all_data = self.get_all_data()
         if all_data:
+            try:
+                asyncio.run(upload_statistic_files_async(os.path.basename(self.name_doc)))
+            except Exception as ex:
+                logger.error(ex)
             logger.debug(all_data)
             created_good_images(all_data, self, self.A3_flag)
         else:
@@ -584,8 +589,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 counts_art = sorted(counts_art, key=lambda x: x.status, reverse=True)
                 try:
                     bad_arts = [(i.art, i.count) for i in counts_art if i.status == '❌']
-                    df_bad = pd.DataFrame(bad_arts, columns=['Артикул', 'Количество'])
-                    df_in_xlsx(df_bad, f'Не найденные артикула в заказе {os.path.basename(filename)}')
+                    if bad_arts:
+                        df_bad = pd.DataFrame(bad_arts, columns=['Артикул', 'Количество'])
+                        df_in_xlsx(df_bad, f'Не найденные артикула в заказе {os.path.basename(filename)}')
 
                 except Exception as ex:
                     logger.error(ex)
@@ -596,10 +602,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     dialog = QueueDialog(counts_art, 'Значки', filename, self)
                     self.dialogs.append(dialog)
                     dialog.show()
-                    try:
-                        asyncio.run(upload_statistic_files_async(os.path.basename(filename)))
-                    except Exception as ex:
-                        logger.error(ex)
+
             except Exception as ex:
                 logger.error(f'Ошибка формирования списков печати {ex}')
 
