@@ -117,36 +117,25 @@ def main(file, size_b):
     print('Время: ', start - datetime.datetime.now())
 
 
+def blur_size(size):
+    directory = fr'E:\База значков\сделать\{size}'
+    for i in os.listdir(directory):
+        # folder_name = r'E:\База значков\MEM_KOT-13NEW-1-56'
+        folder_name = os.path.join(directory, i)
+        for index, filename in enumerate(os.listdir(folder_name), start=1):
+            if (filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()) \
+                    and os.path.isfile(os.path.join(folder_name, filename)):
+                if os.path.exists(os.path.join(folder_name, filename)):
+                    try:
+                        blur_image(image_path=os.path.join(folder_name, filename),
+                                   output_path=os.path.join(folder_name, filename), size_b=size)
+                    except Exception as ex:
+                        logger.error(ex)
+                        logger.error(os.path.join(folder_name, filename))
+
+
 if __name__ == '__main__':
-    size = 37
-
-    directory = fr'E:\База значков\сделать\{size}'
-    for i in os.listdir(directory):
-        # folder_name = r'E:\База значков\MEM_KOT-13NEW-1-56'
-        folder_name = os.path.join(directory, i)
-        for index, filename in enumerate(os.listdir(folder_name), start=1):
-            if (filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()) \
-                    and os.path.isfile(os.path.join(folder_name, filename)):
-                if os.path.exists(os.path.join(folder_name, filename)):
-                    try:
-                        blur_image(image_path=os.path.join(folder_name, filename),
-                                   output_path=os.path.join(folder_name, filename), size_b=size)
-                    except Exception as ex:
-                        logger.error(ex)
-                        logger.error(os.path.join(folder_name, filename))
-    size = 56
-
-    directory = fr'E:\База значков\сделать\{size}'
-    for i in os.listdir(directory):
-        # folder_name = r'E:\База значков\MEM_KOT-13NEW-1-56'
-        folder_name = os.path.join(directory, i)
-        for index, filename in enumerate(os.listdir(folder_name), start=1):
-            if (filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()) \
-                    and os.path.isfile(os.path.join(folder_name, filename)):
-                if os.path.exists(os.path.join(folder_name, filename)):
-                    try:
-                        blur_image(image_path=os.path.join(folder_name, filename),
-                                   output_path=os.path.join(folder_name, filename), size_b=size)
-                    except Exception as ex:
-                        logger.error(ex)
-                        logger.error(os.path.join(folder_name, filename))
+    blur_size(25)
+    blur_size(37)
+    blur_size(44)
+    blur_size(56)
