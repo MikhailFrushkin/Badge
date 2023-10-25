@@ -110,6 +110,7 @@ def move_ready():
 
 if __name__ == '__main__':
     # main()
+
     move_dirs()
 
     blur_size(25)

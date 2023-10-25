@@ -295,12 +295,11 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
             for i in range(config[f'{str(size)}']['ICONS_PER_COL']):
                 for j in range(config[f'{str(size)}']['ICONS_PER_ROW']):
                     try:
-
                         image = Image.open(img[i * config[f'{str(size)}']['ICONS_PER_ROW'] + j][0].strip())
                         image = write_images_art(image, f'#{img[i * config[f"{str(size)}"]["ICONS_PER_ROW"] + j][1]}')
                         image = image.resize((image_width, image_height), Image.LANCZOS)
                     except Exception as ex:
-                        pass
+                        break
                     try:
                         if size == 56:
                             contact_sheet.paste(image, (j * image_width - 10, i * image_height + 10 * (i + 1)))
@@ -315,7 +314,7 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
                             border_rect = [j * image_width + 10, i * image_height + 10 * (i + 1),
                                            (j + 1) * image_width + 10, (i + 1) * image_height + 10 * (i + 1)]
                     except Exception as ex:
-                        pass
+                        break
                     try:
                         circle_center = ((border_rect[0] + border_rect[2]) // 2, (border_rect[1] + border_rect[3]) // 2)
                         circle_radius = min((border_rect[2] - border_rect[0]) // 2,
@@ -324,7 +323,7 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
                                       circle_center[0] + circle_radius, circle_center[1] + circle_radius),
                                      outline=border_color, width=border_width)
                     except Exception as ex:
-                        pass
+                        break
                     # draw.rectangle(border_rect, outline=border_color, width=border_width)
 
             progress.update_progress()
