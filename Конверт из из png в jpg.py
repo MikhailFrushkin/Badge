@@ -35,6 +35,7 @@ def convert_square_to_circle(image_path, output_path, quality=95):
 
 def process_image(filename):
     try:
+        folder_name = r'E:\2'
         input_image_path = os.path.join(folder_name, filename)
         new_name = filename.split('.')[0] + '.jpg'
 
@@ -48,14 +49,15 @@ def process_image(filename):
 if __name__ == '__main__':
     count = 0
     directory = r'E:\База значков\AniKoya'
-    for i in os.listdir(directory):
-        count += 1
-        folder_name = os.path.join(directory, i)
-        if os.path.isdir(os.path.join(directory, i)):
-            print(count, folder_name)
-
-            with ThreadPoolExecutor(max_workers=4) as executor:  # Максимальное количество одновременных потоков
-                for filename in os.listdir(folder_name):
-                    if filename.endswith('.png') and (
-                            filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()):
-                        executor.submit(process_image, filename)
+    process_image('10.png')
+    # for i in os.listdir(directory):
+    #     count += 1
+    #     folder_name = os.path.join(directory, i)
+    #     if os.path.isdir(os.path.join(directory, i)):
+    #         print(count, folder_name)
+    #
+    #         with ThreadPoolExecutor(max_workers=4) as executor:  # Максимальное количество одновременных потоков
+    #             for filename in os.listdir(folder_name):
+    #                 if filename.endswith('.png') and (
+    #                         filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()):
+    #                     executor.submit(process_image, filename)

@@ -6,7 +6,7 @@ from utils import df_in_xlsx
 
 
 def main():
-    df_all = pd.read_excel('E:\\значки.xlsx')
+    df_all = pd.read_excel('E:\\постеры.xlsx')
     df_all['Артикул продавца'] = df_all['Артикул продавца'].apply(lambda x: x.lower().strip())
     arts = df_all['Артикул продавца'].tolist()
     print(len(df_all))
@@ -19,7 +19,7 @@ def main():
 
     print(result)
     df = pd.DataFrame(result, columns=['Артикул'])
-    df_in_xlsx(df, 'Отсутствуют ШК значки')
+    df_in_xlsx(df, 'Отсутствуют ШК постеры')
 
 
 if __name__ == '__main__':

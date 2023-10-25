@@ -29,3 +29,7 @@ google_sticker_path3 = env.str('google_sticker_path3')
 
 id_google_table_DP = env.str('id_google_table_DP')
 id_google_table_anikoya = env.str('id_google_table_anikoya')
+
+path_base_y_disc = '/Значки ANIKOYA  02 23'
+
+ready_path = r'E:\База значков\Значки ШК'

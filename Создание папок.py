@@ -25,6 +25,10 @@ def main():
                 os.remove(os.path.join(directory, item))
 
         if (os.path.isfile(os.path.join(directory, item))) and item.endswith('.pdf'):
+            if ' (2)' in item:
+                old_name = item
+                item = item.replace(' (2)', '')
+                os.rename(os.path.join(directory, old_name), os.path.join(directory, item))
             os.makedirs(os.path.join(directory, item.replace('.pdf', '')))
             shutil.move(os.path.join(directory, item), os.path.join(directory_sh, item))
 
@@ -114,5 +118,6 @@ if __name__ == '__main__':
     blur_size(56)
 
     move_ready()
+
     # delete_files_with_name(starting_directory=r'E:\База значков\AniKoya')
     # check_duo_skin()

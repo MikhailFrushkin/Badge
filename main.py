@@ -448,7 +448,8 @@ def download_new_arts_in_comp(list_arts, self=None):
     for key, value in arts_dict.items():
         try:
             record = GoogleTable.get(folder_link=key)
-
+            record.status_download = True
+            record.save()
             download_new_arts(link=key, arts_list=value[0], shop=value[1], self=self)
             if value[1] == 'DP':
                 move_ready_folder(target_directory=f'{dp_path}',
@@ -457,8 +458,7 @@ def download_new_arts_in_comp(list_arts, self=None):
                 move_ready_folder()
             if self:
                 process.update_progress()
-            record.status_download = True
-            record.save()
+
 
         except Exception as ex:
             logger.error(f'{key}, {value}, {ex}')

@@ -289,19 +289,19 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
         progress = ProgressBar(len(images), self)
     for index, img in enumerate(images, start=1):
         try:
-            # Создаем пустой контейнер для объединения изображений (RGBA mode)
-            contact_sheet = Image.new('RGBA', (a4_width, a4_height), (255, 255, 255, 0))  # 0 alpha for transparency
+            contact_sheet = Image.new('RGBA', (a4_width, a4_height), (255, 255, 255, 0))
             draw = ImageDraw.Draw(contact_sheet)
-            # Добавление рамки вокруг изображения
 
-            # Итерируемся по всем изображениям и размещаем их на листе
             for i in range(config[f'{str(size)}']['ICONS_PER_COL']):
                 for j in range(config[f'{str(size)}']['ICONS_PER_ROW']):
                     try:
+
                         image = Image.open(img[i * config[f'{str(size)}']['ICONS_PER_ROW'] + j][0].strip())
                         image = write_images_art(image, f'#{img[i * config[f"{str(size)}"]["ICONS_PER_ROW"] + j][1]}')
                         image = image.resize((image_width, image_height), Image.LANCZOS)
-
+                    except Exception as ex:
+                        pass
+                    try:
                         if size == 56:
                             contact_sheet.paste(image, (j * image_width - 10, i * image_height + 10 * (i + 1)))
                             border_rect = [j * image_width - 10, i * image_height + 10 * (i + 1),
@@ -314,17 +314,18 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
                             contact_sheet.paste(image, (j * image_width + 10, i * image_height + 10 * (i + 1)))
                             border_rect = [j * image_width + 10, i * image_height + 10 * (i + 1),
                                            (j + 1) * image_width + 10, (i + 1) * image_height + 10 * (i + 1)]
-                        # Параметры круга
+                    except Exception as ex:
+                        pass
+                    try:
                         circle_center = ((border_rect[0] + border_rect[2]) // 2, (border_rect[1] + border_rect[3]) // 2)
                         circle_radius = min((border_rect[2] - border_rect[0]) // 2,
                                             (border_rect[3] - border_rect[1]) // 2)
                         draw.ellipse((circle_center[0] - circle_radius, circle_center[1] - circle_radius,
                                       circle_center[0] + circle_radius, circle_center[1] + circle_radius),
                                      outline=border_color, width=border_width)
-                        # draw.rectangle(border_rect, outline=border_color, width=border_width)
-
-                    except IndexError as ex:
+                    except Exception as ex:
                         pass
+                    # draw.rectangle(border_rect, outline=border_color, width=border_width)
 
             progress.update_progress()
             contact_sheet.save(f'{ready_path}/{size}/{index}.png')
@@ -337,6 +338,7 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
 
         except Exception as ex:
             logger.error(ex)
+            logger.error(img)
 
 
 def merge_pdfs_stickers(queryset, output_path):
