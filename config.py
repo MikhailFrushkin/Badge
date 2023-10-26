@@ -5,7 +5,7 @@ from environs import Env
 path_root = Path(__file__).resolve().parent
 
 env = Env()
-env.read_env()
+env.read_env(path_root / "Настройки" / ".env")
 
 token = env.str('token')
 

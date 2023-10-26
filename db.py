@@ -271,39 +271,6 @@ class Statistic(Model):
         database = db
 
 
-def add_rows_google_table():
-    """Запись в базу из файла excel"""
-    data = pd.read_excel(r'C:\Users\Rebase_znachki\AniKoya\files\Таблица гугл Anikoya.xlsx')
-    data = data[~data['Ссылка на папку'].isna() & ~data['Ссылка на папку'].isnull()
-                & data['Ссылка на папку'].str.startswith('https://') &
-                ~data['АРТИКУЛ ВБ'].isna() & ~data['АРТИКУЛ ВБ'].isnull()
-                ]
-    for _, row in data.iterrows():
-        if pd.isnull(row['Дата']):
-            date = None
-        elif len(row['Дата']) == 10:
-            date = datetime.strptime(row['Дата'], '%d.%m.%Y').date()
-        elif len(row['Дата']) == 8:
-            date = datetime.strptime(row['Дата'], '%d.%m.%y').date()
-        else:
-            date = None
-        record = GoogleTable(
-            name=row['Наименование'],
-            quantity=row['Количество'],
-            designer=row['Дизайнер'],
-            date=date,
-            folder_link=row['Ссылка на папку'],
-            singles=bool(row['Одиночки']) if not pd.isnull(row['Одиночки']) else None,
-            mockups=bool(row['Мокапы']) if not pd.isnull(row['Мокапы']) else None,
-            packaging=bool(row['Упаковка']) if not pd.isnull(row['Упаковка']) else None,
-            checked_by_katya=bool(row['Проверено Катей']) if not pd.isnull(row['Проверено Катей']) else None,
-            added=bool(row['Заведено']) if not pd.isnull(row['Заведено']) else None,
-            performer=row['Исполнитель (загрузка на вб)'],
-            article=row['АРТИКУЛ ВБ']
-        )
-        record.save()
-
-
 def add_record_google_table(name, folder_link, article, shop):
     """Добавление записи в таблицу с гугла"""
 
@@ -318,17 +285,6 @@ def add_record_google_table(name, folder_link, article, shop):
 
     if created:
         print('Новая запись добавлена:', record.name)
-
-
-def print_records_by_month(month, year):
-    records = GoogleTable.select().where(
-        fn.strftime('%m', GoogleTable.date) == str(month).zfill(2),
-        fn.strftime('%Y', GoogleTable.date) == str(year)
-    )
-    for record in records:
-        print(record.date, record.folder_link, record.article)
-
-    return records
 
 
 if __name__ == '__main__':
