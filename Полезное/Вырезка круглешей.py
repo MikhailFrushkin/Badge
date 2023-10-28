@@ -147,4 +147,9 @@ def circle():
 
 
 if __name__ == '__main__':
-    circle()
+    # circle()
+
+    file_paths = [r'E:\База значков\сделать\старые\FREDDI-10NEW-1-37.png']
+    size = 37
+    directory = r'E:\База значков\сделать\старые'
+    circle_one_image(file_paths, size, directory)
