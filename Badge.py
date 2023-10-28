@@ -308,7 +308,6 @@ class QueueDialog(QWidget):
                 asyncio.run(upload_statistic_files_async(os.path.basename(self.name_doc)))
             except Exception as ex:
                 logger.error(ex)
-            logger.debug(all_data)
             created_good_images(all_data, self, self.A3_flag)
         else:
             QMessageBox.information(self, 'Отправка на печать', 'Таблица пуста')
@@ -644,8 +643,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             dialog = CustomDialog()
             dialog.set_text(mes)
             dialog.exec_()
-            logger.debug('Загрузка стикеров:')
-            main_download_stickers(self)
+            # logger.debug('Загрузка стикеров:')
+            # main_download_stickers(self)
 
             download_new_arts_in_comp(list_arts, self)
 

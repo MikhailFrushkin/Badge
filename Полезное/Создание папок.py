@@ -3,14 +3,13 @@ import re
 import shutil
 import subprocess
 import time
-
 from loguru import logger
-
 from blur import blur_size
 from utils import delete_files_with_name
 
 
 def main():
+    """Создание файлов по названиям pdf и удаление лишних"""
     directory = r'E:\База значков\сделать'
     directory_sh = r'E:\База значков\сделать\шк'
 
@@ -19,7 +18,7 @@ def main():
         if os.path.isfile(os.path.join(directory, item)):
 
             if ('silco' in item.lower() or 'mix' in item.lower() or 'упаковка' in item.lower()
-                    or 'фото' in item.lower()
+                    or 'фото' in item.lower() or 'mocup' in item.lower()
                     or 'мокап' in item.lower() or 'размер' in item.lower()
                     or 'джинс' in item.lower() or 'пакет' in item.lower() or 'коробка' in item.lower()):
                 os.remove(os.path.join(directory, item))
@@ -34,6 +33,7 @@ def main():
 
 
 def move_dirs():
+    """СПеремещение папок в папки по размерам 25,37,44,56"""
     directory = r'E:\База значков\сделать'
     directory_out = r'E:\База значков\сделать'
     for item in os.listdir(directory):
@@ -49,6 +49,7 @@ def move_dirs():
 
 
 def check_duo_skin():
+    """Проверка на 2 подложки и отсутствие"""
     directory = r'E:\База значков\AniKoya'
     totalcount = 0
     for item in os.listdir(directory):
@@ -83,6 +84,7 @@ def check_duo_skin():
 
 
 def move_ready():
+    """Перемещение заблюреных готовых папок в основную папку"""
     target_directory = r'E:\База значков\AniKoya'
     for i in [37, 56]:
         directory = fr'E:\База значков\сделать\{i}'
@@ -108,16 +110,41 @@ def move_ready():
                 print(f'Папка {folder_name} уже существует в {target_directory}')
 
 
+def move_all_files():
+    """Перемещени е всех вложенных файлов из папок в корневую"""
+    directory = r'E:\База значков\сделать\старые'
+    for folder in os.listdir(directory):
+        for root, _, files in os.walk(os.path.join(directory, folder)):
+            for file in files:
+                print(root)
+                if 'круг' not in root and 'готовые' not in root:
+                    shutil.move(os.path.join(root, file), os.path.join(directory, file))
+
+
+def created_dirs():
+    """Создание папок по названиям файлов"""
+    directory = r'E:\База значков\сделать\старые'
+    for i in os.listdir(directory):
+        if '-' in i and os.path.isfile(os.path.join(directory, i)):
+            name = i.replace('.png', '').replace('.jpg', '').replace('.xcf', '').replace('.pdf', '')
+
+            os.makedirs(os.path.join(directory, name), exist_ok=True)
+            os.rename(os.path.join(directory, i), os.path.join(directory, 'Подложка ' + i))
+
+
 if __name__ == '__main__':
+    #
     # main()
+    # move_all_files()
+    # created_dirs()
 
-    move_dirs()
-
-    blur_size(25)
-    blur_size(37)
-    blur_size(44)
-    blur_size(56)
-
+    # move_dirs()
+    #
+    # blur_size(25)
+    # blur_size(37)
+    # blur_size(44)
+    # blur_size(56)
+    #
     move_ready()
 
     # delete_files_with_name(starting_directory=r'E:\База значков\AniKoya')

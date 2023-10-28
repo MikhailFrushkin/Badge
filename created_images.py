@@ -98,7 +98,7 @@ def combine_images_to_pdf(input_files, output_pdf, size=None, progress=None, sel
                 c.setFont("Helvetica-Bold", 6)
                 c.drawString(x, y + 1, f"#{img.num_on_list}  {img.art}")
                 try:
-                    logger.success(f"Добавился скин {img.num_on_list}   {img.art}")
+                    logger.success(f"Добавился подложка {img.num_on_list}   {img.art}")
                     progress.update_progress()
                     c.drawImage(img.skin, x - 10, y - img_height - 5, width=img_width, height=img_height)
                 except Exception as ex:
@@ -446,15 +446,15 @@ def created_good_images(all_arts, self, A3_flag=False):
                 create_contact_sheet(sets_of_orders, size, self, A3_flag)
             except Exception as ex:
                 logger.error(ex)
-        try:
-            files_base_postgresql(self)
-        except Exception as ex:
-            logger.error(ex)
-
-        try:
-            orders_base_postgresql(self)
-        except Exception as ex:
-            logger.error(ex)
+        # try:
+        #     files_base_postgresql(self)
+        # except Exception as ex:
+        #     logger.error(ex)
+        #
+        # try:
+        #     orders_base_postgresql(self)
+        # except Exception as ex:
+        #     logger.error(ex)
 
         self.list_on_print = 0
         QMessageBox.information(self, 'Завершено', 'Создание файлов завершено!')
