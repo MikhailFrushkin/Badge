@@ -170,6 +170,9 @@ class GoogleTable(Model):
     status_download = BooleanField(default=False)
     created_at = DateTimeField(default=datetime.now)
 
+    def __str__(self):
+        return self.name
+
     class Meta:
         database = db
 

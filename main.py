@@ -440,30 +440,27 @@ def download_new_arts_in_comp(list_arts, self=None):
     arts_dict = {}
 
     for art in list_arts:
-        url = GoogleTable.select().where(GoogleTable.article.contains(art)).first()
+        url = (GoogleTable.select().where(GoogleTable.article.contains(art) & ~GoogleTable.status_download)
+               .order_by(GoogleTable.created_at.desc()).first())
         arts_dict[url.folder_link] = (url.article, url.shop)
     if self:
         self.second_statusbar.showMessage(f'Скачивание артикулов', 10000)
         process = ProgressBar(len(arts_dict), self)
     for key, value in arts_dict.items():
+        record = GoogleTable.get(folder_link=key)
+        record.status_download = True
+        record.save()
         try:
-            record = GoogleTable.get(folder_link=key)
-            try:
-                download_new_arts(link=key, arts_list=value[0], shop=value[1], self=self)
-                if value[1] == 'DP':
-                    move_ready_folder(target_directory=f'{dp_path}',
-                                      shop='DP')
-                else:
-                    move_ready_folder()
-                if self:
-                    process.update_progress()
-            except Exception as ex:
-                logger.error(f'{key}, {value}, {ex}')
-            finally:
-                record.status_download = True
-                record.save()
+            download_new_arts(link=key, arts_list=value[0], shop=value[1], self=self)
+            if value[1] == 'DP':
+                move_ready_folder(target_directory=f'{dp_path}',
+                                  shop='DP')
+            else:
+                move_ready_folder()
+            if self:
+                process.update_progress()
         except Exception as ex:
-            logger.error(ex)
+            logger.error(f'{key}, {value}, {ex}')
 
 
 def update_arts_db():

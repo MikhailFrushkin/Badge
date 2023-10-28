@@ -92,6 +92,7 @@ def move_ready_folder(directory=f'{all_badge}\\Скаченные с диска'
             logger.error(ex)
         finally:
             shutil.rmtree(directory)
+    return True
 
 
 def rename_files(file_path, new_name):
