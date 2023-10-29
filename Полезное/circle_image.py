@@ -38,8 +38,9 @@ def rename_files(directory):
         os.rename(old_file_path, new_file_path)
 
 
-def circle_one_image(file_paths, size, output_folder):
-    output_folder = os.path.join(output_folder, str(size) + 'круглеши')
+def circle_one_image(file_paths):
+    output_folder = os.path.join(os.path.dirname(file_paths[0]), "По отдельности")
+
     for index, file_path in enumerate(file_paths, start=1):
         image = cv2.imread(file_path)
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -63,17 +64,17 @@ def circle_one_image(file_paths, size, output_folder):
                 y_max = min(y + r + padding, image.shape[0])
                 circle_img = image[y_min:y_max, x_min:x_max]
                 # Сохраняем круг в файл
-                cv2.imwrite(os.path.join(output_folder, f'{size}{index}{i}.png'), circle_img)
+                cv2.imwrite(os.path.join(output_folder, f'{index}{i}{i}.png'), circle_img)
 
             print(f'{len(circles)} кругов сохранены в папке {output_folder}.')
         else:
             with open('bad.txt', 'a') as f:
                 f.write(f"{file_paths}\n")
             print("Круги не найдены на изображении.")
-    # try:
-    #     rename_files(output_folder)
-    # except Exception as ex:
-    #     logger.error(f'Не удалось переименовать файлы в {output_folder}')
+    try:
+        rename_files(output_folder)
+    except Exception as ex:
+        logger.error(f'Не удалось переименовать файлы в {output_folder}')
 
 
 def unique_images_function(directory):
@@ -127,29 +128,28 @@ def unique_images_function(directory):
     # shutil.rmtree(os.path.join(directory, 'По отдельности'))
 
 
-def circle():
-    file_paths = []
-
-    directory = r'E:\База значков\сделать\старые'
-
-    for root, dirs, files in os.walk(directory):
-        for folder in dirs:
-            if 'макеты' in folder.lower():
-                if '37' in root:
-                    size = 37
-                elif '56' in root:
-                    size = 56
-                else:
-                    size = 0
-                for i in os.listdir(os.path.join(root, folder)):
-                    file_paths.append(os.path.join(os.path.join(root, folder), i))
-                circle_one_image(file_paths, size, directory)
-
-
 if __name__ == '__main__':
-    # circle()
+    # directory = r'E:\Готовые\1\37\SKZNACHKIHYUNJIN2'
+    file_paths = []
+    # for i in range(1):
+    #     file_paths.append(f'{directory}\\SKZNACHKIHYUNJIN2.png')
+    #
+    # circle_one_image(file_paths)
+    # unique_images_function(directory)
 
-    file_paths = [r'E:\База значков\сделать\старые\DOTATWO-10NEW-1-56.png']
-    size = 37
-    directory = r'E:\База значков\сделать\старые'
-    circle_one_image(file_paths, size, directory)
+    # directory = r'E:\AniKoya\Старые'
+    # folder_list = os.listdir(directory)
+    # for folder in folder_list:
+    #     logger.debug(f'Чистка папки {folder}')
+    #     try:
+    #         # delete_files_except_matching_folders(os.path.join(directory, folder))
+    #         delete_empty_folders(os.path.join(directory, folder))
+    #         pass
+    #     except Exception as ex:
+    #         logger.error(f"Ошибка при чистке папки {ex}")
+
+    directory = r'E:\Новая база\сделать\VLADA4NABOR-9NEW-7-37'
+
+    for i in os.listdir(directory):
+        file_paths.append(os.path.join(directory, i))
+    circle_one_image(file_paths)

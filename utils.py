@@ -136,7 +136,10 @@ class FilesOnPrint:
 
 def read_excel_file(file: str) -> list:
     df = pd.DataFrame()
-    shutil.rmtree('Файлы связанные с заказом', ignore_errors=True)
+    try:
+        shutil.rmtree('Файлы связанные с заказом', ignore_errors=True)
+    except:
+        pass
     if file.endswith('.csv'):
         try:
             df = pd.read_csv(file, delimiter=';')

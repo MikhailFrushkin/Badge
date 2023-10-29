@@ -1,13 +1,15 @@
 import asyncio
 import os
+import time
 from datetime import timedelta
 from pathlib import Path
+from threading import Thread
 
 import pandas as pd
 import qdarkstyle
 import requests
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QPalette
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QTextEdit, QPushButton, QDialog, QMessageBox, QWidget, \
     QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView, QLabel, QCalendarWidget
@@ -22,7 +24,9 @@ from created_images import created_good_images
 from db import Article, Statistic, update_base_postgresql, GoogleTable, Orders, db
 from dow_stickers import main_download_stickers
 from main import update_db, download_new_arts_in_comp, update_arts_db2, update_sticker_path
+from parser_ready_arts_in_y_d import missing_folders, main_parser
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
+from scan_shk import async_main_sh, main_sh
 from upload_files import upload_statistic_files_async
 from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx
 
@@ -361,6 +365,8 @@ class Ui_MainWindow(object):
         self.pushButton.setFont(font)
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout.addWidget(self.pushButton)
+        # self.pushButton.setEnabled(False)
+
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
         font = QtGui.QFont()
         font.setFamily("Times New Roman")
@@ -393,7 +399,6 @@ class Ui_MainWindow(object):
         self.gridLayout = QtWidgets.QGridLayout()
         self.gridLayout.setObjectName("gridLayout")
         self.verticalLayout.addLayout(self.gridLayout)
-
         self.gridLayout_2 = QtWidgets.QGridLayout()
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.pushButton_6 = QtWidgets.QPushButton(self.centralwidget)
@@ -729,10 +734,39 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
                     grouped_dialog = GroupedRecordsDialog(self, start_date, end_date)
                     grouped_dialog.exec_()
-
-
             except Exception as ex:
                 print(ex)
+
+
+def run_script():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    while True:
+        logger.success('Обновление...')
+        try:
+            missing_dict = missing_folders()
+            loop.run_until_complete(main_parser(missing_dict))
+        except Exception as ex:
+            logger.error(ex)
+
+        try:
+            asyncio.run(async_main_sh())
+        except Exception as ex:
+            logger.error(ex)
+
+        try:
+            update_arts_db2()
+            update_sticker_path()
+        except Exception as ex:
+            logger.error(ex)
+        try:
+            update_base_postgresql()
+        except Exception as ex:
+            logger.error(ex)
+
+        logger.success('Обновление завершено')
+        time.sleep(3600)
 
 
 if __name__ == '__main__':
@@ -746,4 +780,8 @@ if __name__ == '__main__':
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     w = MainWindow()
     w.show()
+    script_thread = Thread(target=run_script)
+    script_thread.daemon = True
+    script_thread.start()
+
     sys.exit(app.exec())

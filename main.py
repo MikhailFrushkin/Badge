@@ -270,6 +270,7 @@ def download_new_arts(link, arts_list, shop, self=None):
     new_folder = os.path.join(f'{all_badge}\\Скаченные с диска', os.listdir(f'{all_badge}\\Скаченные с диска')[0])
     logger.debug(new_folder)
     if new_folder:
+        arts_list = arts_list.replace('\r', ' ').replace('\n', ' ')
         delimiters = r'[\\/|, ]'
         substrings = re.split(delimiters, arts_list)
         arts_list = [substring.strip() for substring in substrings if substring.strip()]
@@ -510,7 +511,7 @@ def update_arts_db():
 
 
 def update_arts_db2():
-    print('Проверка базы: \n')
+    # print('Проверка базы: \n')
     count = 0
     start = datetime.datetime.now()
 
@@ -521,15 +522,15 @@ def update_arts_db2():
             if len(dir) > 10:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'DP')
-                print('\r', count, end='', flush=True)
+                # print('\r', count, end='', flush=True)
     for root, dirs, files in os.walk(rf'{anikoya_path}'):
         for dir in dirs:
             if len(dir) > 10:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
-                print('\r', count, end='', flush=True)
+                # print('\r', count, end='', flush=True)
 
-    print('\nНет подложек')
+    # print('\nНет подложек')
     records = Article.select().where(Article.skin >> None)
     for i in records:
         print(os.path.abspath(i.folder))
@@ -537,7 +538,7 @@ def update_arts_db2():
         shutil.rmtree(i.folder)
         # shutil.move(i.folder, r'E:\Новая база значков\Проблемные')
 
-    print('Нет картинок с цифрами')
+    # print('Нет картинок с цифрами')
     records = Article.select().where(Article.images >> None)
     for i in records:
         print(os.path.abspath(i.folder))
@@ -545,7 +546,7 @@ def update_arts_db2():
         shutil.rmtree(i.folder)
         # shutil.move(i.folder, r'E:\Новая база значков\Проблемные')
 
-    print('НЕ соответствует число картинок с базой')
+    # print('НЕ соответствует число картинок с базой')
     records = Article.select().where(Article.nums_in_folder != Article.nums)
     for i in records:
         print(os.path.abspath(i.folder))
@@ -562,7 +563,7 @@ def update_sticker_path():
     for row in no_stickers_rows:
         name_sticker = row.art + '.pdf'
         for file_name in files_list:
-            if file_name == name_sticker or file_name.lower() == name_sticker:
+            if file_name.lower() == name_sticker.lower():
                 row.sticker = os.path.join(sticker_path_all, file_name)
                 print('найден ШК: ', os.path.join(sticker_path_all, file_name))
                 row.save()
