@@ -138,12 +138,12 @@ if __name__ == '__main__':
     # move_all_files()
     # created_dirs()
 
-    # move_dirs()
-    #
-    # blur_size(25)
-    # blur_size(37)
-    # blur_size(44)
-    # blur_size(56)
+    move_dirs()
+
+    blur_size(25)
+    blur_size(37)
+    blur_size(44)
+    blur_size(56)
 
     move_ready()
 

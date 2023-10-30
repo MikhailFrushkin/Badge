@@ -31,7 +31,8 @@ from upload_files import upload_statistic_files_async
 from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx
 
 
-def check_file(self):
+def check_file():
+    return True
     headers = {
         "Authorization": f"OAuth {token}"
     }
@@ -365,6 +366,7 @@ class Ui_MainWindow(object):
         self.pushButton.setFont(font)
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout.addWidget(self.pushButton)
+
         # self.pushButton.setEnabled(False)
 
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
@@ -524,7 +526,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             logger.debug(ex)
 
         try:
-            if not check_file(self):
+            if not check_file():
                 self.pushButton.setEnabled(False)
                 self.pushButton_3.setEnabled(False)
                 self.pushButton_8.setEnabled(False)
@@ -592,7 +594,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                         item.status = '✅'
                 counts_art = sorted(counts_art, key=lambda x: x.status, reverse=True)
                 try:
-                    bad_arts = [(i.art, i.count) for i in counts_art if i.status == '❌']
+                    bad_arts = [(i.art, i.count) for i in counts_art
+                                if i.status == '❌']
                     if bad_arts:
                         df_bad = pd.DataFrame(bad_arts, columns=['Артикул', 'Количество'])
                         df_in_xlsx(df_bad, f'Не найденные артикула в заказе {os.path.basename(filename)}')
@@ -602,7 +605,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             except Exception as ex:
                 logger.error(ex)
             try:
-                if len(counts_art) > 0:
+                if counts_art:
                     dialog = QueueDialog(counts_art, 'Значки', filename, self)
                     self.dialogs.append(dialog)
                     dialog.show()
@@ -741,7 +744,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 def run_script():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-
     while True:
         logger.success('Обновление...')
         try:
@@ -751,7 +753,7 @@ def run_script():
             logger.error(ex)
 
         try:
-            asyncio.run(async_main_sh())
+            loop.run_until_complete(async_main_sh())
         except Exception as ex:
             logger.error(ex)
 
@@ -780,8 +782,8 @@ if __name__ == '__main__':
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     w = MainWindow()
     w.show()
-    script_thread = Thread(target=run_script)
-    script_thread.daemon = True
-    script_thread.start()
+    # script_thread = Thread(target=run_script)
+    # script_thread.daemon = True
+    # script_thread.start()
 
     sys.exit(app.exec())

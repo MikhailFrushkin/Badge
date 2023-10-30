@@ -513,7 +513,7 @@ def update_arts_db():
 def update_arts_db2():
     # print('Проверка базы: \n')
     count = 0
-    start = datetime.datetime.now()
+    # start = datetime.datetime.now()
 
     if not Article.table_exists():
         Article.create_table(safe=True)
@@ -554,7 +554,7 @@ def update_arts_db2():
         i.save()
         # subprocess.Popen(f'explorer {os.path.abspath(i.folder)}', shell=True)
         # time.sleep(3)
-    logger.debug(datetime.datetime.now() - start)
+    # logger.debug(datetime.datetime.now() - start)
 
 
 def update_sticker_path():

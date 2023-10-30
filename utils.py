@@ -175,9 +175,10 @@ def read_excel_file(file: str) -> list:
     files_on_print = []
     try:
         for index, row in df.iterrows():
-            file_on_print = FilesOnPrint(art=row['Артикул продавца'].strip(), name=row['Название товара'],
-                                         count=row['Количество'])
-            files_on_print.append(file_on_print)
+            if 'poster-' not in row['Артикул продавца'].lower():
+                file_on_print = FilesOnPrint(art=row['Артикул продавца'].strip(), name=row['Название товара'],
+                                             count=row['Количество'])
+                files_on_print.append(file_on_print)
     except Exception as ex:
         logger.error(ex)
     return files_on_print
