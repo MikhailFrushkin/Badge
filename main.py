@@ -464,52 +464,6 @@ def download_new_arts_in_comp(list_arts, self=None):
             logger.error(f'{key}, {value}, {ex}')
 
 
-def update_arts_db():
-    count = 0
-    start = datetime.datetime.now()
-    try:
-        db.connect()
-        db.drop_tables([Article])
-        db.close()
-    except Exception as ex:
-        logger.error(ex)
-
-    if not Article.table_exists():
-        Article.create_table(safe=True)
-    for root, dirs, files in os.walk(rf'{dp_path}'):
-        for dir in dirs:
-            if len(dir) > 10:
-                count += 1
-                Article.create_with_art(dir, os.path.join(root, dir), 'DP')
-                print('\r', count, end='', flush=True)
-    for root, dirs, files in os.walk(rf'{anikoya_path}'):
-        for dir in dirs:
-            if len(dir) > 10:
-                count += 1
-                Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
-                print('\r', count, end='', flush=True)
-
-    print('Нет подложек')
-    records = Article.select().where(Article.skin >> None)
-    for i in records:
-        print(os.path.abspath(i.folder))
-
-    print('Нет картинок с цифрами')
-    records = Article.select().where(Article.images >> None)
-    for i in records:
-        print(os.path.abspath(i.folder))
-
-    print('НЕ соответствует число картинок с базой')
-    records = Article.select().where(Article.nums_in_folder != Article.nums)
-    for i in records:
-        print(os.path.abspath(i.folder))
-        i.nums = i.nums_in_folder
-        i.save()
-        # subprocess.Popen(f'explorer {os.path.abspath(i.folder)}', shell=True)
-        # time.sleep(3)
-    logger.debug(datetime.datetime.now() - start)
-
-
 def update_arts_db2():
     # print('Проверка базы: \n')
     count = 0
@@ -533,7 +487,7 @@ def update_arts_db2():
     # print('\nНет подложек')
     records = Article.select().where(Article.skin >> None)
     for i in records:
-        print(os.path.abspath(i.folder))
+        # print(os.path.abspath(i.folder))
         i.delete_instance()
         shutil.rmtree(i.folder)
         # shutil.move(i.folder, r'E:\Новая база значков\Проблемные')
@@ -541,7 +495,7 @@ def update_arts_db2():
     # print('Нет картинок с цифрами')
     records = Article.select().where(Article.images >> None)
     for i in records:
-        print(os.path.abspath(i.folder))
+        # print(os.path.abspath(i.folder))
         i.delete_instance()
         shutil.rmtree(i.folder)
         # shutil.move(i.folder, r'E:\Новая база значков\Проблемные')
@@ -549,7 +503,7 @@ def update_arts_db2():
     # print('НЕ соответствует число картинок с базой')
     records = Article.select().where(Article.nums_in_folder != Article.nums)
     for i in records:
-        print(os.path.abspath(i.folder))
+        # print(os.path.abspath(i.folder))
         i.nums = i.nums_in_folder
         i.save()
         # subprocess.Popen(f'explorer {os.path.abspath(i.folder)}', shell=True)
@@ -565,7 +519,7 @@ def update_sticker_path():
         for file_name in files_list:
             if file_name.lower() == name_sticker.lower():
                 row.sticker = os.path.join(sticker_path_all, file_name)
-                print('найден ШК: ', os.path.join(sticker_path_all, file_name))
+                # print('найден ШК: ', os.path.join(sticker_path_all, file_name))
                 row.save()
                 break
 

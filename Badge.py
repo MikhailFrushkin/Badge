@@ -367,7 +367,7 @@ class Ui_MainWindow(object):
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout.addWidget(self.pushButton)
 
-        # self.pushButton.setEnabled(False)
+        self.pushButton.setEnabled(False)
 
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
         font = QtGui.QFont()
@@ -752,16 +752,23 @@ def run_script():
         except Exception as ex:
             logger.error(ex)
 
+        logger.success('Поиск новых стикеров ШК...')
         try:
             loop.run_until_complete(async_main_sh())
         except Exception as ex:
             logger.error(ex)
 
+        logger.success('Проверка базы...')
+        db.connect()
         try:
             update_arts_db2()
             update_sticker_path()
+            db.close()
         except Exception as ex:
             logger.error(ex)
+        finally:
+            db.close()
+
         try:
             update_base_postgresql()
         except Exception as ex:
@@ -782,8 +789,8 @@ if __name__ == '__main__':
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     w = MainWindow()
     w.show()
-    # script_thread = Thread(target=run_script)
-    # script_thread.daemon = True
-    # script_thread.start()
+    script_thread = Thread(target=run_script)
+    script_thread.daemon = True
+    script_thread.start()
 
     sys.exit(app.exec())

@@ -36,7 +36,7 @@ def delete_files_with_name(starting_directory, target_filename="Картинка
                 file_path = os.path.join(root, file)
                 os.remove(file_path)
                 count += 1
-                print(f"{count} Файл {file_path} удален.")
+                # print(f"{count} Файл {file_path} удален.")
 
 
 def df_in_xlsx(df, filename, directory='Файлы связанные с заказом', max_width=50):

@@ -13,23 +13,33 @@ from utils import df_in_xlsx
 semaphore = asyncio.Semaphore(5)
 
 
-async def traverse_yandex_disk(session, folder_path, result_dict, progress=None):
-    url = f"https://cloud-api.yandex.net/v1/disk/resources?path={quote(folder_path)}&limit=1000"
+async def traverse_yandex_disk(session, folder_path, result_dict, offset=0):
+    limit = 1000
+    url = f"https://cloud-api.yandex.net/v1/disk/resources?path={quote(folder_path)}&limit={limit}"
     headers = {"Authorization": f"OAuth {token}"}
     try:
         async with session.get(url, headers=headers) as response:
             data = await response.json()
             tasks = []
             for item in data["_embedded"]["items"]:
+                print(item["name"])
+
                 if item["type"] == "file" and item["name"].endswith(".pdf"):
                     if not os.path.exists(os.path.join(sticker_path_all, item["name"])):
-                        print(item["name"])
                         result_dict[item["name"].lower()] = item["path"]
                 elif item["type"] == "dir":
-                    task = traverse_yandex_disk(session, item["path"], result_dict, progress)
+                    task = traverse_yandex_disk(session, item["path"], result_dict)
                     tasks.append(task)
             if tasks:
                 await asyncio.gather(*tasks)
+
+            # Проверяем, есть ли ещё элементы для сканирования
+            total = data["_embedded"]["total"]
+            offset += limit
+            if offset < total:
+                # Рекурсивно вызываем функцию для следующей порции элементов
+                await traverse_yandex_disk(session, folder_path, result_dict, offset)
+
     except Exception as ex:
         logger.error(f'Ошибка при поиске папки {folder_path} {ex}')
 
