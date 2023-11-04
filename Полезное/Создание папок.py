@@ -18,9 +18,11 @@ def main():
         if os.path.isfile(os.path.join(directory, item)):
 
             if ('silco' in item.lower() or 'mix' in item.lower() or 'упаковка' in item.lower()
-                    or 'фото' in item.lower() or 'mocup' in item.lower()
+                    or 'фото' in item.lower() or 'mocup' in item.lower() or 'mockup' in item.lower()
                     or 'мокап' in item.lower() or 'размер' in item.lower()
-                    or 'джинс' in item.lower() or 'пакет' in item.lower() or 'коробка' in item.lower()):
+                    or 'джинс' in item.lower() or 'пакет' in item.lower()
+                    or 'mix' in item.lower() or 'box' in item.lower()
+                    or 'коробка' in item.lower()):
                 os.remove(os.path.join(directory, item))
 
         if (os.path.isfile(os.path.join(directory, item))) and item.endswith('.pdf'):
@@ -29,7 +31,7 @@ def main():
                 item = item.replace(' (2)', '')
                 os.rename(os.path.join(directory, old_name), os.path.join(directory, item))
             os.makedirs(os.path.join(directory, item.replace('.pdf', '')))
-            shutil.move(os.path.join(directory, item), os.path.join(directory_sh, item))
+            os.remove(os.path.join(directory, item))
 
 
 def move_dirs():
@@ -132,12 +134,7 @@ def created_dirs():
             os.rename(os.path.join(directory, i), os.path.join(directory, 'Подложка ' + i))
 
 
-if __name__ == '__main__':
-    #
-    # main()
-    # move_all_files()
-    # created_dirs()
-
+def move_and_blur():
     move_dirs()
 
     blur_size(25)
@@ -146,6 +143,15 @@ if __name__ == '__main__':
     blur_size(56)
 
     move_ready()
+
+
+if __name__ == '__main__':
+    #
+    # main()
+    move_and_blur()
+
+    # move_all_files()
+    # created_dirs()
 
     # delete_files_with_name(starting_directory=r'E:\База значков\AniKoya')
     # check_duo_skin()

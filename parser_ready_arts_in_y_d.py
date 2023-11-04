@@ -85,7 +85,7 @@ async def download_files_from_yandex_folder(session, token, folder_url, local_fo
                 for item in items:
                     if item["type"] == "file":
                         file_name = item["name"]
-                        print(f'Загрузка {file_name}')
+                        # print(f'Загрузка {file_name}')
                         file_url = item["file"]
 
                         # Загружаем файл в указанную локальную папку
