@@ -360,6 +360,7 @@ def merge_pdfs_stickers(queryset, output_path):
 
 
 def created_good_images(all_arts, self, A3_flag=False):
+    lists = []
     try:
         ready_path = 'Файлы на печать'
         Orders.drop_table()
@@ -447,12 +448,12 @@ def created_good_images(all_arts, self, A3_flag=False):
             except Exception as ex:
                 logger.error(ex)
         try:
-            files_base_postgresql(self)
+            lists = files_base_postgresql(self)
         except Exception as ex:
             logger.error(ex)
 
         try:
-            orders_base_postgresql(self)
+            orders_base_postgresql(self, lists)
         except Exception as ex:
             logger.error(ex)
 
@@ -461,6 +462,8 @@ def created_good_images(all_arts, self, A3_flag=False):
 
         records = Orders.select()
         for record in records:
+            record.lists = lists
+            record.save()
             Statistic.create(art=record.art, nums=record.nums_in_folder, size=record.size)
     except Exception as ex:
         logger.error(ex)

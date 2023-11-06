@@ -60,7 +60,7 @@ def files_base_postgresql(self):
         "user": user,
         "password": password
     }
-
+    num_lists = self.list_on_print
     # Создание подключения и контекстного менеджера
     with psycopg2.connect(**db_params) as connection:
         # Создание таблицы, если она не существует
@@ -80,7 +80,6 @@ def files_base_postgresql(self):
             name_file = self.name_doc
             found_arts = Orders.select().count()
             num_badges = Orders.select(fn.SUM(Orders.nums_in_folder)).scalar()
-            num_lists = self.list_on_print
 
             insert_query = ("INSERT INTO files (machin, update_timestamp, "
                             "name_file, found_arts, num_badges, num_lists) "
@@ -90,9 +89,10 @@ def files_base_postgresql(self):
 
         # Подтверждение изменений (commit) выполняется один раз
         connection.commit()
+    return num_lists
 
 
-def orders_base_postgresql(self):
+def orders_base_postgresql(self, lists):
     db_params = {
         "host": host,
         "database": dbname,
@@ -110,7 +110,9 @@ def orders_base_postgresql(self):
             size INT, 
             machin VARCHAR,
             name_file VARCHAR,
-            update_timestamp TIMESTAMP DEFAULT current_timestamp
+            update_timestamp TIMESTAMP DEFAULT current_timestamp,
+            num_on_list INT,
+            lists INT
         );
         '''
         with connection.cursor() as cursor:
@@ -120,14 +122,20 @@ def orders_base_postgresql(self):
             orders = []
             query = Orders.select()
             for order in query:
-                orders.append((order.art, order.nums_in_folder, order.size, machine_name, name_file, datetime.now()))
+                art = order.art
+                check_query = "SELECT COUNT(*) FROM orders WHERE art = %s AND name_file = %s;"
+                cursor.execute(check_query, (art, name_file))
+                count = cursor.fetchone()[0]
+                if count == 0:
+                    orders.append((art, order.nums_in_folder, order.size, machine_name, name_file, datetime.now(),
+                                   order.num_on_list, lists))
+
             insert_data_query = (
-                "INSERT INTO orders (art, num, size, machin, name_file, update_timestamp)"
-                "VALUES (%s, %s, %s, %s, %s, %s);")
+                "INSERT INTO orders (art, num, size, machin, name_file, update_timestamp, num_on_list, lists)"
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s);")
 
             cursor.executemany(insert_data_query, orders)
 
-        # Подтверждение изменений (commit) выполняется один раз
         connection.commit()
 
 
@@ -253,10 +261,11 @@ class Article(Model):
 
 class Orders(Article):
     num_on_list = IntegerField(null=True)
+    lists = IntegerField(null=True)
 
     class Meta:
         database = db
-        ordering = ['size', 'art']
+        ordering = ['created_at']
 
     @classmethod
     def sorted_records(cls):

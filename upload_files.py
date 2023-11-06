@@ -24,7 +24,8 @@ async def upload_file(session, file_path, destination_path):
         if "href" in upload_data:
             async with session.put(upload_data["href"], data=open(file_path, "rb")) as upload_response:
                 if upload_response.status == 201:
-                    print(f"Файл {destination_path} успешно загружен")
+                    pass
+                    # print(f"Файл {destination_path} успешно загружен")
                 else:
                     print(f"Произошла ошибка при загрузке файла {destination_path}: {upload_response.text}")
         else:

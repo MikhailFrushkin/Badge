@@ -367,7 +367,7 @@ class Ui_MainWindow(object):
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout.addWidget(self.pushButton)
 
-        # self.pushButton.setEnabled(False)
+        self.pushButton.setEnabled(False)
 
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
         font = QtGui.QFont()
@@ -589,7 +589,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             try:
                 counts_art = read_excel_file(filename)
                 for item in counts_art:
-                    status = Article.get_or_none(Article.art == item.art)
+                    status = Article.get_or_none(fn.Lower(Article.art) == item.art.lower())
                     if status and os.path.exists(status.folder):
                         item.status = '✅'
                 counts_art = sorted(counts_art, key=lambda x: x.status, reverse=True)
@@ -787,8 +787,8 @@ if __name__ == '__main__':
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     w = MainWindow()
     w.show()
-    # script_thread = Thread(target=run_script)
-    # script_thread.daemon = True
-    # script_thread.start()
+    script_thread = Thread(target=run_script)
+    script_thread.daemon = True
+    script_thread.start()
 
     sys.exit(app.exec())
