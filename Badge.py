@@ -22,6 +22,7 @@ from peewee import fn
 from config import all_badge, token
 from created_images import created_good_images
 from db import Article, Statistic, update_base_postgresql, GoogleTable, Orders, db
+from delete_bad_arts import delete_arts
 from dow_stickers import main_download_stickers
 from main import update_db, download_new_arts_in_comp, update_arts_db2, update_sticker_path
 from parser_ready_arts_in_y_d import missing_folders, main_parser
@@ -745,6 +746,12 @@ def run_script():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     while True:
+        logger.success('Удаление...')
+        try:
+            delete_arts()
+        except Exception as ex:
+            logger.error(ex)
+
         logger.success('Обновление...')
         try:
             missing_dict = missing_folders()
@@ -760,10 +767,8 @@ def run_script():
 
         logger.success('Проверка базы...')
         try:
-            db.connect()
             update_arts_db2()
             update_sticker_path()
-            db.close()
         except Exception as ex:
             logger.error(ex)
 

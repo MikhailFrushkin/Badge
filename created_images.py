@@ -1,6 +1,5 @@
 import json
 import json
-import math
 import os
 import shutil
 import time
@@ -12,12 +11,15 @@ from PIL import Image, ImageDraw, ImageFont
 from PyPDF2 import PdfReader, PdfWriter
 from PyQt5.QtWidgets import QMessageBox
 from loguru import logger
-from peewee import fn
 from reportlab.lib.pagesizes import A4, A3, landscape
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 from db import Article, Orders, Statistic, files_base_postgresql, orders_base_postgresql
 from utils import ProgressBar, df_in_xlsx
+
+pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
 
 
 def add_header_and_footer_to_pdf(pdf_file, footer_text, A3_flag):
@@ -41,25 +43,27 @@ def add_header_and_footer_to_pdf(pdf_file, footer_text, A3_flag):
     writer = PdfWriter()
 
     for page_num in range(len(reader.pages)):
-        page = reader.pages[page_num]
+        try:
+            page = reader.pages[page_num]
 
-        # Create a canvas for the page
-        packet = BytesIO()
-        can = canvas.Canvas(packet, pagesize=pagesize)
+            # Create a canvas for the page
+            packet = BytesIO()
+            can = canvas.Canvas(packet, pagesize=pagesize)
 
-        # Add the header text (centered) to the canvas
-        can.setFont("Helvetica", size=size)
-        if A3_flag:
-            can.drawCentredString(x2, y2, f"{footer_text} - Page.{page_num + 1}")
-        else:
-            can.drawCentredString(x2, y2, f"{footer_text} - Page.{page_num + 1}")
-        can.save()
-        packet.seek(0)
-        new_pdf = PdfReader(packet)
-        page.merge_page(new_pdf.pages[0])
+            # Add the header text (centered) to the canvas
+            can.setFont("Arial", size=size)
+            if A3_flag:
+                can.drawCentredString(x2, y2, f"{footer_text} - Стр.{page_num + 1}")
+            else:
+                can.drawCentredString(x2, y2, f"{footer_text} - Стр.{page_num + 1}")
+            can.save()
+            packet.seek(0)
+            new_pdf = PdfReader(packet)
+            page.merge_page(new_pdf.pages[0])
 
-        writer.add_page(page)
-
+            writer.add_page(page)
+        except Exception as ex:
+            logger.error(ex)
     with open(pdf_file, "wb") as output_pdf:
         writer.write(output_pdf)
 
@@ -447,15 +451,15 @@ def created_good_images(all_arts, self, A3_flag=False):
                 create_contact_sheet(sets_of_orders, size, self, A3_flag)
             except Exception as ex:
                 logger.error(ex)
-        try:
-            lists = files_base_postgresql(self)
-        except Exception as ex:
-            logger.error(ex)
-
-        try:
-            orders_base_postgresql(self, lists)
-        except Exception as ex:
-            logger.error(ex)
+        # try:
+        #     lists = files_base_postgresql(self)
+        # except Exception as ex:
+        #     logger.error(ex)
+        #
+        # try:
+        #     orders_base_postgresql(self, lists)
+        # except Exception as ex:
+        #     logger.error(ex)
 
         self.list_on_print = 0
         QMessageBox.information(self, 'Завершено', 'Создание файлов завершено!')

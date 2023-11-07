@@ -149,7 +149,7 @@ def circle():
 if __name__ == '__main__':
     # circle()
 
-    file_paths = [r'E:\База значков\сделать\старые\DOTATWO-10NEW-1-56.png']
+    file_paths = [r'E:\База значков\сделать\старые\SKZNACHKISKZNABOR2.png']
     size = 37
     directory = r'E:\База значков\сделать\старые'
     circle_one_image(file_paths, size, directory)

@@ -42,7 +42,8 @@ async def traverse_yandex_disk(session, folder_path, result_dict, offset=0):
                 await traverse_yandex_disk(session, folder_path, result_dict, offset)
 
     except Exception as ex:
-        logger.debug(f'Ошибка при поиске папки {folder_path} {ex}')
+        # logger.debug(f'Ошибка при поиске папки {folder_path} {ex}')
+        pass
 
 
 async def main_search():
@@ -122,7 +123,7 @@ async def main_parser(missing_dict):
 
             for dirname, y_path in chunk:
                 new_folder = os.path.join(all_badge, y_path.replace("disk:/Компьютер HOME-PC/База значков/", ''))
-                logger.debug(new_folder)
+                # logger.debug(new_folder)
                 folder_url = f"https://cloud-api.yandex.net/v1/disk/resources?path={y_path.replace('disk:', '')}"
                 tasks.append(download_files_from_yandex_folder(session, token, folder_url, new_folder))
 
