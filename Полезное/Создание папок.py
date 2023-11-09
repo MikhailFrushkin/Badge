@@ -156,10 +156,10 @@ def move_and_blur():
 if __name__ == '__main__':
     #
     # main()
-    move_and_blur()
+    # move_and_blur()
 
-    # move_all_files()
-    # created_dirs()
+    move_all_files()
+    created_dirs()
 
     # delete_files_with_name(starting_directory=r'E:\База значков\AniKoya')
     # check_duo_skin()

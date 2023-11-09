@@ -451,15 +451,15 @@ def created_good_images(all_arts, self, A3_flag=False):
                 create_contact_sheet(sets_of_orders, size, self, A3_flag)
             except Exception as ex:
                 logger.error(ex)
-        try:
-            lists = files_base_postgresql(self)
-        except Exception as ex:
-            logger.error(ex)
-
-        try:
-            orders_base_postgresql(self, lists)
-        except Exception as ex:
-            logger.error(ex)
+        # try:
+        #     lists = files_base_postgresql(self)
+        # except Exception as ex:
+        #     logger.error(ex)
+        #
+        # try:
+        #     orders_base_postgresql(self, lists)
+        # except Exception as ex:
+        #     logger.error(ex)
 
         self.list_on_print = 0
         QMessageBox.information(self, 'Завершено', 'Создание файлов завершено!')

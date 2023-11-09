@@ -176,7 +176,8 @@ def read_excel_file(file: str) -> list:
     try:
         for index, row in df.iterrows():
             if 'poster-' not in row['Артикул продавца'].lower():
-                file_on_print = FilesOnPrint(art=row['Артикул продавца'].strip(), name=row['Название товара'],
+                file_on_print = FilesOnPrint(art=replace_bad_simbols(row['Артикул продавца'].strip()),
+                                             name=row['Название товара'],
                                              count=row['Количество'])
                 files_on_print.append(file_on_print)
     except Exception as ex:
@@ -184,5 +185,17 @@ def read_excel_file(file: str) -> list:
     return files_on_print
 
 
+import re
+
+
+def replace_bad_simbols(row):
+    bad = r'[\?\/\\\:\*\"><\|]'
+    new_row = re.sub(bad, '', row)
+    return new_row
+
+
 if __name__ == '__main__':
-    move_ready_folder()
+    row = "Название файла?с символами/которые:нельзя*использовать<в винде>"
+    new_row = replace_bad_simbols(row)
+    print(new_row)
+

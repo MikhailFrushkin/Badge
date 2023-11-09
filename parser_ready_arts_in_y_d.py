@@ -26,7 +26,6 @@ async def traverse_yandex_disk(session, folder_path, result_dict, offset=0):
             for item in data["_embedded"]["items"]:
                 if item["type"] == "dir" and (item["name"] not in result_dict):
                     if len(item["name"]) > 8 and item["name"] != 'Значки ШК' and item["name"] != 'Новые значки':
-                        print(item["name"])
                         result_dict[item["name"].lower()] = item["path"]
                     task = traverse_yandex_disk(session, item["path"], result_dict)
                     tasks.append(task)
@@ -34,7 +33,6 @@ async def traverse_yandex_disk(session, folder_path, result_dict, offset=0):
             if tasks:
                 await asyncio.gather(*tasks)
 
-            # Проверяем, есть ли ещё элементы для сканирования
             total = data["_embedded"]["total"]
             offset += limit
             if offset < total:
