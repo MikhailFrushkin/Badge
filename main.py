@@ -263,18 +263,13 @@ def search_image_56(folder_skin, output_folder):
             f.write(f"{output_folder}\n")
 
 
-def download_new_arts(link, arts_list, shop, self=None):
-    logger.debug(arts_list)
+def download_new_arts(link, list_arts, shop, self=None):
     main_download(public_link=link, shop=shop, self=self)
     logger.debug(link)
     new_folder = os.path.join(f'{all_badge}\\Скаченные с диска', os.listdir(f'{all_badge}\\Скаченные с диска')[0])
     logger.debug(new_folder)
     if new_folder:
-        arts_list = arts_list.replace('\r', ' ').replace('\n', ' ')
-        delimiters = r'[\\/|, ]'
-        substrings = re.split(delimiters, arts_list)
-        arts_list = [substring.strip() for substring in substrings if substring.strip()]
-        logger.debug(arts_list)
+        arts_list = []
         list_image = []
         list_skin_one = []
         list_skin_names = ['подлож', 'главная', 'nabor']
@@ -284,16 +279,21 @@ def download_new_arts(link, arts_list, shop, self=None):
                 return
         for file in os.listdir(new_folder):
             if os.path.isfile(os.path.join(new_folder, file)):
-                if file.split('.')[1] == 'png' or file.split('.')[1] == 'jpg':
-                    if file.split('.')[0].strip().isdigit():
-                        list_image.append(file)
-                elif file.endswith('.pdf'):
+                if file.replace('.png', '').replace('.jpg', '').strip().isdigit():
+                    list_image.append(file)
+                elif file.endswith('.pdf') and '-' in file:
                     try:
+                        arts_list.append(file.replace('.pdf', ''))
                         logger.success(f'Найден стикер {file}\nСкопирован в папку {sticker_path_all}')
                         shutil.copy2(os.path.join(new_folder, file), sticker_path_all)
                     except Exception as ex:
                         logger.error(ex)
-
+        if not arts_list:
+            arts_list = list_arts.replace('\r', ' ').replace('\n', ' ')
+            delimiters = r'[\\/|, ]'
+            substrings = re.split(delimiters, arts_list)
+            arts_list = [substring.strip() for substring in substrings if substring.strip()]
+            logger.debug(arts_list)
         for name in list_skin_names_one:
             list_skin_one = []
             for file in os.listdir(new_folder):

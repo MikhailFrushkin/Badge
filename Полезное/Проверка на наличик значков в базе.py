@@ -16,6 +16,14 @@ def main():
     print(len(arts_list_in_db))
 
     result = list(set(arts_list_in_file) - set(arts_list_in_db))
+
+    result = [i for i in result
+              if ('sumka-' not in i.lower()
+              and 'box1-' not in i.lower()
+              and 'boshki-' not in i.lower()
+              and '13new' in i.lower())
+              and ('25' in i.lower() or '44' in i.lower())
+              ]
     print(result)
     print(len(result))
     df = pd.DataFrame(result, columns=['Артикул продавца'])

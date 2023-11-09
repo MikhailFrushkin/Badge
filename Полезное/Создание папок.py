@@ -11,7 +11,6 @@ from utils import delete_files_with_name
 def main():
     """Создание файлов по названиям pdf и удаление лишних"""
     directory = r'E:\База значков\сделать'
-    directory_sh = r'E:\База значков\сделать\шк'
 
     for item in os.listdir(directory):
 
@@ -22,7 +21,7 @@ def main():
                     or 'мокап' in item.lower() or 'размер' in item.lower()
                     or 'джинс' in item.lower() or 'пакет' in item.lower()
                     or 'mix' in item.lower() or 'box' in item.lower()
-                    or 'коробка' in item.lower()):
+                    or 'коробка' in item.lower() or 'одинаков' in item.lower() or 'разные' in item.lower()):
                 os.remove(os.path.join(directory, item))
 
         if (os.path.isfile(os.path.join(directory, item))) and item.endswith('.pdf'):
@@ -32,6 +31,15 @@ def main():
                 os.rename(os.path.join(directory, old_name), os.path.join(directory, item))
             os.makedirs(os.path.join(directory, item.replace('.pdf', '')))
             os.remove(os.path.join(directory, item))
+
+        if os.path.isfile(os.path.join(directory, item)):
+            newname = (item.replace('nabor-', 'подложка')
+                       .replace('one-', 'подложка')
+                       .replace('Главная', 'подложка')
+                       .replace('ГЛАВНАЯ', 'подложка')
+                       .replace('ГЛАВНЫЕ', 'подложка')
+                       )
+            os.rename(os.path.join(directory, item), os.path.join(directory, newname))
 
 
 def move_dirs():

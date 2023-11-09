@@ -225,7 +225,11 @@ class Article(Model):
     def find_skin_filename(self, folder_name):
         lower_filenames = [filename.lower() for filename in os.listdir(folder_name)]
         for filename in lower_filenames:
-            if "подлож" in filename or "один" in filename or "главн" in filename:
+            if ("подлож" in filename.lower()
+                    or "один" in filename.lower()
+                    or "главн" in filename.lower()
+                    or "nabor" in filename.lower()
+                    or "one" in filename.lower()):
                 return filename
 
     def fill_additional_columns(self):
