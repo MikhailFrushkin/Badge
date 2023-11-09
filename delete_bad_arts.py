@@ -1,19 +1,13 @@
 import asyncio
-import os
 import shutil
-import time
-from pprint import pprint
 from urllib.parse import quote
 
-import aiofiles
 import aiohttp
-import pandas as pd
 from loguru import logger
 from peewee import fn
 
-from config import token, all_badge
+from config import token
 from db import Article
-from utils import df_in_xlsx
 
 
 async def traverse_yandex_disk(session, folder_path, list_arts, offset=0):
@@ -52,4 +46,3 @@ def delete_arts():
 
 if __name__ == "__main__":
     delete_arts()
-

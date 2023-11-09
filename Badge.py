@@ -791,8 +791,8 @@ if __name__ == '__main__':
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     w = MainWindow()
     w.show()
-    # script_thread = Thread(target=run_script)
-    # script_thread.daemon = True
-    # script_thread.start()
+    script_thread = Thread(target=run_script)
+    script_thread.daemon = True
+    script_thread.start()
 
     sys.exit(app.exec())

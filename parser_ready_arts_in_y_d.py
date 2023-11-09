@@ -1,17 +1,16 @@
 import asyncio
 import os
 import time
+from pprint import pprint
 from urllib.parse import quote
 
 import aiofiles
 import aiohttp
-import pandas as pd
 from loguru import logger
 
 from config import token, all_badge
-from utils import df_in_xlsx
 
-semaphore = asyncio.Semaphore(3)
+semaphore = asyncio.Semaphore(2)
 
 
 async def traverse_yandex_disk(session, folder_path, result_dict, offset=0):
@@ -27,6 +26,7 @@ async def traverse_yandex_disk(session, folder_path, result_dict, offset=0):
             for item in data["_embedded"]["items"]:
                 if item["type"] == "dir" and (item["name"] not in result_dict):
                     if len(item["name"]) > 8 and item["name"] != 'Значки ШК' and item["name"] != 'Новые значки':
+                        print(item["name"])
                         result_dict[item["name"].lower()] = item["path"]
                     task = traverse_yandex_disk(session, item["path"], result_dict)
                     tasks.append(task)
@@ -79,14 +79,15 @@ async def download_files_from_yandex_folder(session, token, folder_url, local_fo
     os.makedirs(local_folder_path, exist_ok=True)
     # Получаем список файлов в папке на Яндекс.Диске
     try:
-        async with session.get(folder_url, headers=headers) as response:
+        params = {"limit": 1000}
+        async with session.get(folder_url, headers=headers, params=params) as response:
             if response.status == 200:
                 data = await response.json()
                 items = data.get("_embedded", {}).get("items", [])
                 for item in items:
                     if item["type"] == "file":
                         file_name = item["name"]
-                        # print(f'Загрузка {file_name}')
+                        # logger.debug(f'Загрузка {file_name}')
                         file_url = item["file"]
 
                         # Загружаем файл в указанную локальную папку
@@ -99,18 +100,19 @@ async def download_files_from_yandex_folder(session, token, folder_url, local_fo
 async def download_file(session, url, filename):
     headers = {'Authorization': f'OAuth {token}'}
 
-    async with semaphore:
-        try:
-            async with session.get(url, headers=headers) as response:
-                if response.status == 200:
-                    async with aiofiles.open(filename, 'wb') as f:
-                        while True:
-                            chunk = await response.content.read(1024)
-                            if not chunk:
-                                break
-                            await f.write(chunk)
-        except Exception as e:
-            logger.error(f"Error downloading {filename}: {e}")
+    try:
+        async with session.get(url, headers=headers) as response:
+            if response.status == 200:
+                async with aiofiles.open(filename, 'wb') as f:
+                    while True:
+                        chunk = await response.content.read(1024)
+                        if not chunk:
+                            break
+                        await f.write(chunk)
+            else:
+                logger.error(f"Error downloading {filename} {response.status}")
+    except Exception as e:
+        logger.error(f"Error downloading {filename}: {e}")
 
 
 async def main_parser(missing_dict):
@@ -159,9 +161,16 @@ def missing_folders():
 
 
 if __name__ == "__main__":
-    missing_dict = missing_folders()
+    # missing_dict = missing_folders()
+    missing_dict = {'bongo_cat-13new-20-37': 'disk:/Компьютер HOME-PC/База '
+                                             'значков/AniKoya/BONGO_CAT-13NEW-20-37',
+                    'bongo_cat-13new-20-56': 'disk:/Компьютер HOME-PC/База '
+                                             'значков/AniKoya/BONGO_CAT-13NEW-20-56',
+                    }
+    pprint(missing_dict)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main_parser(missing_dict))
+
     # loop = asyncio.get_event_loop()
     # result_dict = loop.run_until_complete(main_search())
     # print(result_dict)
