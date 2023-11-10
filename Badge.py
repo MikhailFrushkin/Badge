@@ -746,10 +746,10 @@ def run_script():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     while True:
-        try:
-            delete_arts()
-        except Exception as ex:
-            logger.error(ex)
+        # try:
+        #     delete_arts()
+        # except Exception as ex:
+        #     logger.error(ex)
 
         logger.success('Обновление...')
         try:
@@ -777,7 +777,7 @@ def run_script():
             logger.error(ex)
 
         logger.success('Обновление завершено')
-        time.sleep(3600)
+        time.sleep(60*60)
 
 
 if __name__ == '__main__':

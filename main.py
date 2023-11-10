@@ -428,9 +428,9 @@ def update_db(self=None):
             delimiters = r'[\\/|, ]'
             substrings = re.split(delimiters, row.article)
             temp_list = [substring.strip() for substring in substrings if substring.strip()]
-            if len(temp_list) > 4:
+            if 0 > len(temp_list) > 4:
                 logger.debug(f'{row.id}: {temp_list}')
-            if len(temp_list) < 5:
+            else:
                 list_arts.extend(temp_list)
     except Exception as ex:
         logger.error(ex)
@@ -452,7 +452,7 @@ def download_new_arts_in_comp(list_arts, self=None):
         record.status_download = True
         record.save()
         try:
-            download_new_arts(link=key, arts_list=value[0], shop=value[1], self=self)
+            download_new_arts(link=key, list_arts=value[0], shop=value[1], self=self)
             if value[1] == 'DP':
                 move_ready_folder(target_directory=f'{dp_path}',
                                   shop='DP')
