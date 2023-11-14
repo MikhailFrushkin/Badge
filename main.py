@@ -63,7 +63,8 @@ def read_table_google(CREDENTIALS_FILE='Настройки\\google_acc.json',
             progress = ProgressBar(len(rows), self)
         for index, row in df.iterrows():
             try:
-                if row[art_name_col] == '' or '-' not in row[art_name_col] or not row['Ссылка на папку'].startswith('https://disk'):
+                if row[art_name_col] == '' or '-' not in row[art_name_col] or not row['Ссылка на папку'].startswith(
+                        'https://disk'):
                     continue
                 else:
                     add_record_google_table(name=row['Наименование'],
@@ -484,26 +485,26 @@ def update_arts_db2():
                 Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
                 # print('\r', count, end='', flush=True)
 
-    # print('\nНет подложек')
+    print('\nНет подложек')
     records = Article.select().where(Article.skin >> None)
     for i in records:
-        # print(os.path.abspath(i.folder))
+        print(os.path.abspath(i.folder))
         i.delete_instance()
         shutil.rmtree(i.folder)
         # shutil.move(i.folder, r'E:\Новая база значков\Проблемные')
 
-    # print('Нет картинок с цифрами')
+    print('Нет картинок с цифрами')
     records = Article.select().where(Article.images >> None)
     for i in records:
-        # print(os.path.abspath(i.folder))
+        print(os.path.abspath(i.folder))
         i.delete_instance()
         shutil.rmtree(i.folder)
         # shutil.move(i.folder, r'E:\Новая база значков\Проблемные')
 
-    # print('НЕ соответствует число картинок с базой')
+    print('НЕ соответствует число картинок с базой')
     records = Article.select().where(Article.nums_in_folder != Article.nums)
     for i in records:
-        # print(os.path.abspath(i.folder))
+        print(os.path.abspath(i.folder))
         i.nums = i.nums_in_folder
         i.save()
         # subprocess.Popen(f'explorer {os.path.abspath(i.folder)}', shell=True)
@@ -525,5 +526,18 @@ def update_sticker_path():
 
 
 if __name__ == '__main__':
-    read_table_google()
-    read_table_google(spreadsheet_id=id_google_table_DP, shop='DP')
+    # read_table_google()
+    # read_table_google(spreadsheet_id=id_google_table_DP, shop='DP')
+    directory = r'E:\База значков\AniKoya'
+    count = 1
+    for index, item in enumerate(os.listdir(directory), start=1):
+        try:
+            num = int(item.split("-")[-2])
+            records_num = Article.get(Article.art == item).nums_in_folder
+            if num != records_num and num > 10:
+                print(f'{count} {item}  {num}/{records_num}')
+                print(os.path.join(directory, item))
+                count += 1
+        except Exception as ex:
+            pass
+            # logger.error(f'{item} {ex} ')

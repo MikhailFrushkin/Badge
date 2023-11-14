@@ -10,7 +10,7 @@ import qdarkstyle
 import requests
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QPalette
+from PyQt5.QtGui import QPalette, QFont
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QTextEdit, QPushButton, QDialog, QMessageBox, QWidget, \
     QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView, QLabel, QCalendarWidget
 from PyQt5.QtWidgets import (
@@ -21,6 +21,7 @@ from peewee import fn
 
 from config import all_badge, token
 from created_images import created_good_images
+from created_one_pdf import created_pdfs
 from db import Article, Statistic, update_base_postgresql, GoogleTable, Orders, db
 from delete_bad_arts import delete_arts
 from dow_stickers import main_download_stickers
@@ -246,11 +247,18 @@ class QueueDialog(QWidget):
 
         layout = QVBoxLayout(self)
 
+        # Add checkbox with default value checked
+        self.create_pdf_checkbox = QCheckBox("Создать 1 PDF файл", self)
+        self.create_pdf_checkbox.setChecked(True)
+        self.create_pdf_checkbox.setFont(QFont("Arial", 16))  # Set font size
+        self.create_pdf_checkbox.setStyleSheet("QCheckBox { font-size: 16pt; }")  # Set font size using style sheet
+        layout.addWidget(self.create_pdf_checkbox)
+
         self.tableWidget = QTableWidget(self)
-        self.tableWidget.setColumnCount(4)  # Добавление колонки "Название"
+        self.tableWidget.setColumnCount(3)  # Добавление колонки "Название"
         self.tableWidget.setMinimumSize(800, 300)
         self.tableWidget.setHorizontalHeaderLabels(
-            ["Название", "Артикул", "Количество", "Найден"])  # Обновленные заголовки
+            ["Артикул", "Количество", "Найден"])  # Обновленные заголовки
 
         font = self.tableWidget.font()
         font.setPointSize(14)
@@ -259,14 +267,14 @@ class QueueDialog(QWidget):
         self.tableWidget.setRowCount(len(self.files_on_print))
 
         for row, file_on_print in enumerate(self.files_on_print):
-            name_item = QTableWidgetItem(file_on_print.name)  # Получение названия из датакласса
+            # name_item = QTableWidgetItem(file_on_print.name)  # Получение названия из датакласса
             art_item = QTableWidgetItem(file_on_print.art)
             count_item = QTableWidgetItem(str(file_on_print.count))
             status_item = QTableWidgetItem(str(file_on_print.status))
-            self.tableWidget.setItem(row, 0, name_item)  # Установка элемента в колонку "Название"
-            self.tableWidget.setItem(row, 1, art_item)
-            self.tableWidget.setItem(row, 2, count_item)
-            self.tableWidget.setItem(row, 3, status_item)
+            # self.tableWidget.setItem(row, 0, name_item)  # Установка элемента в колонку "Название"
+            self.tableWidget.setItem(row, 0, art_item)
+            self.tableWidget.setItem(row, 1, count_item)
+            self.tableWidget.setItem(row, 2, status_item)
 
         layout.addWidget(self.tableWidget)
 
@@ -299,6 +307,7 @@ class QueueDialog(QWidget):
         layout.addWidget(self.progress_bar)
 
     def evt_btn_print_clicked(self):
+        """Создание одной выбранной строки"""
         selected_data = self.get_selected_data()
         if selected_data:
             logger.debug(selected_data)
@@ -307,6 +316,7 @@ class QueueDialog(QWidget):
             QMessageBox.information(self, 'Отправка на печать', 'Ни одна строка не выбрана')
 
     def evt_btn_print_all_clicked(self):
+        """Создание всех строк с артикулами"""
         logger.debug(self.name_doc)
         all_data = self.get_all_data()
         if all_data:
@@ -314,6 +324,7 @@ class QueueDialog(QWidget):
                 asyncio.run(upload_statistic_files_async(os.path.basename(self.name_doc)))
             except Exception as ex:
                 logger.error(ex)
+
             created_good_images(all_data, self, self.A3_flag)
         else:
             QMessageBox.information(self, 'Отправка на печать', 'Таблица пуста')
@@ -368,7 +379,7 @@ class Ui_MainWindow(object):
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout.addWidget(self.pushButton)
 
-        self.pushButton.setEnabled(False)
+        # self.pushButton.setEnabled(False)
 
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
         font = QtGui.QFont()
@@ -791,8 +802,8 @@ if __name__ == '__main__':
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     w = MainWindow()
     w.show()
-    script_thread = Thread(target=run_script)
-    script_thread.daemon = True
-    script_thread.start()
+    # script_thread = Thread(target=run_script)
+    # script_thread.daemon = True
+    # script_thread.start()
 
     sys.exit(app.exec())

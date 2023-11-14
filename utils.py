@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 from dataclasses import dataclass
 from typing import Optional
@@ -74,7 +75,8 @@ def move_ready_folder(directory=f'{all_badge}\\Скаченные с диска'
                             if art:
                                 folder_name = art.folder
                                 for index, filename in enumerate(os.listdir(folder_name), start=1):
-                                    if (filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()) \
+                                    if (filename.split('.')[0].startswith('!') or filename.split('.')[
+                                        0].strip().isdigit()) \
                                             and os.path.isfile(os.path.join(folder_name, filename)):
                                         if os.path.exists(os.path.join(folder_name, filename)):
                                             try:
@@ -135,6 +137,7 @@ class FilesOnPrint:
 
 
 def read_excel_file(file: str) -> list:
+    """Чтенеие файла с заказом"""
     df = pd.DataFrame()
     try:
         shutil.rmtree('Файлы связанные с заказом', ignore_errors=True)
@@ -154,19 +157,24 @@ def read_excel_file(file: str) -> list:
             df = df[mask]
 
             df = df.rename(columns={'Номер заказа': 'Количество', 'Артикул': 'Артикул продавца'})
-            print(df.columns)
         except Exception as ex:
             logger.error(ex)
     else:
         try:
             df = pd.read_excel(file)
-            if 'Название товара' not in df.columns:
-                df['Название товара'] = 'Нет названия'
-            df = df.groupby('Артикул продавца').agg({
-                'Название товара': 'first',
-                'Стикер': 'count',
-            }).reset_index()
-            df = df.rename(columns={'Стикер': 'Количество'})
+            columns_list = list(map(str.lower, df.columns))
+            if 'артикул' in columns_list and 'количество' in columns_list:
+                logger.debug(f'Столбцы: {df.columns}')
+                try:
+                    df = df.rename(columns={'артикул': 'Артикул продавца', 'количество': 'Количество'})
+                except Exception as ex:
+                    logger.error(ex)
+                    df = df.rename(columns={'Aртикул': 'Артикул продавца'})
+            else:
+                df = df.groupby('Артикул продавца').agg({
+                    'Стикер': 'count',
+                }).reset_index()
+                df = df.rename(columns={'Стикер': 'Количество'})
         except Exception as ex:
             logger.error(ex)
 
@@ -177,15 +185,11 @@ def read_excel_file(file: str) -> list:
         for index, row in df.iterrows():
             if 'poster-' not in row['Артикул продавца'].lower():
                 file_on_print = FilesOnPrint(art=replace_bad_simbols(row['Артикул продавца'].strip()),
-                                             name=row['Название товара'],
                                              count=row['Количество'])
                 files_on_print.append(file_on_print)
     except Exception as ex:
         logger.error(ex)
     return files_on_print
-
-
-import re
 
 
 def replace_bad_simbols(row):
@@ -195,7 +199,5 @@ def replace_bad_simbols(row):
 
 
 if __name__ == '__main__':
-    row = "Название файла?с символами/которые:нельзя*использовать<в винде>"
-    new_row = replace_bad_simbols(row)
-    print(new_row)
-
+    read_excel_file(r'E:\PyCharm\Badge2\0611 5 Ангелина 44.xlsx')
+    read_excel_file(r'E:\PyCharm\Badge2\Заказ.xlsx')

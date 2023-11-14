@@ -16,6 +16,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
+from created_one_pdf import created_pdfs
 from db import Article, Orders, Statistic, files_base_postgresql, orders_base_postgresql
 from utils import ProgressBar, df_in_xlsx
 
@@ -23,6 +24,7 @@ pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
 
 
 def add_header_and_footer_to_pdf(pdf_file, footer_text, A3_flag):
+    """Надписи сверху пдф файла и снизу"""
     # Open the original PDF and extract its content
     with open(pdf_file, "rb") as pdf:
         pdf_content = BytesIO(pdf.read())
@@ -69,6 +71,7 @@ def add_header_and_footer_to_pdf(pdf_file, footer_text, A3_flag):
 
 
 def combine_images_to_pdf(input_files, output_pdf, size=None, progress=None, self=None, A3_flag=False):
+    """Создание файла с наклейками"""
     x_offset = 20
     y_offset = 20
     big_list_skin = []
@@ -162,11 +165,12 @@ def combine_images_to_pdf(input_files, output_pdf, size=None, progress=None, sel
 
 
 def write_images_art(image, text1):
+    """Нанесения номера на значке"""
     width, height = image.size
     draw = ImageDraw.Draw(image)
 
     # Calculate the font size based on the image width
-    font_size = int(width / 11)
+    font_size = int(width / 13)
     font = ImageFont.truetype("arial.ttf", font_size)
 
     # Добавляем надпись в правый верхний угол
@@ -451,15 +455,23 @@ def created_good_images(all_arts, self, A3_flag=False):
                 create_contact_sheet(sets_of_orders, size, self, A3_flag)
             except Exception as ex:
                 logger.error(ex)
-        try:
-            lists = files_base_postgresql(self)
-        except Exception as ex:
-            logger.error(ex)
 
-        try:
-            orders_base_postgresql(self, lists)
-        except Exception as ex:
-            logger.error(ex)
+        if self.create_pdf_checkbox.checkState() == 2:
+            try:
+                created_pdfs(self)
+            except Exception as ex:
+                logger.error(ex)
+
+        lists = 0
+        # try:
+        #     lists = files_base_postgresql(self)
+        # except Exception as ex:
+        #     logger.error(ex)
+        #
+        # try:
+        #     orders_base_postgresql(self, lists)
+        # except Exception as ex:
+        #     logger.error(ex)
 
         self.list_on_print = 0
         QMessageBox.information(self, 'Завершено', 'Создание файлов завершено!')
