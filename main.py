@@ -477,13 +477,13 @@ def update_arts_db2():
             if len(dir) > 10:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'DP')
-                # print('\r', count, end='', flush=True)
+                print('\r', count, end='', flush=True)
     for root, dirs, files in os.walk(rf'{anikoya_path}'):
         for dir in dirs:
             if len(dir) > 10:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
-                # print('\r', count, end='', flush=True)
+                print('\r', count, end='', flush=True)
 
     print('\nНет подложек')
     records = Article.select().where(Article.skin >> None)

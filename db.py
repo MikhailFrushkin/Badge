@@ -1,8 +1,8 @@
 import os
+import re
 from datetime import datetime
-import psycopg2
 
-import pandas as pd
+import psycopg2
 from PIL import Image
 from loguru import logger
 from peewee import *
@@ -10,6 +10,16 @@ from peewee import *
 from config import sticker_path_all, dbname, user, password, host, machine_name
 
 db = SqliteDatabase('mydatabase.db')
+
+
+def remove_russian_letters(input_string):
+    # Используем регулярное выражение для поиска всех русских букв
+    russian_letters_pattern = re.compile('[а-яА-Я]')
+
+    # Заменяем найденные русские буквы на пустую строку
+    result_string = re.sub(russian_letters_pattern, '', input_string)
+
+    return result_string.strip()
 
 
 def update_base_postgresql():
@@ -203,8 +213,14 @@ class Article(Model):
     def __str__(self):
         return self.art
 
+    def save(self, *args, **kwargs):
+        if self.art:
+            self.art = str(self.art).lower()
+        super(Article, self).save(*args, **kwargs)
+
     @classmethod
     def create_with_art(cls, art, folder, shop):
+        art = remove_russian_letters(art).lower()
         existing_article = cls.get_or_none(art=art)
         if existing_article:
             return existing_article

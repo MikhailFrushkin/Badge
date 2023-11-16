@@ -3,13 +3,12 @@ import os
 import time
 from datetime import timedelta
 from pathlib import Path
-from threading import Thread
 
 import pandas as pd
 import qdarkstyle
 import requests
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette, QFont
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QTextEdit, QPushButton, QDialog, QMessageBox, QWidget, \
     QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView, QLabel, QCalendarWidget
@@ -21,17 +20,14 @@ from peewee import fn
 
 from config import all_badge, token
 from created_images import created_good_images
-from created_one_pdf import created_pdfs
-from db import Article, Statistic, update_base_postgresql, GoogleTable, Orders, db
+from db import Article, Statistic, update_base_postgresql, GoogleTable, Orders, db, remove_russian_letters
 from delete_bad_arts import delete_arts
-from dow_stickers import main_download_stickers
 from main import update_db, download_new_arts_in_comp, update_arts_db2, update_sticker_path
 from parser_ready_arts_in_y_d import missing_folders, main_parser
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
-from scan_shk import async_main_sh, main_sh
+from scan_shk import async_main_sh
 from upload_files import upload_statistic_files_async
 from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx
-
 
 def check_file():
     return True
@@ -601,7 +597,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             try:
                 counts_art = read_excel_file(filename)
                 for item in counts_art:
-                    status = Article.get_or_none(fn.Lower(Article.art) == item.art.lower())
+                    status = None
+                    try:
+                        art = remove_russian_letters(item.art.upper())
+                        status = Article.get_or_none(fn.UPPER(Article.art) == art)
+                    except:
+                        pass
                     if status and os.path.exists(status.folder):
                         item.status = '✅'
                 counts_art = sorted(counts_art, key=lambda x: x.status, reverse=True)
@@ -634,7 +635,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             try:
                 counts_art = read_excel_file(self.lineEdit.text())
                 for item in counts_art:
-                    status = Article.get_or_none(Article.art == item.art)
+                    status = Article.get_or_none(fn.UPPER(Article.art) == fn.UPPER(item.art))
                     if status:
                         item.status = '✅'
                 counts_art = sorted(counts_art, key=lambda x: x.status, reverse=True)
@@ -665,12 +666,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             dialog.exec_()
             # logger.debug('Загрузка стикеров:')
             # main_download_stickers(self)
+            # self.progress_label.setText(f"Скачивание файлов")
+            self.progress_bar.setValue(0)
 
             download_new_arts_in_comp(list_arts, self)
 
             delete_files_with_name(starting_directory=all_badge)
             try:
+                logger.success('Проверка базы')
                 update_arts_db2()
+                logger.success('Поиск новых стикеров')
                 update_sticker_path()
             except Exception as ex:
                 logger.error(ex)
@@ -757,12 +762,17 @@ def run_script():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     while True:
+        try:
+            delete_arts()
+        except Exception as ex:
+            logger.error(ex)
+
+        logger.success('Обновление...')
         # try:
-        #     delete_arts()
+        #     Article.update(art=fn.lower(Article.art)).execute()
         # except Exception as ex:
         #     logger.error(ex)
 
-        logger.success('Обновление...')
         try:
             missing_dict = missing_folders()
             loop.run_until_complete(main_parser(missing_dict))
@@ -777,6 +787,14 @@ def run_script():
 
         logger.success('Проверка базы...')
         try:
+            rows = Article.select()
+            for row in rows:
+                row.art = remove_russian_letters(row.art).strip()
+                row.save()
+        except Exception as ex:
+            logger.error(ex)
+
+        try:
             update_arts_db2()
             update_sticker_path()
         except Exception as ex:
@@ -788,7 +806,7 @@ def run_script():
             logger.error(ex)
 
         logger.success('Обновление завершено')
-        time.sleep(60*60)
+        time.sleep(60 * 60)
 
 
 if __name__ == '__main__':

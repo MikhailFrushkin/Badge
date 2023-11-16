@@ -9,6 +9,7 @@ import win32print
 from loguru import logger
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
+from peewee import fn
 
 from blur import blur_image
 from config import anikoya_path, all_badge
@@ -163,10 +164,10 @@ def read_excel_file(file: str) -> list:
         try:
             df = pd.read_excel(file)
             columns_list = list(map(str.lower, df.columns))
-            if 'артикул' in columns_list and 'количество' in columns_list:
+            if len(columns_list) == 2:
                 logger.debug(f'Столбцы: {df.columns}')
                 try:
-                    df = df.rename(columns={'артикул': 'Артикул продавца', 'количество': 'Количество'})
+                    df = df.rename(columns={df.columns[0]: 'Артикул продавца', df.columns[1]: 'Количество'})
                 except Exception as ex:
                     logger.error(ex)
                     df = df.rename(columns={'Aртикул': 'Артикул продавца'})
@@ -184,7 +185,7 @@ def read_excel_file(file: str) -> list:
     try:
         for index, row in df.iterrows():
             if 'poster-' not in row['Артикул продавца'].lower():
-                file_on_print = FilesOnPrint(art=replace_bad_simbols(row['Артикул продавца'].strip()),
+                file_on_print = FilesOnPrint(art=replace_bad_simbols(row['Артикул продавца'].strip().lower()),
                                              count=row['Количество'])
                 files_on_print.append(file_on_print)
     except Exception as ex:
@@ -198,6 +199,9 @@ def replace_bad_simbols(row):
     return new_row
 
 
+
+
 if __name__ == '__main__':
-    read_excel_file(r'E:\PyCharm\Badge2\0611 5 Ангелина 44.xlsx')
-    read_excel_file(r'E:\PyCharm\Badge2\Заказ.xlsx')
+    # read_excel_file(r'E:\PyCharm\Badge2\0611 5 Ангелина 44.xlsx')
+    # read_excel_file(r'E:\PyCharm\Badge2\Заказ.xlsx')
+    pass

@@ -38,6 +38,7 @@ def delete_arts():
         results = Article.select().where(fn.Lower(Article.art).in_(list_arts))
         for article in results:
             try:
+                print(f'Удален {article.art}')
                 article.delete_instance()
                 shutil.rmtree(article.folder)
             except Exception as ex:

@@ -21,7 +21,7 @@ def main():
               if ('sumka-' not in i.lower()
               and 'box1-' not in i.lower()
               and 'boshki-' not in i.lower()
-              and '13new' not in i.lower())
+              and '13new' in i.lower())
               and ('37' in i.lower() or '56' in i.lower())
               ]
     print(result)

@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime
 
 from loguru import logger
@@ -7,6 +8,16 @@ from peewee import *
 from config import sticker_path_all, dp_path, anikoya_path
 
 db = SqliteDatabase('mydatabase.db')
+
+
+def remove_russian_letters(input_string):
+    # Используем регулярное выражение для поиска всех русских букв
+    russian_letters_pattern = re.compile('[а-яА-Я]')
+
+    # Заменяем найденные русские буквы на пустую строку
+    result_string = re.sub(russian_letters_pattern, '', input_string)
+
+    return result_string.strip()
 
 
 class Article(Model):
@@ -29,6 +40,7 @@ class Article(Model):
 
     @classmethod
     def create_with_art(cls, art, folder, shop):
+        art = remove_russian_letters(art).lower()
         existing_article = cls.get_or_none(art=art)
         if existing_article:
             return existing_article
