@@ -3,6 +3,7 @@ import os
 import time
 from datetime import timedelta
 from pathlib import Path
+from threading import Thread
 
 import pandas as pd
 import qdarkstyle
@@ -232,11 +233,13 @@ class Dialog(QDialog):
 
 
 class QueueDialog(QWidget):
-    def __init__(self, files_on_print, title, name_doc, sub_self, A3_flag=False, parent=None):
+    """
+    Окно со спискос на печать
+    """
+    def __init__(self, files_on_print, title, name_doc, A3_flag=False, parent=None):
         super().__init__(parent)
         self.files_on_print = files_on_print
         self.setWindowTitle(title)
-        self.sub_self = sub_self
         self.A3_flag = A3_flag
         self.name_doc = os.path.abspath(name_doc).split('\\')[-1].replace('.xlsx', '')
         self.list_on_print = 0
@@ -303,16 +306,15 @@ class QueueDialog(QWidget):
         layout.addWidget(self.progress_bar)
 
     def evt_btn_print_clicked(self):
-        """Создание одной выбранной строки"""
+        """Создание файлов для одной или несколько строк"""
         selected_data = self.get_selected_data()
         if selected_data:
-            logger.debug(selected_data)
             created_good_images(selected_data, self, self.A3_flag)
         else:
             QMessageBox.information(self, 'Отправка на печать', 'Ни одна строка не выбрана')
 
     def evt_btn_print_all_clicked(self):
-        """Создание всех строк с артикулами"""
+        """Создание файлов всех строк с артикулами"""
         logger.debug(self.name_doc)
         all_data = self.get_all_data()
         if all_data:
@@ -320,8 +322,10 @@ class QueueDialog(QWidget):
                 asyncio.run(upload_statistic_files_async(os.path.basename(self.name_doc)))
             except Exception as ex:
                 logger.error(ex)
-
-            created_good_images(all_data, self, self.A3_flag)
+            try:
+                created_good_images(all_data, self, self.A3_flag)
+            except Exception as ex:
+                logger.error(ex)
         else:
             QMessageBox.information(self, 'Отправка на печать', 'Таблица пуста')
 
@@ -329,10 +333,10 @@ class QueueDialog(QWidget):
         selected_rows = self.tableWidget.selectionModel().selectedRows()
         data = []
         for row in selected_rows:
-            name = self.tableWidget.item(row.row(), 0).text()
-            art = self.tableWidget.item(row.row(), 1).text()
-            count = self.tableWidget.item(row.row(), 2).text()
-            status = self.tableWidget.item(row.row(), 3).text()
+            name = ''
+            art = self.tableWidget.item(row.row(), 0).text()
+            count = self.tableWidget.item(row.row(), 1).text()
+            status = self.tableWidget.item(row.row(), 2).text()
             if status == '✅':
                 data.append(FilesOnPrint(name=name, art=art, count=int(count), status='✅'))
         return data
@@ -340,12 +344,17 @@ class QueueDialog(QWidget):
     def get_all_data(self):
         data = []
         for row in range(self.tableWidget.rowCount()):
-            name = self.tableWidget.item(row, 0).text()
-            art = self.tableWidget.item(row, 1).text()
-            count = self.tableWidget.item(row, 2).text()
-            status = self.tableWidget.item(row, 3).text()
-            if status == '✅':
-                data.append(FilesOnPrint(name=name, art=art, count=int(count), status='✅'))
+            logger.debug(self.tableWidget.item(1, 1).text())
+
+            try:
+                name = ''
+                art = self.tableWidget.item(row, 0).text()
+                count = self.tableWidget.item(row, 1).text()
+                status = self.tableWidget.item(row, 2).text()
+                if status == '✅':
+                    data.append(FilesOnPrint(name=name, art=art, count=int(count), status='✅'))
+            except Exception as ex:
+                logger.error(ex)
         return data
 
     def update_progress(self, current_value, total_value):
@@ -375,6 +384,7 @@ class Ui_MainWindow(object):
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout.addWidget(self.pushButton)
 
+        # Кнопка обновления
         # self.pushButton.setEnabled(False)
 
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
@@ -515,6 +525,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.version = 3.0
         self.current_dir = Path.cwd()
         self.dialogs = []
 
@@ -593,7 +604,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         """Ивент на кнопку Создать файлы"""
         filename = self.lineEdit.text()
         if filename:
-            logger.success(filename)
             try:
                 counts_art = read_excel_file(filename)
                 for item in counts_art:
@@ -601,8 +611,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     try:
                         art = remove_russian_letters(item.art.upper())
                         status = Article.get_or_none(fn.UPPER(Article.art) == art)
-                    except:
-                        pass
+                    except Exception as ex:
+                        logger.error(ex)
                     if status and os.path.exists(status.folder):
                         item.status = '✅'
                 counts_art = sorted(counts_art, key=lambda x: x.status, reverse=True)
@@ -611,15 +621,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                                 if i.status == '❌']
                     if bad_arts:
                         df_bad = pd.DataFrame(bad_arts, columns=['Артикул', 'Количество'])
-                        df_in_xlsx(df_bad, f'Не найденные артикула в заказе {os.path.basename(filename)}')
+                        df_in_xlsx(df_bad, f'Не найденные артикула в заказе '
+                                           f'{os.path.basename(filename)}_v_{self.version}')
 
                 except Exception as ex:
                     logger.error(ex)
             except Exception as ex:
                 logger.error(ex)
+
             try:
                 if counts_art:
-                    dialog = QueueDialog(counts_art, 'Значки', filename, self)
+                    dialog = QueueDialog(counts_art, 'Значки', filename)
                     self.dialogs.append(dialog)
                     dialog.show()
 
@@ -631,9 +643,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def evt_btn_create_files_A3(self):
         """Ивент на кнопку Создать файлы"""
-        if self.lineEdit.text():
+        filename = self.lineEdit.text()
+        if filename:
             try:
-                counts_art = read_excel_file(self.lineEdit.text())
+                counts_art = read_excel_file(filename)
                 for item in counts_art:
                     status = Article.get_or_none(fn.UPPER(Article.art) == fn.UPPER(item.art))
                     if status:
@@ -642,8 +655,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             except Exception as ex:
                 logger.error(ex)
             try:
-                if len(counts_art) > 0:
-                    dialog = QueueDialog(counts_art, 'Значки', self.lineEdit.text(), self, True)
+                if counts_art:
+                    dialog = QueueDialog(counts_art, 'Значки', filename, True)
                     self.dialogs.append(dialog)
                     dialog.show()
             except Exception as ex:

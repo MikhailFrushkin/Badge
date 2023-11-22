@@ -320,7 +320,8 @@ def add_record_google_table(name, folder_link, article, shop):
 
 
 if __name__ == '__main__':
-    db.connect()
-    db.create_tables([Statistic, GoogleTable, Orders, Article])
-    db.close()
+    # db.connect()
+    # db.create_tables([Statistic, GoogleTable, Orders, Article])
+    # db.close()
     # update_base_postgresql()
+    print(remove_russian_letters('Масленников_Артëм'))

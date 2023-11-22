@@ -33,6 +33,7 @@ async def upload_file(session, file_path, destination_path):
 
 
 async def upload_statistic_files_async(order=None):
+    """Отправка на я.диск файла с ненайденными артикулами"""
     current_directory = os.getcwd()
     directory = os.path.join(current_directory, 'Файлы связанные с заказом')
     tasks = []

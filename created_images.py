@@ -21,7 +21,7 @@ from db import Article, Orders, Statistic, files_base_postgresql, orders_base_po
 from utils import ProgressBar, df_in_xlsx
 
 pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
-
+Image.MAX_IMAGE_PIXELS = None
 
 def add_header_and_footer_to_pdf(pdf_file, footer_text, A3_flag):
     """Надписи сверху пдф файла и снизу"""

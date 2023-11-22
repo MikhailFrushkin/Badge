@@ -322,6 +322,8 @@ def download_new_arts(link, list_arts, shop, self=None):
                 break
         if len(list_skin_one) == 0:
             list_skin_one = [i for i in list_skin if '1' in i.lower() or 'one' in i.lower() or 'мал' in i.lower()]
+            if len(list_skin_one) == 0:
+                list_skin_one = list_skin[:]
         list_skin = [i for i in list_skin if i not in list_skin_one]
         print("Артикула: ", arts_list)
         print("Наклейки одиночки: ", list_skin_one)
