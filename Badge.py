@@ -254,10 +254,10 @@ class QueueDialog(QWidget):
         layout.addWidget(self.create_pdf_checkbox)
 
         self.tableWidget = QTableWidget(self)
-        self.tableWidget.setColumnCount(3)  # Добавление колонки "Название"
+        self.tableWidget.setColumnCount(3)  # Добавление колонки 3 колонок
         self.tableWidget.setMinimumSize(800, 300)
         self.tableWidget.setHorizontalHeaderLabels(
-            ["Артикул", "Количество", "Найден"])  # Обновленные заголовки
+            ["Артикул", "Количество", "Найден"])  # заголовки
 
         font = self.tableWidget.font()
         font.setPointSize(14)
@@ -266,11 +266,9 @@ class QueueDialog(QWidget):
         self.tableWidget.setRowCount(len(self.files_on_print))
 
         for row, file_on_print in enumerate(self.files_on_print):
-            # name_item = QTableWidgetItem(file_on_print.name)  # Получение названия из датакласса
             art_item = QTableWidgetItem(file_on_print.art)
             count_item = QTableWidgetItem(str(file_on_print.count))
             status_item = QTableWidgetItem(str(file_on_print.status))
-            # self.tableWidget.setItem(row, 0, name_item)  # Установка элемента в колонку "Название"
             self.tableWidget.setItem(row, 0, art_item)
             self.tableWidget.setItem(row, 1, count_item)
             self.tableWidget.setItem(row, 2, status_item)
@@ -292,7 +290,6 @@ class QueueDialog(QWidget):
         # Установка режима выделения целых строк
         self.tableWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
 
-        # Установка ширины колонки "Артикул" в 80% от ширины окна
         header = self.tableWidget.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.Stretch)
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
@@ -344,8 +341,6 @@ class QueueDialog(QWidget):
     def get_all_data(self):
         data = []
         for row in range(self.tableWidget.rowCount()):
-            logger.debug(self.tableWidget.item(1, 1).text())
-
             try:
                 name = ''
                 art = self.tableWidget.item(row, 0).text()
