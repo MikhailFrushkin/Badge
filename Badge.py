@@ -50,7 +50,7 @@ def check_file():
         else:
             return False
     else:
-        print("Error:", response.status_code)
+        logger.error("Error:", response.status_code)
         return []
 
 
@@ -222,7 +222,7 @@ class Dialog(QDialog):
 
     def buttonClicked(self):
         sender = self.sender()
-        print(f"Нажата кнопка: {sender.text()}")
+        logger.debug(f"Нажата кнопка: {sender.text()}")
         try:
             self.show()
             print_pdf_sticker(printer_name=sender.text(), self=self)
@@ -716,7 +716,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # Проверяем, является ли виджет флажком (QCheckBox) и отмечен ли он
             if isinstance(widget, QtWidgets.QCheckBox) and widget.isChecked():
                 checked_checkboxes.append(widget.text())
-                print(widget.text())
+                logger.debug(widget.text())
         if not checked_checkboxes:
             QMessageBox.information(self, 'Инфо', 'Не выбран ни один принтер')
         return checked_checkboxes
@@ -763,7 +763,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     grouped_dialog = GroupedRecordsDialog(self, start_date, end_date)
                     grouped_dialog.exec_()
             except Exception as ex:
-                print(ex)
+                logger.error(ex)
 
 
 def run_script():

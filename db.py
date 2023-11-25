@@ -241,7 +241,7 @@ class Article(Model):
     def find_skin_filename(self, folder_name):
         lower_filenames = [filename.lower() for filename in os.listdir(folder_name)]
         for filename in lower_filenames:
-            if ("подлож" in filename.lower()
+            if ("под" in filename.lower()
                     or "один" in filename.lower()
                     or "главн" in filename.lower()
                     or "nabor" in filename.lower()
@@ -316,7 +316,7 @@ def add_record_google_table(name, folder_link, article, shop):
     )
 
     if created:
-        print('Новая запись добавлена:', record.name)
+        logger.debug('Новая запись добавлена:', record.name)
 
 
 if __name__ == '__main__':

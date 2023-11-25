@@ -54,9 +54,7 @@ def read_table_google(CREDENTIALS_FILE='Настройки\\google_acc.json',
     df = pd.DataFrame(data[1:], columns=headers)
 
     if len(headers) != len(rows[0]):
-        print(len(headers), len(rows[0]))
-        print(headers)
-        print(rows[0])
+
         logger.error("Ошибка: количество столбцов не совпадает с количеством значений.")
     else:
         if self:
@@ -108,7 +106,7 @@ def get_yandex_disk_files(public_url):
             return data['name'].strip()
         return None
     except Exception as ex:
-        print(f'{public_url} {ex}')
+        logger.error(f'{public_url} {ex}')
 
 
 def download_folder(public_link, local_path, comp_path, self=None):
@@ -233,7 +231,6 @@ def search_image_56(folder_skin, output_folder):
     """Вырезание круга с подложки"""
     filename = os.path.abspath(folder_skin)
     image = cv2.imread(filename)
-    print(filename)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (5, 5), 0)
     # Детекция кругов на изображении
@@ -273,8 +270,8 @@ def download_new_arts(link, list_arts, shop, self=None):
         arts_list = []
         list_image = []
         list_skin_one = []
-        list_skin_names = ['подлож', 'главная', 'nabor']
-        list_skin_names_one = ['одиноч', 'one', 'подлож']
+        list_skin_names = ['под', 'главная', 'nabor']
+        list_skin_names_one = ['одиноч', 'one', 'под']
         for file in os.listdir(new_folder):
             if os.path.isdir(os.path.join(new_folder, file)):
                 return
@@ -300,7 +297,7 @@ def download_new_arts(link, list_arts, shop, self=None):
             for file in os.listdir(new_folder):
                 if file.split('.')[1] == 'png' or file.split('.')[1] == 'jpg':
                     if name in file.split('.')[0].lower():
-                        if 'подлож' in file.split('.')[0].lower() \
+                        if 'под' in file.split('.')[0].lower() \
                                 and '1' not in file.split('.')[0].lower() \
                                 and '11' not in file.split('.')[0].lower() \
                                 and '12' not in file.split('.')[0].lower() \

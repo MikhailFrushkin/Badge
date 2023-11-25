@@ -83,7 +83,7 @@ def blur_image(image_path, output_path, size_b):
 
     cv2.imwrite(output_path, enlarged_result)
 
-    print(f"Изображение сохранено в: {output_path}")
+    logger.debug(f"Изображение сохранено в: {output_path}")
 
 
 def main(file, size_b):
@@ -91,7 +91,6 @@ def main(file, size_b):
     with open(file, 'r') as f:
         data = f.read()
     art_list = data.split('\n')
-    print(len(art_list))
     query = (Article
              .select()
              .where((Article.size == size_b) & ~(Article.art << art_list)))
@@ -101,7 +100,6 @@ def main(file, size_b):
     list_db = []
     for article in results:
         count += 1
-        print(count, article.art)
         list_db.append(article.art)
         folder_name = article.folder
         for index, filename in enumerate(os.listdir(folder_name), start=1):
@@ -114,7 +112,7 @@ def main(file, size_b):
                     except Exception as ex:
                         logger.error(ex)
                         logger.error(os.path.join(folder_name, filename))
-    print('Время: ', start - datetime.datetime.now())
+    logger.debug('Время: ', start - datetime.datetime.now())
 
 
 def blur_size(size):
