@@ -178,7 +178,7 @@ def read_excel_file(file: str) -> list:
         except Exception as ex:
             logger.error(ex)
 
-    df_in_xlsx(df, 'Сгруппированный заказ')
+    # df_in_xlsx(df, 'Сгруппированный заказ')
 
     files_on_print = []
     try:

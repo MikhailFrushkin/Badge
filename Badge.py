@@ -797,6 +797,7 @@ def run_script():
             logger.error(ex)
 
         try:
+            logger.debug('Загрузка стикеров я.диска:')
             loop.run_until_complete(async_main_sh())
         except Exception as ex:
             logger.error(ex)
