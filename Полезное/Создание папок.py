@@ -11,7 +11,10 @@ from utils import delete_files_with_name
 def main():
     """Создание файлов по названиям pdf и удаление лишних"""
     directory = r'E:\База значков\сделать'
-
+    os.makedirs(os.path.join(directory, '25'), exist_ok=True)
+    os.makedirs(os.path.join(directory, '37'), exist_ok=True)
+    os.makedirs(os.path.join(directory, '44'), exist_ok=True)
+    os.makedirs(os.path.join(directory, '56'), exist_ok=True)
     for item in os.listdir(directory):
 
         if os.path.isfile(os.path.join(directory, item)):
@@ -56,7 +59,8 @@ def move_dirs():
                 shutil.move(os.path.join(directory, item), os.path.join(directory_out + '\\25', item))
             elif item.endswith('44'):
                 shutil.move(os.path.join(directory, item), os.path.join(directory_out + '\\44', item))
-
+            else:
+                shutil.move(os.path.join(directory, item), os.path.join(directory_out + '\\44', item))
 
 def check_duo_skin():
     """Проверка на 2 подложки и отсутствие"""
@@ -111,11 +115,13 @@ def move_ready():
     for i in [25, 44]:
         directory = fr'E:\База значков\сделать\{i}'
         for folder_name in os.listdir(directory):
+            if 'popsocket' in folder_name.lower():
+                target_directory = r'E:\База значков\Popsockets'
             folder_path = os.path.join(directory, folder_name)
             folder_path_res = os.path.join(target_directory, folder_name)
             if not os.path.exists(folder_path_res):
                 shutil.move(folder_path, target_directory)
-                # print(f'перемещена {folder_name} в {target_directory}')
+                print(f'перемещена {folder_name} в {target_directory}')
             else:
                 print(f'Папка {folder_name} уже существует в {target_directory}')
 

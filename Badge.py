@@ -19,10 +19,11 @@ from PyQt5.QtWidgets import (
 from loguru import logger
 from peewee import fn
 
-from config import all_badge, token
+from config import all_badge, token, machine_name
 from created_images import created_good_images
 from db import Article, Statistic, update_base_postgresql, GoogleTable, Orders, db, remove_russian_letters
 from delete_bad_arts import delete_arts
+from dow_stickers import main_download_stickers
 from main import update_db, download_new_arts_in_comp, update_arts_db2, update_sticker_path
 from parser_ready_arts_in_y_d import missing_folders, main_parser
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
@@ -380,7 +381,8 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addWidget(self.pushButton)
 
         # Кнопка обновления
-        # self.pushButton.setEnabled(False)
+        if machine_name != 'Mikhail':
+            self.pushButton.setEnabled(False)
 
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
         font = QtGui.QFont()
@@ -520,7 +522,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.version = 3.0
+        self.version = 6.0
         self.current_dir = Path.cwd()
         self.dialogs = []
 
@@ -554,8 +556,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.pushButton.clicked.connect(self.evt_btn_update)
         self.pushButton_3.clicked.connect(self.evt_btn_open_file_clicked)
-        self.pushButton_8.clicked.connect(self.evt_btn_create_files)
-        self.pushButton_9.clicked.connect(self.evt_btn_create_files_A3)
+        self.pushButton_8.clicked.connect(lambda: self.evt_btn_create_files(False))
+        self.pushButton_9.clicked.connect(lambda: self.evt_btn_create_files(True))
         self.pushButton_6.clicked.connect(self.evt_btn_print_stickers)
         self.pushButton_5.clicked.connect(self.evt_btn_print_skins)
         self.pushButton_4.clicked.connect(self.evt_btn_print_images)
@@ -595,7 +597,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 logger.error(f'ошибка чтения xlsx {ex}')
                 QMessageBox.information(self, 'Инфо', f'ошибка чтения xlsx {ex}')
 
-    def evt_btn_create_files(self):
+    def evt_btn_create_files(self, flag_A3):
         """Ивент на кнопку Создать файлы"""
         filename = self.lineEdit.text()
         if filename:
@@ -626,7 +628,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             try:
                 if counts_art:
-                    dialog = QueueDialog(counts_art, 'Значки', filename)
+                    dialog = QueueDialog(counts_art, 'Значки', filename, flag_A3)
                     self.dialogs.append(dialog)
                     dialog.show()
 
@@ -636,28 +638,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         else:
             QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
 
-    def evt_btn_create_files_A3(self):
-        """Ивент на кнопку Создать файлы"""
-        filename = self.lineEdit.text()
-        if filename:
-            try:
-                counts_art = read_excel_file(filename)
-                for item in counts_art:
-                    status = Article.get_or_none(fn.UPPER(Article.art) == fn.UPPER(item.art))
-                    if status:
-                        item.status = '✅'
-                counts_art = sorted(counts_art, key=lambda x: x.status, reverse=True)
-            except Exception as ex:
-                logger.error(ex)
-            try:
-                if counts_art:
-                    dialog = QueueDialog(counts_art, 'Значки', filename, True)
-                    self.dialogs.append(dialog)
-                    dialog.show()
-            except Exception as ex:
-                logger.error(f'Ошибка формирования списков печати {ex}')
-        else:
-            QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
 
     def update_list_view(self, values):
         model = QtCore.QStringListModel()
@@ -667,30 +647,57 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def evt_btn_update(self):
         """Ивент на кнопку обновить базу"""
         try:
-            list_arts = update_db(self)
+            list_arts, list_arts_popsocket = update_db(self)
             mes = "\n".join(list_arts)
+            mes += "\n".join(list_arts_popsocket)
             dialog = CustomDialog()
             dialog.set_text(mes)
             dialog.exec_()
-            # logger.debug('Загрузка стикеров:')
-            # main_download_stickers(self)
-            # self.progress_label.setText(f"Скачивание файлов")
+
+            logger.success('Поиск новых стикеров ШК...')
+            try:
+                logger.debug('Загрузка стикеров с гугл диска:')
+                main_download_stickers(self)
+                logger.success('Поиск новых стикеров на я.диске')
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(async_main_sh())
+            except Exception as ex:
+                logger.error(ex)
+
+            if list_arts_popsocket:
+                from popsocket import scan_files
+                logger.debug(list_arts_popsocket)
+                self.second_statusbar.showMessage(f"Скачивание файлов попсокетов", 10000)
+                self.progress_bar.setValue(0)
+                asyncio.run(scan_files(list_arts_popsocket))
+            try:
+                os.makedirs(f'{all_badge}\\Popsockets', exist_ok=True)
+            except Exception as ex:
+                logger.error(ex)
+
+            self.second_statusbar.showMessage(f"Скачивание файлов значков", 10000)
             self.progress_bar.setValue(0)
+            try:
+                if list_arts:
+                    download_new_arts_in_comp(list_arts, self)
+                    delete_files_with_name(starting_directory=all_badge)
+            except Exception as ex:
+                logger.error(ex)
 
-            download_new_arts_in_comp(list_arts, self)
-
-            delete_files_with_name(starting_directory=all_badge)
             try:
                 logger.success('Проверка базы')
                 update_arts_db2()
-                logger.success('Поиск новых стикеров')
+                logger.success('Поиск новых стикеров для артикулов в базе')
                 update_sticker_path()
             except Exception as ex:
                 logger.error(ex)
+
             try:
                 update_base_postgresql()
             except Exception as ex:
                 logger.error(ex)
+
             QMessageBox.information(self, 'Загрузка', 'Загрузка закончена')
             self.progress_bar.setValue(100)
         except Exception as ex:
@@ -789,6 +796,12 @@ def run_script():
 
         logger.success('Поиск новых стикеров ШК...')
         try:
+            logger.debug('Загрузка стикеров с гугл диска:')
+            main_download_stickers()
+        except Exception as ex:
+            logger.error(ex)
+
+        try:
             loop.run_until_complete(async_main_sh())
         except Exception as ex:
             logger.error(ex)
@@ -828,8 +841,9 @@ if __name__ == '__main__':
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     w = MainWindow()
     w.show()
-    # script_thread = Thread(target=run_script)
-    # script_thread.daemon = True
-    # script_thread.start()
+    if machine_name != 'Mikhail':
+        script_thread = Thread(target=run_script)
+        script_thread.daemon = True
+        script_thread.start()
 
     sys.exit(app.exec())

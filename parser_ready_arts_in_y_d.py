@@ -19,13 +19,18 @@ async def traverse_yandex_disk(session, folder_path, result_dict, offset=0):
     headers = {"Authorization": f"OAuth {token}"}
 
     try:
-        async with session.get(url, headers=headers) as response:
+        async with (session.get(url, headers=headers) as response):
             data = await response.json()
             tasks = []
 
             for item in data["_embedded"]["items"]:
                 if item["type"] == "dir" and (item["name"] not in result_dict):
-                    if len(item["name"]) > 8 and item["name"] != 'Значки ШК' and item["name"] != 'Новые значки':
+                    if (item["name"] != 'Значки ШК'
+                            and item["name"] != 'AniKoya'
+                            and item["name"] != 'DP'
+                            and item["name"] != 'Popsockets'
+                            and item["name"] != 'сделать'
+                            and item["name"] != 'Новые значки'):
                         result_dict[item["name"].lower()] = item["path"]
                     task = traverse_yandex_disk(session, item["path"], result_dict)
                     tasks.append(task)
@@ -53,8 +58,6 @@ async def main_search():
     # df = pd.DataFrame(list(result_dict.items()), columns=['Имя', 'Путь'])
     # logger.info('Создан документ Пути к артикулам.xlsx')
     # df_in_xlsx(df, 'Пути к артикулам')
-
-    time.sleep(30)
     return result_dict
 
 
@@ -165,7 +168,6 @@ if __name__ == "__main__":
                     'bongo_cat-13new-20-56': 'disk:/Компьютер HOME-PC/База '
                                              'значков/AniKoya/BONGO_CAT-13NEW-20-56',
                     }
-    pprint(missing_dict)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main_parser(missing_dict))
 

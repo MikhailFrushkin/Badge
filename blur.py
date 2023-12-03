@@ -6,6 +6,8 @@ import numpy as np
 from loguru import logger
 from peewee import *
 
+from config import all_badge
+
 db = SqliteDatabase('mydatabase.db')
 
 
@@ -115,10 +117,11 @@ def main(file, size_b):
     logger.debug('Время: ', start - datetime.datetime.now())
 
 
-def blur_size(size):
-    directory = fr'E:\База значков\сделать\{size}'
+def blur_size(size, directory=None):
+    if not directory:
+        directory = fr'{all_badge}\сделать\{size}'
+    os.makedirs(directory, exist_ok=True)
     for i in os.listdir(directory):
-        # folder_name = r'E:\База значков\MEM_KOT-13NEW-1-56'
         folder_name = os.path.join(directory, i)
         for index, filename in enumerate(os.listdir(folder_name), start=1):
             if (filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()) \
@@ -133,7 +136,4 @@ def blur_size(size):
 
 
 if __name__ == '__main__':
-    blur_size(25)
-    blur_size(37)
-    blur_size(44)
-    blur_size(56)
+    blur_size(44, directory=r'E:\База значков\Скаченные с диска')

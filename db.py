@@ -13,6 +13,7 @@ db = SqliteDatabase('mydatabase.db')
 
 
 def remove_russian_letters(input_string):
+    """Удаление русских букв из строки"""
     # Используем регулярное выражение для поиска всех русских букв
     russian_letters_pattern = re.compile('[а-яА-Я]')
 
@@ -23,6 +24,7 @@ def remove_russian_letters(input_string):
 
 
 def update_base_postgresql():
+    """Запись инфы по обновлению в бд пг"""
     db_params = {
         "host": host,
         "database": dbname,
@@ -64,6 +66,9 @@ def update_base_postgresql():
 
 
 def files_base_postgresql(self):
+    """Запись информации по файлам в бд пг"""
+    if machine_name == 'Mikhail':
+        return 0
     db_params = {
         "host": host,
         "database": dbname,
@@ -103,6 +108,9 @@ def files_base_postgresql(self):
 
 
 def orders_base_postgresql(self, lists):
+    """Запись заказов в бд пг"""
+    if machine_name == 'Mikhail':
+        return
     db_params = {
         "host": host,
         "database": dbname,
@@ -150,6 +158,7 @@ def orders_base_postgresql(self, lists):
 
 
 def crop_to_content(image_path, output_path):
+    """обрезка изображения до содержимого"""
     start = datetime.now()
     # Открываем изображение с помощью Pillow
     image = Image.open(image_path)
@@ -225,9 +234,12 @@ class Article(Model):
         if existing_article:
             return existing_article
         try:
-            nums, size = art.split('-')[-2:]
-            nums = int(nums)
-            size = int(size)
+            if art.lower().startswith('popsocket'):
+                nums, size = 1, 44
+            else:
+                nums, size = art.split('-')[-2:]
+                nums = int(nums)
+                size = int(size)
         except (ValueError, IndexError):
             nums = None
             if art.endswith('56'):
@@ -236,16 +248,13 @@ class Article(Model):
                 size = 37
         article = cls.create(art=art, folder=os.path.abspath(folder), nums=nums, size=size, shop=shop)
         article.fill_additional_columns()
+        logger.success(article)
         return article
 
     def find_skin_filename(self, folder_name):
         lower_filenames = [filename.lower() for filename in os.listdir(folder_name)]
         for filename in lower_filenames:
-            if ("под" in filename.lower()
-                    or "один" in filename.lower()
-                    or "главн" in filename.lower()
-                    or "nabor" in filename.lower()
-                    or "one" in filename.lower()):
+            if not filename.strip().lower().startswith('!') and not filename.strip()[0].isdigit():
                 return filename
 
     def fill_additional_columns(self):
@@ -259,7 +268,7 @@ class Article(Model):
         image_filenames = []
 
         for index, filename in enumerate(os.listdir(folder_name), start=1):
-            if (filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()) \
+            if (filename[0].startswith('!') or filename.strip()[0].isdigit()) \
                     and os.path.isfile(os.path.join(folder_name, filename)):
                 image_filenames.append(os.path.join(folder_name, f'{filename}'))
 
@@ -270,11 +279,12 @@ class Article(Model):
         sticker_file_path = None
 
         # Поиск файла с учетом разных регистров
-        for file_name in os.listdir(sticker_path_all):
-            if file_name == name_sticker or file_name.lower() == name_sticker:
-                sticker_file_path = os.path.join(sticker_path_all, file_name)
-                break
 
+        all_stickers = os.listdir(sticker_path_all)
+        all_stickers_rev_rush = list(map(remove_russian_letters, list(map(str.lower, all_stickers))))
+        if name_sticker in all_stickers_rev_rush:
+            sticker_file_path = os.path.join(sticker_path_all, all_stickers[all_stickers_rev_rush.index(name_sticker)])
+            logger.success(name_sticker)
         self.sticker = sticker_file_path
         self.save()
 
@@ -316,7 +326,23 @@ def add_record_google_table(name, folder_link, article, shop):
     )
 
     if created:
-        logger.debug('Новая запись добавлена:', record.name)
+        logger.success(f'Новая запись добавлена: {name}')
+
+
+def push_number(art_id, num):
+    """запись номера значка в строку заказа к артикулу"""
+    try:
+        row = Orders.get(Orders.id == art_id)
+        row.num_on_list = num
+        row.save()
+    except Exception as ex:
+        logger.error(ex)
+
+
+def contains_invalid_characters(file_name):
+    """Проверка на наличие запрещенных символов при создании файлов в винде"""
+    pattern = r'[<>:"/\\|?*]'
+    return bool(re.search(pattern, file_name))
 
 
 if __name__ == '__main__':
@@ -325,3 +351,8 @@ if __name__ == '__main__':
     # db.close()
     # update_base_postgresql()
     print(remove_russian_letters('Масленников_Артëм'))
+    file_name = "example<>"
+    if contains_invalid_characters(file_name):
+        print(f"Имя файла {file_name} содержит недопустимые символы.")
+    else:
+        print(f"Имя файла {file_name} допустимо.")

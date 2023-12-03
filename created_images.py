@@ -4,6 +4,7 @@ import os
 import shutil
 import time
 from io import BytesIO
+from pprint import pprint
 
 import PyPDF2
 import pandas as pd
@@ -11,17 +12,20 @@ from PIL import Image, ImageDraw, ImageFont
 from PyPDF2 import PdfReader, PdfWriter
 from PyQt5.QtWidgets import QMessageBox
 from loguru import logger
+from peewee import fn
 from reportlab.lib.pagesizes import A4, A3, landscape
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 from created_one_pdf import created_pdfs
-from db import Article, Orders, Statistic, files_base_postgresql, orders_base_postgresql
+from db import Article, Orders, Statistic, files_base_postgresql, orders_base_postgresql, remove_russian_letters, \
+    push_number
 from utils import ProgressBar, df_in_xlsx
 
 pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
 Image.MAX_IMAGE_PIXELS = None
+
 
 def add_header_and_footer_to_pdf(pdf_file, footer_text, A3_flag):
     """Надписи сверху пдф файла и снизу"""
@@ -146,15 +150,12 @@ def combine_images_to_pdf(input_files, output_pdf, size=None, progress=None, sel
         c = canvas.Canvas(f"Файлы на печать/Большие подложки {size}.pdf", pagesize=A4)
         img_width = 505
         img_height = 674
-        logger.info(img_width)
-        logger.info(img_height)
         for i, img in enumerate(big_list_skin):
             c.setFont("Helvetica-Bold", 8)
             c.drawString(30, 30, f"#{img.num_on_list}     {img.art}")
             try:
                 logger.success(f"Добавился скин {img.num_on_list}     {img.art}")
                 progress.update_progress()
-                logger.debug(img.skin)
 
                 c.drawImage(img.skin, 40, 100, width=img_width, height=img_height)
             except Exception as ex:
@@ -184,48 +185,50 @@ def write_images_art(image, text1):
 
 def write_images_art2(image, text, x, y):
     draw = ImageDraw.Draw(image)
-    font = ImageFont.truetype("arial.ttf", 50)
+    font = ImageFont.truetype("arial.ttf", 40)
 
     draw.text((x, y), text, font=font, fill="black")
 
     return image
 
 
-def distribute_images(queryset, size, A3_flag, self=None):
-    if A3_flag:
+def distribute_images(queryset, size, a3_flag, self, count) -> tuple:
+    if a3_flag:
         with open('Настройки\\Параметры значков_A3.json', 'r') as file:
             config = json.load(file)
     else:
         with open('Настройки\\Параметры значков.json', 'r') as file:
             config = json.load(file)
     nums = config[f'{str(size)}']['nums']
-    list_arts = [(i.num_on_list, i.nums_in_folder, i.images) for i in queryset]
+    list_arts = [[None, i.nums_in_folder, i.images, i.id] for i in queryset]
     list_arts = sorted(list_arts, key=lambda x: x[1], reverse=True)
-
     # Список для хранения наборов
     sets_of_orders = []
 
     current_set = []  # Текущий набор
     current_count = 0  # Текущее количество элементов в наборе
-    count = 0
     while len(list_arts) > 0:
         for order in list_arts[:]:
             if order[1] > nums:
-                image_list = [(i, order[0]) for i in order[2].split(',')]
+                image_list = [(i, count) for i in order[2].split(', ')]
                 if (current_count + (len(image_list) % nums)) <= nums and ((len(image_list) % nums) != 0):
                     current_set.extend(image_list[-(order[1] % nums):])
                     current_count += len(image_list) % nums
                     full_lists = order[1] // nums
                     for i in range(full_lists):
                         sets_of_orders.append(image_list[nums * i:nums * i + nums])
+                    push_number(order[3], count)
                     list_arts.remove(order)
+                    count += 1
                 elif (order[1] > nums) and current_count == 0:
                     full_lists = order[1] // nums
                     for i in range(full_lists):
                         sets_of_orders.append(image_list[nums * i:nums * i + nums])
                     if order[1] % nums != 0:
                         current_set.extend(image_list[-(order[1] % nums):])
+                    push_number(order[3], count)
                     list_arts.remove(order)
+                    count += 1
                 else:
                     sets_of_orders.append(current_set)
                     current_set = []
@@ -237,13 +240,16 @@ def distribute_images(queryset, size, A3_flag, self=None):
                     if order[1] % nums != 0:
                         current_set.extend(image_list[-(order[1] % nums):])
                         current_count += len(image_list[-(order[1] % nums):])
+                    push_number(order[3], count)
                     list_arts.remove(order)
+                    count += 1
 
             if (current_count + order[1]) <= nums:
-                count += 1
-                current_set.extend([(i, order[0]) for i in order[2].split(',')])
+                current_set.extend([[i, count] for i in order[2].split(', ')])
                 current_count += order[1]
                 list_arts.remove(order)
+                push_number(order[3], count)
+                count += 1
                 if current_count == nums:
                     sets_of_orders.append(current_set)
                     current_set = []
@@ -253,23 +259,28 @@ def distribute_images(queryset, size, A3_flag, self=None):
         if current_count != 0:
             sets_of_orders.append(current_set)
         if len(list_arts) == 1:
-            sets_of_orders.append([(i, list_arts[0][0]) for i in list_arts[0][2].split(',')])
+            sets_of_orders.append([[i, count] for i in list_arts[0][2].split(', ')])
+            push_number(list_arts[0][3], count)
             list_arts.remove(list_arts[0])
+            count += 1
+
         if list_arts:
             current_set = []
-            current_set.extend([(i, list_arts[0][0]) for i in list_arts[0][2].split(',')])
+            current_set.extend([[i, count] for i in list_arts[0][2].split(', ')])
             current_count = list_arts[0][1]
+            push_number(list_arts[0][3], count)
             list_arts.remove(list_arts[0])
+            count += 1
 
     logger.info(f'Сумма значков: {sum([len(i) for i in sets_of_orders])}')
     # logger.info(f'Сумма значков на листах: {set([len(i) for i in sets_of_orders])}')
     logger.info(f'Количество листов: {len(sets_of_orders)}')
     if self:
         self.list_on_print += len(sets_of_orders)
-    return sets_of_orders
+    return sets_of_orders, count
 
 
-def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
+def create_contact_sheet(images=None, size=None, self=None, A3_flag=False, popsocket=False):
     border_color = (0, 0, 0, 255)  # Черный цвет рамки
     border_width = 1  # Ширина рамки в пикселях
     ready_path = 'Файлы на печать'
@@ -304,7 +315,8 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
                 for j in range(config[f'{str(size)}']['ICONS_PER_ROW']):
                     try:
                         image = Image.open(img[i * config[f'{str(size)}']['ICONS_PER_ROW'] + j][0].strip())
-                        image = write_images_art(image, f'#{img[i * config[f"{str(size)}"]["ICONS_PER_ROW"] + j][1]}')
+                        image = write_images_art(image,
+                                                 f'#{img[i * config[f"{str(size)}"]["ICONS_PER_ROW"] + j][1]}')
                         image = image.resize((image_width, image_height), Image.LANCZOS)
                     except Exception as ex:
                         break
@@ -332,15 +344,16 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
                                      outline=border_color, width=border_width)
                     except Exception as ex:
                         break
-                    # draw.rectangle(border_rect, outline=border_color, width=border_width)
-
-            progress.update_progress()
-            contact_sheet.save(f'{ready_path}/{size}/{index}.png')
-            image = Image.open(f"{ready_path}/{size}/{index}.png")
-            x = config['number on badge']['x']
+            if self:
+                progress.update_progress()
+            if not popsocket:
+                path_ready = f'{ready_path}/{size}/{index}.png'
+            else:
+                path_ready = f'{ready_path}/Popsockets/{index}.png'
+            x = config['number on badge']['x'] - 40
             y = config['number on badge']['y']
-            image = write_images_art2(image, f"{self.name_doc} Стр.{index}", x, y)
-            image.save(f'{ready_path}/{size}/{index}.png')
+            image = write_images_art2(contact_sheet, f"{self.name_doc} Стр.{index}", x, y)
+            image.save(path_ready)
             logger.success(f'Создано изображение {index}.png')
 
         except Exception as ex:
@@ -351,6 +364,8 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False):
 def merge_pdfs_stickers(queryset, output_path):
     pdf_writer = PyPDF2.PdfWriter()
     input_paths = [i.sticker for i in queryset if i.sticker]
+    if not input_paths:
+        return
     for index, input_path in enumerate(input_paths, start=1):
         try:
             with open(input_path, 'rb') as pdf_file:
@@ -368,7 +383,8 @@ def merge_pdfs_stickers(queryset, output_path):
 
 
 def created_good_images(all_arts, self, A3_flag=False):
-    lists = []
+    progress = None
+
     try:
         ready_path = 'Файлы на печать'
         Orders.drop_table()
@@ -380,16 +396,15 @@ def created_good_images(all_arts, self, A3_flag=False):
             time.sleep(1)
         except:
             pass
-        try:
-            os.makedirs(f'{ready_path}\\25', exist_ok=True)
-            os.makedirs(f'{ready_path}\\37', exist_ok=True)
-            os.makedirs(f'{ready_path}\\44', exist_ok=True)
-            os.makedirs(f'{ready_path}\\56', exist_ok=True)
-        except:
-            pass
+        os.makedirs(f'{ready_path}\\25', exist_ok=True)
+        os.makedirs(f'{ready_path}\\37', exist_ok=True)
+        os.makedirs(f'{ready_path}\\44', exist_ok=True)
+        os.makedirs(f'{ready_path}\\56', exist_ok=True)
+        os.makedirs(f'{ready_path}\\Popsockets', exist_ok=True)
 
         for art in all_arts:
-            row = Article.get_or_none(Article.art == art.art)
+            art_clean = remove_russian_letters(art.art.upper())
+            row = Article.get_or_none(fn.UPPER(Article.art) == art_clean)
             if row:
                 data = [{'art': row.art,
                          'folder': row.folder,
@@ -410,25 +425,24 @@ def created_good_images(all_arts, self, A3_flag=False):
             if not os.path.exists(row.folder):
                 logger.error(f'Папка не найдена {row.folder}')
                 row.delete_instance()
-            else:
-                row.num_on_list = index
-                row.save()
-                if not row.sticker:
-                    bad_arts_stickers.append((row.art, row.size))
+            if not row.sticker:
+                bad_arts_stickers.append((row.art, row.size))
 
         # Запись ненайденных артикулов и с отсутсвующих стикеров в файл
-        try:
-            df_bad_sticker = pd.DataFrame(bad_arts_stickers, columns=['Артикул', 'Размер'])
-            df_in_xlsx(df_bad_sticker, 'Не найденные стикеры в заказе')
-        except Exception as ex:
-            logger.error(ex)
+        if bad_arts_stickers:
+            try:
+                df_bad_sticker = pd.DataFrame(bad_arts_stickers, columns=['Артикул', 'Размер'])
+                df_in_xlsx(df_bad_sticker, 'Не найденные ШК в заказе')
+            except Exception as ex:
+                logger.error(ex)
 
-        records = Orders.select(Orders.size).order_by('-size').distinct()
+        records = Orders.select(Orders.size).where(Orders.shop != 'Popsocket').order_by('-size').distinct()
         records = sorted([i.size for i in records])
-
+        count = 1
         for size in records:
-            queryset = Orders.select().where(Orders.size == size)
+            queryset = Orders.select().where(Orders.size == size).where(Orders.shop != 'Popsocket')
 
+            sets_of_orders, count = distribute_images(queryset, size, A3_flag, self, count)
             if self:
                 self.progress_bar.setValue(0)
                 self.progress_label.setText(f"Прогресс: Создание подложек {size} mm.")
@@ -436,23 +450,55 @@ def created_good_images(all_arts, self, A3_flag=False):
                 progress = ProgressBar(queryset.count(), self)
 
             try:
-                logger.debug(f'Создание наклейки {size}')
-                combine_images_to_pdf(queryset, f"{ready_path}/{size}.pdf", size, progress, self, A3_flag)
+                logger.debug(f'Создание наклеек {size}')
+                combine_images_to_pdf(queryset.order_by(Orders.num_on_list),
+                                      f"{ready_path}/Наклейки {size}.pdf", size, progress, self, A3_flag)
             except Exception as ex:
                 logger.error(ex)
-                logger.error(f'Не удалось создать файл наклейнки {size}')
+                logger.error(f'Не удалось создать файл с наклейками {size}')
 
             try:
                 logger.debug(f'Создание файла ШК {size}')
-                merge_pdfs_stickers(queryset, f'Файлы на печать\\{size}ШК')
+                merge_pdfs_stickers(queryset.order_by(Orders.num_on_list), f'Файлы на печать\\ШК {size}')
             except Exception as ex:
                 logger.error(ex)
                 logger.error(f'Не удалось создать файл ШК {size}, возможно не одного не найденно')
 
-            sets_of_orders = distribute_images(queryset, size, A3_flag, self)
             try:
                 logger.debug(f'Создание листов со значками {size}')
                 create_contact_sheet(sets_of_orders, size, self, A3_flag)
+            except Exception as ex:
+                logger.error(ex)
+
+
+        #Popsockets
+        queryset = Orders.select().where(Orders.shop == 'Popsocket')
+        if len(queryset) > 0:
+            size = 44
+            sets_of_orders, count = distribute_images(queryset, size, A3_flag, self, count)
+            if self:
+                self.progress_bar.setValue(0)
+                self.progress_label.setText(f"Прогресс: Создание подложек Popsocket")
+                progress = ProgressBar(queryset.count(), self)
+
+            try:
+                logger.debug(f'Создание наклеек Popsocket {size}')
+                combine_images_to_pdf(queryset.order_by(Orders.num_on_list),
+                                      f"{ready_path}\\Наклейки Popsockets.pdf", size, progress, self, A3_flag)
+            except Exception as ex:
+                logger.error(ex)
+                logger.error(f'Не удалось создать файл с наклейками {size}')
+
+            try:
+                logger.debug(f'Создание файла ШК {size}')
+                merge_pdfs_stickers(queryset.order_by(Orders.num_on_list), f'Файлы на печать\\ШК Popsocket')
+            except Exception as ex:
+                logger.error(ex)
+                logger.error(f'Не удалось создать файл ШК Popsocket, возможно не одного не найденно')
+
+            try:
+                logger.debug(f'Создание листов со значками Popsocket')
+                create_contact_sheet(sets_of_orders, size, self, A3_flag, popsocket=True)
             except Exception as ex:
                 logger.error(ex)
 
@@ -463,15 +509,15 @@ def created_good_images(all_arts, self, A3_flag=False):
                 logger.error(ex)
 
         lists = 0
-        # try:
-        #     lists = files_base_postgresql(self)
-        # except Exception as ex:
-        #     logger.error(ex)
-        #
-        # try:
-        #     orders_base_postgresql(self, lists)
-        # except Exception as ex:
-        #     logger.error(ex)
+        try:
+            lists = files_base_postgresql(self)
+        except Exception as ex:
+            logger.error(ex)
+
+        try:
+            orders_base_postgresql(self, lists)
+        except Exception as ex:
+            logger.error(ex)
 
         self.list_on_print = 0
         QMessageBox.information(self, 'Завершено', 'Создание файлов завершено!')

@@ -53,13 +53,13 @@ def created_pdfs(self=None):
         self.progress_bar.setValue(0)
 
     ready_path = 'Файлы на печать'
-    directory_list = ['25', '37', '44', '56']
+    directory_list = ['25', '37', '44', '56', 'Popsockets']
     for size_dir in directory_list:
         directory = os.path.join(ready_path, size_dir)
         if os.path.exists(directory):
             len_files = len(os.listdir(directory))
             if len_files != 0:
-                filename = os.path.join(directory, f'{size_dir}.pdf')
+                filename = os.path.join(directory, f'!PDF {size_dir}.pdf')
                 if self:
                     self.progress_label.setText(f"Прогресс: Создание PDF файла {size_dir} mm.")
                     progress = ProgressBar(len_files, self)

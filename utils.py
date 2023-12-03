@@ -65,28 +65,27 @@ def move_ready_folder(directory=f'{all_badge}\\Скаченные с диска'
             target_directory = os.path.abspath(target_directory)
 
             for i in os.listdir(folder_path):
-
                 new_folder = os.path.join(folder_path, i)
                 if os.path.isdir(new_folder):
                     if not os.path.exists(os.path.join(target_directory, i)):
                         shutil.move(new_folder, target_directory)
                         Article.create_with_art(i, os.path.join(target_directory, i), shop=shop)
                         try:
-                            art = Article.get_or_none(Article.art == i)
+                            art = Article.get_or_none(fn.UPPER(Article.art) == i.upper())
                             if art:
                                 folder_name = art.folder
                                 for index, filename in enumerate(os.listdir(folder_name), start=1):
-                                    if (filename.split('.')[0].startswith('!') or filename.split('.')[
-                                        0].strip().isdigit()) \
+                                    if (filename.startswith('!') or filename[0].isdigit()) \
                                             and os.path.isfile(os.path.join(folder_name, filename)):
-                                        if os.path.exists(os.path.join(folder_name, filename)):
-                                            try:
-                                                blur_image(image_path=os.path.join(folder_name, filename),
-                                                           output_path=os.path.join(folder_name, filename),
-                                                           size_b=art.size)
-                                            except Exception as ex:
-                                                logger.error(ex)
-                                                logger.error(os.path.join(folder_name, filename))
+                                        try:
+                                            blur_image(image_path=os.path.join(folder_name, filename),
+                                                       output_path=os.path.join(folder_name, filename),
+                                                       size_b=art.size)
+                                        except Exception as ex:
+                                            logger.error(ex)
+                                            logger.error(os.path.join(folder_name, filename))
+                            else:
+                                logger.error(f'Не нашелся артикул в бд {i}')
                         except Exception as ex:
                             logger.error(ex)
                     else:
@@ -184,7 +183,11 @@ def read_excel_file(file: str) -> list:
     files_on_print = []
     try:
         for index, row in df.iterrows():
-            if 'poster-' not in row['Артикул продавца'].lower():
+            if '-poster-' in row['Артикул продавца'].lower():
+                file_on_print = FilesOnPrint(art=replace_bad_simbols(row['Артикул продавца'].strip().lower()),
+                                             count=row['Количество'])
+                files_on_print.append(file_on_print)
+            elif 'poster-' not in row['Артикул продавца'].lower():
                 file_on_print = FilesOnPrint(art=replace_bad_simbols(row['Артикул продавца'].strip().lower()),
                                              count=row['Количество'])
                 files_on_print.append(file_on_print)

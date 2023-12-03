@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import os
 import re
@@ -15,18 +16,15 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from loguru import logger
 
+from blur import blur_size
 from config import anikoya_path, dp_path, id_google_table_anikoya, id_google_table_DP, sticker_path_all, all_badge
-from db import add_record_google_table, GoogleTable, Article, db
+from db import add_record_google_table, GoogleTable, Article, db, remove_russian_letters, contains_invalid_characters
 from utils import rename_files, move_ready_folder, ProgressBar
 
 
 def read_table_google(CREDENTIALS_FILE='Настройки\\google_acc.json',
                       spreadsheet_id=id_google_table_anikoya,
-                      shop='AniKoya', self=None):
-    if shop == 'AniKoya':
-        art_name_col = 'АРТИКУЛ ВБ'
-    else:
-        art_name_col = 'Артикул ВБ'
+                      shop='AniKoya', self=None, sheet_name='2023'):
     logger.debug(f'Читаю гугл таблицу {shop}')
     if self:
         self.second_statusbar.showMessage(f'Читаю гугл таблицу {shop}', 10000)
@@ -34,15 +32,13 @@ def read_table_google(CREDENTIALS_FILE='Настройки\\google_acc.json',
     try:
         credentials = service_account.Credentials.from_service_account_file(CREDENTIALS_FILE)
         service = build('sheets', 'v4', credentials=credentials)
-        # Пример чтения файла
         values = service.spreadsheets().values().get(
             spreadsheetId=spreadsheet_id,
-            range='2023',
+            range=sheet_name,
         ).execute()
     except Exception as ex:
         logger.error(f'Ошибка чтения гуглтаблицы {ex}')
-        if self:
-            QMessageBox.warning(self, 'Ошибка', f'Ошибка чтения гуглтаблицы \n{ex}')
+
     data = values.get('values', [])
     rows = data[1:]
     headers = [i for i in data[0]]
@@ -52,28 +48,45 @@ def read_table_google(CREDENTIALS_FILE='Настройки\\google_acc.json',
         if missing_columns > 0:
             row += [''] * missing_columns
     df = pd.DataFrame(data[1:], columns=headers)
+    art_name_col = None
+    url_name_col = None
+    name_name_col = None
+    for i in headers:
+        if shop == "AniKoya" or shop == "DP":
+            if 'артикул' in i.lower():
+                art_name_col = i
+        else:
+            if ('артикул' in i.lower()
+                    and 'вб' not in i.lower() and 'озон' not in i.lower()
+                    and 'wb' not in i.lower() and 'ozon' not in i.lower()):
+                art_name_col = i
+
+        if ('ссылка' in i.lower()
+                and 'вб' not in i.lower() and 'озон' not in i.lower()
+                and 'wb' not in i.lower() and 'ozon' not in i.lower()):
+            url_name_col = i
+        if 'наимен' in i.lower():
+            name_name_col = i
 
     if len(headers) != len(rows[0]):
-
         logger.error("Ошибка: количество столбцов не совпадает с количеством значений.")
     else:
-        if self:
-            progress = ProgressBar(len(rows), self)
         for index, row in df.iterrows():
             try:
-                if row[art_name_col] == '' or '-' not in row[art_name_col] or not row['Ссылка на папку'].startswith(
+                if row[art_name_col] == '' or '-' not in row[art_name_col] or not row[url_name_col].startswith(
                         'https://disk'):
                     continue
                 else:
-                    add_record_google_table(name=row['Наименование'],
-                                            folder_link=row['Ссылка на папку'],
-                                            article=row[art_name_col],
-                                            shop=shop,
-                                            )
-                    if self:
-                        progress.update_progress()
+                    add_record_google_table(
+                        name=row[name_name_col] if name_name_col else 'Не найден столбец наименование',
+                        folder_link=row[url_name_col],
+                        article=row[art_name_col],
+                        shop=shop,
+                        )
             except Exception as ex:
-                QMessageBox.warning(self, 'Ошибка', f'Ошибка записы ссылки в базу\n{index}{ex}')
+                logger.error(row)
+                logger.error(ex)
+                QMessageBox.warning(self, 'Ошибка', f'Ошибка записи ссылки в базу\n{index}{ex}')
 
 
 def download_file(url, local_path):
@@ -124,7 +137,10 @@ def download_folder(public_link, local_path, comp_path, self=None):
         folder_path = os.path.join(local_path, path)
         if os.path.exists(os.path.join(comp_path, path)):
             return
-
+        if contains_invalid_characters(path):
+            logger.error(f'f"Имя файла {path} содержит недопустимые символы."')
+            logger.error(href)
+            return
         if not os.path.exists(folder_path):
             os.makedirs(folder_path, exist_ok=True)
             logger.success(f'Скачивание {os.path.join(folder_path, path.split("/")[-1])}')
@@ -140,6 +156,7 @@ def download_folder(public_link, local_path, comp_path, self=None):
 
 
 def extract_archive(archive_path, destination_path):
+    """Распаковка скачаного архива"""
     try:
         name = os.path.splitext(os.path.basename(archive_path))[0]
         folder = os.path.join(destination_path, name)
@@ -418,23 +435,28 @@ def update_db(self=None):
     try:
         read_table_google(spreadsheet_id=id_google_table_anikoya, shop='AniKoya', self=self)
         read_table_google(spreadsheet_id=id_google_table_DP, shop='DP', self=self)
+        read_table_google(shop='Popsocket', sheet_name='ПОПСОКЕТЫ 2023')
     except Exception as ex:
         logger.error(ex)
         QMessageBox.warning(self, 'Ошибка', f'Ошибка сканирования гугл таблицы\n {ex}')
     records = GoogleTable.select().where(~GoogleTable.status_download)
     list_arts = []
+    list_arts_popsocket = []
     try:
         for row in records:
-            delimiters = r'[\\/|, ]'
-            substrings = re.split(delimiters, row.article)
-            temp_list = [substring.strip() for substring in substrings if substring.strip()]
-            if 0 > len(temp_list) > 4:
-                logger.debug(f'{row.id}: {temp_list}')
-            else:
-                list_arts.extend(temp_list)
+            if row.shop == 'AniKoya' or row.shop == 'DP':
+                delimiters = r'[\\/|, ]'
+                substrings = re.split(delimiters, row.article)
+                temp_list = [substring.strip() for substring in substrings if substring.strip()]
+                if 0 > len(temp_list) > 4:
+                    logger.debug(f'{row.id}: {temp_list}')
+                else:
+                    list_arts.extend(temp_list)
+            if row.shop == 'Popsocket':
+                list_arts_popsocket.append(row)
     except Exception as ex:
         logger.error(ex)
-    return list_arts
+    return list_arts, list_arts_popsocket
 
 
 def download_new_arts_in_comp(list_arts, self=None):
@@ -465,9 +487,7 @@ def download_new_arts_in_comp(list_arts, self=None):
 
 
 def update_arts_db2():
-    # print('Проверка базы: \n')
     count = 0
-    # start = datetime.datetime.now()
 
     if not Article.table_exists():
         Article.create_table(safe=True)
@@ -482,6 +502,13 @@ def update_arts_db2():
             if len(dir) > 10:
                 count += 1
                 Article.create_with_art(dir, os.path.join(root, dir), 'AniKoya')
+                print('\r', count, end='', flush=True)
+
+    for root, dirs, files in os.walk(rf'{all_badge}\\Popsockets'):
+        for dir in dirs:
+            if len(dir) > 10:
+                count += 1
+                Article.create_with_art(dir, os.path.join(root, dir), 'Popsocket')
                 print('\r', count, end='', flush=True)
 
     print('\nНет подложек')
@@ -508,20 +535,19 @@ def update_arts_db2():
         i.save()
         # subprocess.Popen(f'explorer {os.path.abspath(i.folder)}', shell=True)
         # time.sleep(3)
-    # logger.debug(datetime.datetime.now() - start)
 
 
 def update_sticker_path():
     no_stickers_rows = Article.select().where(Article.sticker >> None)
-    files_list = os.listdir(sticker_path_all)
-    for row in no_stickers_rows:
+    all_stickers = os.listdir(sticker_path_all)
+    all_stickers_rev_rush = list(map(remove_russian_letters, list(map(str.lower, all_stickers))))
+    for index, row in enumerate(no_stickers_rows, start=1):
         name_sticker = row.art + '.pdf'
-        for file_name in files_list:
-            if file_name.lower() == name_sticker.lower():
-                row.sticker = os.path.join(sticker_path_all, file_name)
-                # print('найден ШК: ', os.path.join(sticker_path_all, file_name))
-                row.save()
-                break
+        if name_sticker in all_stickers_rev_rush:
+            sticker_file_path = os.path.join(sticker_path_all, all_stickers[all_stickers_rev_rush.index(name_sticker)])
+            row.sticker = os.path.join(sticker_path_all, sticker_file_path)
+            print(f'{index} найден ШК: {row.art} ', os.path.join(sticker_path_all, sticker_file_path))
+            row.save()
 
 
 if __name__ == '__main__':
