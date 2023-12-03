@@ -6,18 +6,20 @@ from urllib.parse import quote
 
 import aiofiles
 import aiohttp
+import pandas as pd
 from loguru import logger
 
 from config import token, all_badge
+from utils import df_in_xlsx
 
 semaphore = asyncio.Semaphore(2)
 
 
 async def traverse_yandex_disk(session, folder_path, result_dict, offset=0):
-    limit = 1000  # Максимальное количество элементов, которые можно получить за один запрос
+    limit = 1000
     url = f"https://cloud-api.yandex.net/v1/disk/resources?path={quote(folder_path)}&limit={limit}&offset={offset}"
     headers = {"Authorization": f"OAuth {token}"}
-
+    dirs_list = ['Значки ШК', 'AniKoya', 'DP', 'Popsockets', 'сделать', 'Новые значки']
     try:
         async with (session.get(url, headers=headers) as response):
             data = await response.json()
@@ -25,12 +27,7 @@ async def traverse_yandex_disk(session, folder_path, result_dict, offset=0):
 
             for item in data["_embedded"]["items"]:
                 if item["type"] == "dir" and (item["name"] not in result_dict):
-                    if (item["name"] != 'Значки ШК'
-                            and item["name"] != 'AniKoya'
-                            and item["name"] != 'DP'
-                            and item["name"] != 'Popsockets'
-                            and item["name"] != 'сделать'
-                            and item["name"] != 'Новые значки'):
+                    if item["name"] not in dirs_list:
                         result_dict[item["name"].lower()] = item["path"]
                     task = traverse_yandex_disk(session, item["path"], result_dict)
                     tasks.append(task)
@@ -55,9 +52,9 @@ async def main_search():
     async with aiohttp.ClientSession() as session:
         await traverse_yandex_disk(session, folder_path, result_dict)
 
-    # df = pd.DataFrame(list(result_dict.items()), columns=['Имя', 'Путь'])
-    # logger.info('Создан документ Пути к артикулам.xlsx')
-    # df_in_xlsx(df, 'Пути к артикулам')
+    df = pd.DataFrame(list(result_dict.items()), columns=['Имя', 'Путь'])
+    logger.info('Создан документ Пути к артикулам.xlsx')
+    df_in_xlsx(df, 'Пути к артикулам')
     return result_dict
 
 

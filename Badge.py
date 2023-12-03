@@ -783,11 +783,6 @@ def run_script():
             logger.error(ex)
 
         logger.success('Обновление...')
-        # try:
-        #     Article.update(art=fn.lower(Article.art)).execute()
-        # except Exception as ex:
-        #     logger.error(ex)
-
         try:
             missing_dict = missing_folders()
             loop.run_until_complete(main_parser(missing_dict))
