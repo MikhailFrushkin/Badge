@@ -23,7 +23,7 @@ async def download_file(session, url, file_name, local_directory):
                     if not chunk:
                         break
                     f.write(chunk)
-            logger.success(f"Downloaded {file_name} successfully.")
+            # logger.success(f"Downloaded {file_name} successfully.")
             return True
         else:
             logger.error(f"Failed to download {file_name}: Status code {response.status}")

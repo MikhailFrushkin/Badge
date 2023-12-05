@@ -47,14 +47,14 @@ async def traverse_yandex_disk(session, folder_path, result_dict, offset=0):
 
 
 async def main_search():
-    folder_path = '/Компьютер HOME-PC/База значков'
+    folder_path = '/База значков'
     result_dict = {}
     async with aiohttp.ClientSession() as session:
         await traverse_yandex_disk(session, folder_path, result_dict)
 
-    df = pd.DataFrame(list(result_dict.items()), columns=['Имя', 'Путь'])
-    logger.info('Создан документ Пути к артикулам.xlsx')
-    df_in_xlsx(df, 'Пути к артикулам')
+    # df = pd.DataFrame(list(result_dict.items()), columns=['Имя', 'Путь'])
+    # logger.info('Создан документ Пути к артикулам.xlsx')
+    # df_in_xlsx(df, 'Пути к артикулам')
     return result_dict
 
 
@@ -122,7 +122,7 @@ async def main_parser(missing_dict):
             tasks = []
 
             for dirname, y_path in chunk:
-                new_folder = os.path.join(all_badge, y_path.replace("disk:/Компьютер HOME-PC/База значков/", ''))
+                new_folder = os.path.join(all_badge, y_path.replace("disk:/База значков/", ''))
                 # logger.debug(new_folder)
                 folder_url = f"https://cloud-api.yandex.net/v1/disk/resources?path={y_path.replace('disk:', '')}"
                 tasks.append(download_files_from_yandex_folder(session, token, folder_url, new_folder))

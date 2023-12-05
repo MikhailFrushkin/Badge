@@ -248,7 +248,6 @@ class Article(Model):
                 size = 37
         article = cls.create(art=art, folder=os.path.abspath(folder), nums=nums, size=size, shop=shop)
         article.fill_additional_columns()
-        logger.success(article)
         return article
 
     def find_skin_filename(self, folder_name):
@@ -284,7 +283,6 @@ class Article(Model):
         all_stickers_rev_rush = list(map(remove_russian_letters, list(map(str.lower, all_stickers))))
         if name_sticker in all_stickers_rev_rush:
             sticker_file_path = os.path.join(sticker_path_all, all_stickers[all_stickers_rev_rush.index(name_sticker)])
-            logger.success(name_sticker)
         self.sticker = sticker_file_path
         self.save()
 

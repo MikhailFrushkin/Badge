@@ -490,7 +490,7 @@ def created_good_images(all_arts, self, A3_flag=False):
                 logger.error(f'Не удалось создать файл с наклейками {size}')
 
             try:
-                logger.debug(f'Создание файла ШК {size}')
+                logger.debug(f'Создание файла ШК Popsocket')
                 merge_pdfs_stickers(queryset.order_by(Orders.num_on_list), f'Файлы на печать\\ШК Popsocket')
             except Exception as ex:
                 logger.error(ex)

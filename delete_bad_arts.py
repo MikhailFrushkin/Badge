@@ -11,7 +11,7 @@ from db import Article
 
 
 async def traverse_yandex_disk(session, folder_path, list_arts, offset=0):
-    url = f"https://cloud-api.yandex.net/v1/disk/resources?path={quote(folder_path)}&limit=100&offset={offset}"
+    url = f"https://cloud-api.yandex.net/v1/disk/resources?path={quote(folder_path)}&limit=1000&offset={offset}"
     headers = {"Authorization": f"OAuth {token}"}
 
     try:
@@ -24,7 +24,7 @@ async def traverse_yandex_disk(session, folder_path, list_arts, offset=0):
 
 
 async def main_search():
-    folder_path = '/Компьютер HOME-PC/Исправить'
+    folder_path = '/Исправить'
     list_arts = []
     async with aiohttp.ClientSession() as session:
         await traverse_yandex_disk(session, folder_path, list_arts)

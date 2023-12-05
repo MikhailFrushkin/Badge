@@ -77,7 +77,7 @@ async def download_file(session, url, filename):
             async with session.get(url, headers=headers) as response:
                 if response.status == 200:
                     full_path = os.path.join(sticker_path_all, filename)
-                    logger.success(f'Загрузка {filename}')
+                    # logger.success(f'Загрузка {filename}')
                     async with aiofiles.open(full_path, 'wb') as f:
                         while True:
                             chunk = await response.content.read(1024)

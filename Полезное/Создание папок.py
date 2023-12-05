@@ -37,6 +37,7 @@ def main():
 
         if os.path.isfile(os.path.join(directory, item)):
             newname = (item.replace('nabor-', 'подложка')
+                       .replace('Попсокет', 'подложка')
                        .replace('one-', 'подложка')
                        .replace('Главная', 'подложка')
                        .replace('ГЛАВНАЯ', 'подложка')

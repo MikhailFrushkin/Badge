@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import os
 import time
 from datetime import timedelta
@@ -649,7 +650,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         try:
             list_arts, list_arts_popsocket = update_db(self)
             mes = "\n".join(list_arts)
-            mes += "\n".join(list_arts_popsocket)
             dialog = CustomDialog()
             dialog.set_text(mes)
             dialog.exec_()
@@ -666,15 +666,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 logger.error(ex)
 
             if list_arts_popsocket:
-                from popsocket import scan_files
-                logger.debug(list_arts_popsocket)
-                self.second_statusbar.showMessage(f"Скачивание файлов попсокетов", 10000)
-                self.progress_bar.setValue(0)
-                asyncio.run(scan_files(list_arts_popsocket))
-            try:
-                os.makedirs(f'{all_badge}\\Popsockets', exist_ok=True)
-            except Exception as ex:
-                logger.error(ex)
+                try:
+                    from popsocket import scan_files
+                    os.makedirs(f'{all_badge}\\Popsockets', exist_ok=True)
+                    self.second_statusbar.showMessage(f"Скачивание файлов попсокетов", 10000)
+                    self.progress_bar.setValue(0)
+                    asyncio.run(scan_files(list_arts_popsocket))
+                except Exception as ex:
+                    logger.error(ex)
 
             self.second_statusbar.showMessage(f"Скачивание файлов значков", 10000)
             self.progress_bar.setValue(0)
@@ -774,55 +773,57 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 def run_script():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
     while True:
-        try:
-            delete_arts()
-        except Exception as ex:
-            logger.error(ex)
+        time_now = datetime.datetime.now().hour
+        if 0 < time_now < 18:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                delete_arts()
+            except Exception as ex:
+                logger.error(ex)
 
-        logger.success('Обновление...')
-        try:
-            missing_dict = missing_folders()
-            loop.run_until_complete(main_parser(missing_dict))
-        except Exception as ex:
-            logger.error(ex)
+            logger.success('Обновление...')
+            try:
+                missing_dict = missing_folders()
+                loop.run_until_complete(main_parser(missing_dict))
+            except Exception as ex:
+                logger.error(ex)
 
-        logger.success('Поиск новых стикеров ШК...')
-        try:
-            logger.debug('Загрузка стикеров с гугл диска:')
-            main_download_stickers()
-        except Exception as ex:
-            logger.error(ex)
+            logger.success('Поиск новых стикеров ШК...')
+            try:
+                logger.debug('Загрузка стикеров с гугл диска:')
+                main_download_stickers()
+            except Exception as ex:
+                logger.error(ex)
 
-        try:
-            logger.debug('Загрузка стикеров я.диска:')
-            loop.run_until_complete(async_main_sh())
-        except Exception as ex:
-            logger.error(ex)
+            try:
+                logger.debug('Загрузка стикеров я.диска:')
+                loop.run_until_complete(async_main_sh())
+            except Exception as ex:
+                logger.error(ex)
 
-        logger.success('Проверка базы...')
-        try:
-            rows = Article.select()
-            for row in rows:
-                row.art = remove_russian_letters(row.art).strip()
-                row.save()
-        except Exception as ex:
-            logger.error(ex)
+            logger.success('Проверка базы...')
+            try:
+                rows = Article.select()
+                for row in rows:
+                    row.art = remove_russian_letters(row.art).strip()
+                    row.save()
+            except Exception as ex:
+                logger.error(ex)
 
-        try:
-            update_arts_db2()
-            update_sticker_path()
-        except Exception as ex:
-            logger.error(ex)
+            try:
+                update_arts_db2()
+                update_sticker_path()
+            except Exception as ex:
+                logger.error(ex)
 
-        try:
-            update_base_postgresql()
-        except Exception as ex:
-            logger.error(ex)
+            try:
+                update_base_postgresql()
+            except Exception as ex:
+                logger.error(ex)
 
-        logger.success('Обновление завершено')
+            logger.success('Обновление завершено')
         time.sleep(60 * 60)
 
 
