@@ -30,7 +30,8 @@ from parser_ready_arts_in_y_d import missing_folders, main_parser
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
 from scan_shk import async_main_sh
 from upload_files import upload_statistic_files_async
-from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx
+from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx, split_row
+
 
 def check_file():
     return True
@@ -238,6 +239,7 @@ class QueueDialog(QWidget):
     """
     Окно со спискос на печать
     """
+
     def __init__(self, files_on_print, title, name_doc, A3_flag=False, parent=None):
         super().__init__(parent)
         self.files_on_print = files_on_print
@@ -638,7 +640,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         else:
             QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
-
 
     def update_list_view(self, values):
         model = QtCore.QStringListModel()

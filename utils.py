@@ -30,7 +30,8 @@ class ProgressBar:
         return str(self.current)
 
 
-def delete_files_with_name(starting_directory, target_filename="Картинка1.png"):
+def delete_files_with_name(starting_directory: str, target_filename: str = "Картинка1.png"):
+    """Рекурсивное удаление файлов в директории с указанным названием"""
     count = 0
     for root, _, files in os.walk(starting_directory):
         for file in files:
@@ -41,7 +42,8 @@ def delete_files_with_name(starting_directory, target_filename="Картинка
                 # print(f"{count} Файл {file_path} удален.")
 
 
-def df_in_xlsx(df, filename, directory='Файлы связанные с заказом', max_width=50):
+def df_in_xlsx(df: pd.DataFrame, filename: str, directory: str = 'Файлы связанные с заказом', max_width: int = 50):
+    """Запись датафрейма в файл"""
     workbook = Workbook()
     sheet = workbook.active
     for row in dataframe_to_rows(df, index=False, header=True):
@@ -56,9 +58,10 @@ def df_in_xlsx(df, filename, directory='Файлы связанные с зак�
     workbook.save(f"{directory}\\{filename}.xlsx")
 
 
-def move_ready_folder(directory=f'{all_badge}\\Скаченные с диска',
-                      target_directory=f'{anikoya_path}',
-                      shop='AniKoya'):
+def move_ready_folder(directory: str = f'{all_badge}\\Скаченные с диска',
+                      target_directory: str = f'{anikoya_path}',
+                      shop: str = 'AniKoya'):
+    """Перемещение папки и блюр на значки, занесение в базу"""
     for folder in os.listdir(directory):
         try:
             folder_path = os.path.abspath(os.path.join(directory, folder))
@@ -97,7 +100,8 @@ def move_ready_folder(directory=f'{all_badge}\\Скаченные с диска'
     return True
 
 
-def rename_files(file_path, new_name):
+def rename_files(file_path: str, new_name: str):
+    """Преименовывание файлов"""
     try:
         base_path = os.path.dirname(file_path)
         file_extension = os.path.splitext(file_path)[1]
@@ -196,15 +200,21 @@ def read_excel_file(file: str) -> list:
     return files_on_print
 
 
-def replace_bad_simbols(row):
+def replace_bad_simbols(row: str) -> str:
+    """Удаляет символы из строки которые нельзя указывать в названии файлов"""
     bad = r'[\?\/\\\:\*\"><\|]'
     new_row = re.sub(bad, '', row)
     return new_row
 
 
+def split_row(row: str) -> list:
+    """Разделяет строку по делителям"""
+    delimiters = r'[\\/|, ]'
+    substrings = re.split(delimiters, row)
+    substrings = [i for i in substrings if i]
+    return substrings
 
 
 if __name__ == '__main__':
-    # read_excel_file(r'E:\PyCharm\Badge2\0611 5 Ангелина 44.xlsx')
-    # read_excel_file(r'E:\PyCharm\Badge2\Заказ.xlsx')
-    pass
+    print(
+        split_row('KAZAKHSTAN-11NEW-1-37,KAZAKHSTANNABOR-11NEW-6-37,KAZAKHSTAN-11NEW-1-56, KAZAKHSTANNABOR-11NEW-6-56'))
