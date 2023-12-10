@@ -655,7 +655,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             dialog.set_text(mes)
             dialog.exec_()
 
-            logger.success('Поиск новых стикеров ШК...')
+            logger.debug('Поиск новых стикеров ШК...')
             try:
                 logger.debug('Загрузка стикеров с гугл диска:')
                 main_download_stickers(self)
@@ -791,7 +791,6 @@ def run_script():
             except Exception as ex:
                 logger.error(ex)
 
-            logger.success('Поиск новых стикеров ШК...')
             try:
                 logger.debug('Загрузка стикеров с гугл диска:')
                 main_download_stickers()
@@ -804,7 +803,7 @@ def run_script():
             except Exception as ex:
                 logger.error(ex)
 
-            logger.success('Проверка базы...')
+            logger.debug('Проверка базы...')
             try:
                 rows = Article.select()
                 for row in rows:
