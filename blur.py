@@ -95,7 +95,7 @@ def main(file, size_b):
     art_list = data.split('\n')
     query = (Article
              .select()
-             .where((Article.size == size_b) & ~(Article.art << art_list)))
+             .where((Article.size == size_b) & (Article.art << art_list)))
 
     results = query.execute()
     count = 0
@@ -104,8 +104,9 @@ def main(file, size_b):
         count += 1
         list_db.append(article.art)
         folder_name = article.folder
+        print(count)
         for index, filename in enumerate(os.listdir(folder_name), start=1):
-            if (filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()) \
+            if (filename.startswith('!') or filename[0].strip().isdigit()) \
                     and os.path.isfile(os.path.join(folder_name, filename)):
                 if os.path.exists(os.path.join(folder_name, filename)):
                     try:
@@ -114,6 +115,7 @@ def main(file, size_b):
                     except Exception as ex:
                         logger.error(ex)
                         logger.error(os.path.join(folder_name, filename))
+
     logger.debug('Время: ', start - datetime.datetime.now())
 
 
@@ -136,4 +138,4 @@ def blur_size(size, directory=None):
 
 
 if __name__ == '__main__':
-    blur_size(44, directory=r'E:\База значков\Скаченные с диска')
+    main(file=r'D:\PyCharm\Badge2\Полезное\да.txt', size_b=37)

@@ -5,7 +5,7 @@ from datetime import datetime
 from loguru import logger
 from peewee import *
 
-from config import sticker_path_all, dp_path, anikoya_path
+from config import sticker_path_all, dp_path, anikoya_path, all_badge
 
 db = SqliteDatabase('mydatabase.db')
 
@@ -141,3 +141,4 @@ if __name__ == '__main__':
 
     update_arts_db(dp_path, 'DP')
     update_arts_db(anikoya_path, 'AniKoya')
+    update_arts_db(rf'{all_badge}\\Popsockets', 'Popsocket')

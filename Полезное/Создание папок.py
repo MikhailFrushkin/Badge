@@ -10,7 +10,7 @@ from utils import delete_files_with_name
 
 def main():
     """Создание файлов по названиям pdf и удаление лишних"""
-    directory = r'E:\База значков\сделать'
+    directory = r'D:\База значков\сделать'
     os.makedirs(os.path.join(directory, '25'), exist_ok=True)
     os.makedirs(os.path.join(directory, '37'), exist_ok=True)
     os.makedirs(os.path.join(directory, '44'), exist_ok=True)
@@ -48,8 +48,8 @@ def main():
 
 def move_dirs():
     """СПеремещение папок в папки по размерам 25,37,44,56"""
-    directory = r'E:\База значков\сделать'
-    directory_out = r'E:\База значков\сделать'
+    directory = r'D:\База значков\сделать'
+    directory_out = r'D:\База значков\сделать'
     for item in os.listdir(directory):
         if os.path.isdir(os.path.join(directory, item)) and item not in ['25', '37', '44', '56', 'шк']:
             if item.endswith('37'):
@@ -65,7 +65,7 @@ def move_dirs():
 
 def check_duo_skin():
     """Проверка на 2 подложки и отсутствие"""
-    directory = r'E:\База значков\AniKoya'
+    directory = r'D:\База значков\AniKoya'
     totalcount = 0
     for item in os.listdir(directory):
         if os.path.isdir(os.path.join(directory, item)):
@@ -100,9 +100,9 @@ def check_duo_skin():
 
 def move_ready():
     """Перемещение заблюреных готовых папок в основную папку"""
-    target_directory = r'E:\База значков\AniKoya'
+    target_directory = r'D:\База значков\AniKoya'
     for i in [37, 56]:
-        directory = fr'E:\База значков\сделать\{i}'
+        directory = fr'D:\База значков\сделать\{i}'
         for folder_name in os.listdir(directory):
             folder_path = os.path.join(directory, folder_name)
             folder_path_res = os.path.join(target_directory, folder_name)
@@ -112,12 +112,12 @@ def move_ready():
             else:
                 print(f'Папка {folder_name} уже существует в {target_directory}')
 
-    target_directory = r'E:\База значков\DP'
+    target_directory = r'D:\База значков\DP'
     for i in [25, 44]:
-        directory = fr'E:\База значков\сделать\{i}'
+        directory = fr'D:\База значков\сделать\{i}'
         for folder_name in os.listdir(directory):
             if 'popsocket' in folder_name.lower():
-                target_directory = r'E:\База значков\Popsockets'
+                target_directory = r'D:\База значков\Popsockets'
             folder_path = os.path.join(directory, folder_name)
             folder_path_res = os.path.join(target_directory, folder_name)
             if not os.path.exists(folder_path_res):
@@ -129,7 +129,7 @@ def move_ready():
 
 def move_all_files():
     """Перемещени е всех вложенных файлов из папок в корневую"""
-    directory = r'E:\База значков\сделать\старые'
+    directory = r'D:\База значков\сделать\старые'
     for folder in os.listdir(directory):
         for root, _, files in os.walk(os.path.join(directory, folder)):
             for file in files:
@@ -140,7 +140,7 @@ def move_all_files():
 
 def created_dirs():
     """Создание папок по названиям файлов"""
-    directory = r'E:\База значков\сделать\старые'
+    directory = r'D:\База значков\сделать\старые'
     for i in os.listdir(directory):
         if '-' in i and os.path.isfile(os.path.join(directory, i)):
             name = i.replace('.png', '').replace('.jpg', '').replace('.xcf', '').replace('.pdf', '')

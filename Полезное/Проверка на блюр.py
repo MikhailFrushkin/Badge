@@ -1,4 +1,6 @@
 import sys
+from datetime import datetime
+
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QPushButton
 from PyQt5.QtGui import QPixmap
 from db import Article
@@ -51,7 +53,9 @@ class ImageLabelApp(QMainWindow):
         self.current_article_index = 0
 
     def load_articles(self):
-        self.articles = Article.select().where(Article.size == 56)
+        """3558"""
+        offset_value = 3558
+        self.articles = Article.select().where(Article.size == 37).offset(offset_value)
         print(self.articles.count())
         if self.articles.count() > 0:
             self.load_image(self.current_article_index)
@@ -78,7 +82,7 @@ class ImageLabelApp(QMainWindow):
         self.image_label.setPixmap(scaled_pixmap)
 
     def on_yes_clicked(self):
-        self.save_to_file(self.articles[self.current_article_index].art, "ненужно/да.txt")
+        self.save_to_file(self.articles[self.current_article_index].art, "да.txt")
         self.next_article()
 
     def on_no_clicked(self):
