@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 from datetime import datetime
 
 import psycopg2
@@ -285,6 +286,33 @@ class Article(Model):
             sticker_file_path = os.path.join(sticker_path_all, all_stickers[all_stickers_rev_rush.index(name_sticker)])
         self.sticker = sticker_file_path
         self.save()
+
+    @classmethod
+    def delete_by_art(cls, art):
+        """
+        Удаляет запись из базы данных по артикулу и соответствующую папку на диске.
+        :param art: Артикул записи, которую нужно удалить.
+        :return: True, если запись была найдена и удалена, иначе False.
+        """
+        # Найти запись с заданным артикулом
+        try:
+            article = cls.get(cls.art == art)
+        except cls.DoesNotExist:
+            return False
+
+        folder_path = article.folder
+        query = cls.delete().where(cls.art == art)
+        deleted = query.execute()
+
+        # Если запись была успешно удалена, удалить и папку
+        if deleted and folder_path:
+            try:
+                shutil.rmtree(folder_path)
+                return True
+            except Exception as e:
+                logger.error(f"Ошибка при удалении папки: {e}")
+                return False
+        return False
 
 
 class Orders(Article):

@@ -38,6 +38,15 @@ def read_table_google(CREDENTIALS_FILE='Настройки\\google_acc.json',
         ).execute()
     except Exception as ex:
         logger.error(f'Ошибка чтения гуглтаблицы {ex}')
+        try:
+            credentials = service_account.Credentials.from_service_account_file(CREDENTIALS_FILE)
+            service = build('sheets', 'v4', credentials=credentials)
+            values = service.spreadsheets().values().get(
+                spreadsheetId=spreadsheet_id,
+                range='2024',
+            ).execute()
+        except Exception as ex:
+            logger.error(f'Ошибка чтения гуглтаблицы {ex}')
 
     data = values.get('values', [])
     rows = data[1:]

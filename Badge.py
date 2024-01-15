@@ -525,7 +525,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.version = 6.0
+        self.version = 7.0
         self.current_dir = Path.cwd()
         self.dialogs = []
 

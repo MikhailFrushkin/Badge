@@ -76,6 +76,7 @@ def add_header_and_footer_to_pdf(pdf_file, footer_text, A3_flag):
 
 def combine_images_to_pdf(input_files, output_pdf, size=None, progress=None, self=None, A3_flag=False):
     """Создание файла с наклейками"""
+    bad_skin_list = []
     x_offset = 20
     y_offset = 20
     big_list_skin = []
@@ -133,16 +134,25 @@ def combine_images_to_pdf(input_files, output_pdf, size=None, progress=None, sel
             start_idx = page * images_per_page
             end_idx = min(start_idx + images_per_page, total_images)
             for i, img in enumerate(input_files[start_idx:end_idx]):
-                x = x_positions[i % 3]
-                y = y_positions[i // 3]
-                c.setFont("Helvetica-Bold", 8)
-                c.drawString(x, y + 2, f"#{img.num_on_list}     {img.art}")
-                try:
-                    logger.success(f"Добавился скин {img.num_on_list}     {img.art}")
-                    progress.update_progress()
-                    c.drawImage(img.skin, x - 10, y - img_height, width=img_width, height=img_height)
-                except Exception as ex:
-                    logger.error(f"Не удалось добавить подложку для {img.art} {ex}")
+                if not os.path.exists(img.skin):
+                    logger.debug(f'{img.skin} не существует')
+                else:
+                    x = x_positions[i % 3]
+                    y = y_positions[i // 3]
+                    c.setFont("Helvetica-Bold", 8)
+                    c.drawString(x, y + 2, f"#{img.num_on_list}     {img.art}")
+                    try:
+                        logger.success(f"Добавился скин {img.num_on_list}     {img.art}")
+                        progress.update_progress()
+                        c.drawImage(img.skin, x - 10, y - img_height, width=img_width, height=img_height)
+                    except Exception as ex:
+                        logger.error(f"Не удалось добавить подложку для {img.art} {ex}")
+                        try:
+                            c.drawImage(img.skin, x - 10, y - img_height, width=img_width, height=img_height)
+                        except Exception as ex:
+                            logger.error(f"Не удалось добавить подложку для {img.art} {ex} 2й раз")
+                            bad_skin_list.append(img.art)
+
             c.showPage()
         c.save()
 
@@ -163,6 +173,7 @@ def combine_images_to_pdf(input_files, output_pdf, size=None, progress=None, sel
             c.showPage()
         c.save()
     add_header_and_footer_to_pdf(output_pdf, self.name_doc, A3_flag=A3_flag)
+    return bad_skin_list
 
 
 def write_images_art(image, text1):
@@ -384,6 +395,7 @@ def merge_pdfs_stickers(queryset, output_path):
 
 def created_good_images(all_arts, self, A3_flag=False):
     progress = None
+    bad_skin_list = None
 
     try:
         ready_path = 'Файлы на печать'
@@ -451,8 +463,9 @@ def created_good_images(all_arts, self, A3_flag=False):
 
             try:
                 logger.debug(f'Создание наклеек {size}')
-                combine_images_to_pdf(queryset.order_by(Orders.num_on_list),
-                                      f"{ready_path}/Наклейки {size}.pdf", size, progress, self, A3_flag)
+                bad_skin_list = combine_images_to_pdf(queryset.order_by(Orders.num_on_list),
+                                                      f"{ready_path}/Наклейки {size}.pdf", size, progress, self,
+                                                      A3_flag)
             except Exception as ex:
                 logger.error(ex)
                 logger.error(f'Не удалось создать файл с наклейками {size}')
@@ -470,8 +483,13 @@ def created_good_images(all_arts, self, A3_flag=False):
             except Exception as ex:
                 logger.error(ex)
 
-
-        #Popsockets
+        if bad_skin_list:
+            for item in bad_skin_list:
+                if Article.delete_by_art(item):
+                    logger.warning("Запись и соответствующая папка успешно удалены.")
+                else:
+                    logger.warning("Не удалось удалить запись или папку.")
+        # Popsockets
         queryset = Orders.select().where(Orders.shop == 'Popsocket')
         if len(queryset) > 0:
             size = 44
@@ -483,8 +501,9 @@ def created_good_images(all_arts, self, A3_flag=False):
 
             try:
                 logger.debug(f'Создание наклеек Popsocket {size}')
-                combine_images_to_pdf(queryset.order_by(Orders.num_on_list),
-                                      f"{ready_path}\\Наклейки Popsockets.pdf", size, progress, self, A3_flag)
+                bad_skin_list = combine_images_to_pdf(queryset.order_by(Orders.num_on_list),
+                                                      f"{ready_path}\\Наклейки Popsockets.pdf", size, progress, self,
+                                                      A3_flag)
             except Exception as ex:
                 logger.error(ex)
                 logger.error(f'Не удалось создать файл с наклейками {size}')
@@ -501,6 +520,13 @@ def created_good_images(all_arts, self, A3_flag=False):
                 create_contact_sheet(sets_of_orders, size, self, A3_flag, popsocket=True)
             except Exception as ex:
                 logger.error(ex)
+
+        if bad_skin_list:
+            for item in bad_skin_list:
+                if Article.delete_by_art(item):
+                    logger.warning("Запись и соответствующая папка успешно удалены.")
+                else:
+                    logger.warning("Не удалось удалить запись или папку.")
 
         if self.create_pdf_checkbox.checkState() == 2:
             try:

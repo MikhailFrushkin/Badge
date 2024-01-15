@@ -43,6 +43,8 @@ def main():
                        .replace('ГЛАВНАЯ', 'подложка')
                        .replace('ГЛАВНЫЕ', 'подложка')
                        )
+            if 'Поп' in item:
+                newname = 'Подложка.png'
             os.rename(os.path.join(directory, item), os.path.join(directory, newname))
 
 
