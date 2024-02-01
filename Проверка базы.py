@@ -1,6 +1,7 @@
 import os
 import re
 from datetime import datetime
+from pprint import pprint
 
 from loguru import logger
 from peewee import *
@@ -77,14 +78,15 @@ class Article(Model):
         self.images = ', '.join(image_filenames) if image_filenames else None
         self.nums_in_folder = len(image_filenames)
 
-        name_sticker = self.art + '.pdf'
-        sticker_file_path = None
-
-        # Поиск файла с учетом разных регистров
-        for file_name in os.listdir(sticker_path_all):
-            if file_name == name_sticker or file_name.lower() == name_sticker:
-                sticker_file_path = os.path.join(sticker_path_all, file_name)
-                break
+        # name_sticker = self.art + '.pdf'
+        # sticker_file_path = None
+        #
+        # # Поиск файла с учетом разных регистров
+        # for file_name in os.listdir(sticker_path_all):
+        #     if file_name == name_sticker or file_name.lower() == name_sticker:
+        #         sticker_file_path = os.path.abspath(os.path.join(sticker_path_all, file_name))
+        #         break
+        sticker_file_path = sticker_dict.get(self.art.lower(), None)
 
         self.sticker = sticker_file_path
         self.save()
@@ -130,15 +132,17 @@ def update_arts_db(path, shop):
 
 
 if __name__ == '__main__':
-    try:
-        with db.atomic():
-            db.drop_tables([Article])
-    except Exception as ex:
-        logger.error(ex)
+    # try:
+    #     with db.atomic():
+    #         db.drop_tables([Article])
+    # except Exception as ex:
+    #     logger.error(ex)
+    #
+    # if not Article.table_exists():
+    #     Article.create_table(safe=True)
 
-    if not Article.table_exists():
-        Article.create_table(safe=True)
-
-    update_arts_db(dp_path, 'DP')
+    sticker_dict = {i.replace('.pdf', '').lower(): os.path.abspath(os.path.join(sticker_path_all, i))
+                    for i in os.listdir(sticker_path_all)}
+    # update_arts_db(dp_path, 'DP')
     update_arts_db(anikoya_path, 'AniKoya')
     update_arts_db(rf'{all_badge}\\Popsockets', 'Popsocket')

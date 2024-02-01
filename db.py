@@ -12,6 +12,8 @@ from config import sticker_path_all, dbname, user, password, host, machine_name
 
 db = SqliteDatabase('mydatabase.db')
 
+all_stickers = os.listdir(sticker_path_all)
+
 
 def remove_russian_letters(input_string):
     """Удаление русских букв из строки"""
@@ -280,7 +282,6 @@ class Article(Model):
 
         # Поиск файла с учетом разных регистров
 
-        all_stickers = os.listdir(sticker_path_all)
         all_stickers_rev_rush = list(map(remove_russian_letters, list(map(str.lower, all_stickers))))
         if name_sticker in all_stickers_rev_rush:
             sticker_file_path = os.path.join(sticker_path_all, all_stickers[all_stickers_rev_rush.index(name_sticker)])

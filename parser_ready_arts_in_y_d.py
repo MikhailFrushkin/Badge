@@ -52,9 +52,9 @@ async def main_search():
     async with aiohttp.ClientSession() as session:
         await traverse_yandex_disk(session, folder_path, result_dict)
 
-    # df = pd.DataFrame(list(result_dict.items()), columns=['Имя', 'Путь'])
-    # logger.info('Создан документ Пути к артикулам.xlsx')
-    # df_in_xlsx(df, 'Пути к артикулам')
+    df = pd.DataFrame(list(result_dict.items()), columns=['Имя', 'Путь'])
+    logger.info('Создан документ Пути к артикулам.xlsx')
+    df_in_xlsx(df, 'Пути к артикулам')
     return result_dict
 
 
@@ -91,6 +91,7 @@ async def download_files_from_yandex_folder(session, token, folder_url, local_fo
                         # Загружаем файл в указанную локальную папку
                         local_file_path = os.path.join(local_folder_path, file_name)
                         await download_file(session, file_url, local_file_path)
+                logger.success(f'Загружен: {data.get("name")}')
     except Exception as e:
         logger.error(f"Error downloading files from {folder_url}: {e}")
 
@@ -155,6 +156,7 @@ def missing_folders():
         except Exception as ex:
             pass
     missing_dict = result_dict
+    logger.debug(f'Новые артикула: {missing_dict.keys()}')
     return missing_dict
 
 

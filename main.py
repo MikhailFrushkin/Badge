@@ -292,16 +292,17 @@ def download_new_arts(link, list_arts, shop, self=None):
     logger.debug(link)
     new_folder = os.path.join(f'{all_badge}\\Скаченные с диска', os.listdir(f'{all_badge}\\Скаченные с диска')[0])
     logger.debug(new_folder)
+    files_in_dir = os.listdir(new_folder)
     if new_folder:
         arts_list = []
         list_image = []
         list_skin_one = []
         list_skin_names = ['под', 'главная', 'nabor']
         list_skin_names_one = ['одиноч', 'one', 'под']
-        for file in os.listdir(new_folder):
+        for file in files_in_dir:
             if os.path.isdir(os.path.join(new_folder, file)):
                 return
-        for file in os.listdir(new_folder):
+        for file in files_in_dir:
             if os.path.isfile(os.path.join(new_folder, file)):
                 if file.replace('.png', '').replace('.jpg', '').strip().isdigit():
                     list_image.append(file)
@@ -320,7 +321,7 @@ def download_new_arts(link, list_arts, shop, self=None):
             logger.debug(arts_list)
         for name in list_skin_names_one:
             list_skin_one = []
-            for file in os.listdir(new_folder):
+            for file in files_in_dir:
                 if file.split('.')[1] == 'png' or file.split('.')[1] == 'jpg':
                     if name in file.split('.')[0].lower():
                         if 'под' in file.split('.')[0].lower() \
@@ -337,7 +338,7 @@ def download_new_arts(link, list_arts, shop, self=None):
 
         for name in list_skin_names:
             list_skin = []
-            for file in os.listdir(new_folder):
+            for file in files_in_dir:
                 if file.split('.')[1] == 'png' or file.split('.')[1] == 'jpg':
                     if name in file.split('.')[0].lower():
                         list_skin.append(file)
@@ -352,12 +353,14 @@ def download_new_arts(link, list_arts, shop, self=None):
         print("Наклейки одиночки: ", list_skin_one)
         print("Наклейки наборы: ", list_skin)
         print("Изображения значков: ", list_image)
+
         for folder in arts_list:
             folder_art = os.path.join(new_folder, folder)
             os.makedirs(folder_art, exist_ok=True)
             size = folder.split('-')[-1]
             nums = int(folder.split('-')[-2])
-
+            logger.success(size)
+            logger.success(nums)
             if len(list_image) == 1:
                 if nums == 1:
                     shutil.copy2(os.path.join(new_folder, list_image[0]), folder_art)

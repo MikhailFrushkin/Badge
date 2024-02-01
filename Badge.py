@@ -622,7 +622,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     if bad_arts:
                         df_bad = pd.DataFrame(bad_arts, columns=['Артикул', 'Количество'])
                         df_in_xlsx(df_bad, f'Не найденные артикула в заказе '
-                                           f'{os.path.basename(filename)}_v_{self.version}')
+                                           f'{os.path.basename(filename)}_v_{self.version}_{machine_name}')
 
                 except Exception as ex:
                     logger.error(ex)
@@ -649,22 +649,23 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def evt_btn_update(self):
         """Ивент на кнопку обновить базу"""
         try:
+            list_arts, list_arts_popsocket = [], []
             list_arts, list_arts_popsocket = update_db(self)
             mes = "\n".join(list_arts)
             dialog = CustomDialog()
             dialog.set_text(mes)
             dialog.exec_()
 
-            logger.debug('Поиск новых стикеров ШК...')
-            try:
-                logger.debug('Загрузка стикеров с гугл диска:')
-                main_download_stickers(self)
-                logger.success('Поиск новых стикеров на я.диске')
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(async_main_sh())
-            except Exception as ex:
-                logger.error(ex)
+            # logger.debug('Поиск новых стикеров ШК...')
+            # try:
+            #     logger.debug('Загрузка стикеров с гугл диска:')
+            #     main_download_stickers(self)
+            #     logger.success('Поиск новых стикеров на я.диске')
+            #     loop = asyncio.new_event_loop()
+            #     asyncio.set_event_loop(loop)
+            #     loop.run_until_complete(async_main_sh())
+            # except Exception as ex:
+            #     logger.error(ex)
 
             if list_arts_popsocket:
                 try:
@@ -779,10 +780,10 @@ def run_script():
         if 0 < time_now < 18:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            try:
-                delete_arts()
-            except Exception as ex:
-                logger.error(ex)
+            # try:
+            #     delete_arts()
+            # except Exception as ex:
+            #     logger.error(ex)
 
             logger.success('Обновление...')
             try:
@@ -824,7 +825,7 @@ def run_script():
                 logger.error(ex)
 
             logger.success('Обновление завершено')
-        time.sleep(60 * 60)
+        time.sleep(15 * 60)
 
 
 if __name__ == '__main__':
