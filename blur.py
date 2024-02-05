@@ -85,7 +85,7 @@ def blur_image(image_path, output_path, size_b):
 
     cv2.imwrite(output_path, enlarged_result)
 
-    logger.debug(f"Изображение сохранено в: {output_path}")
+    # logger.debug(f"Изображение сохранено в: {output_path}")
 
 
 def main(file, size_b):

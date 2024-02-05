@@ -69,7 +69,7 @@ def download_file(destination_path, url):
                 for chunk in response.iter_content(chunk_size=1024):
                     if chunk:  # filter out keep-alive new chunks
                         file.write(chunk)
-            logger.info(f"File downloaded successfully: {destination_path}")
+            # logger.info(f"File downloaded successfully: {destination_path}")
         else:
             logger.error(f"Error {response.status_code} while downloading file: {url}")
     except requests.RequestException as e:
@@ -117,14 +117,18 @@ def main_download_site():
     #
     # with open('json.json', 'r') as f:
     #     data = json.load(f)
-
-    for item in result_dict_arts:
-        if item['art'] not in art_list:
+    count_task = len(result_dict_arts)
+    for index, item in enumerate(result_dict_arts, start=1):
+        art = item['art']
+        if art not in art_list:
             brand = item['brand']
             category = item['category']
             size = item['size']
             count = item['quantity']
-            folder = os.path.join(directory, item['art'])
+            folder = os.path.join(directory, art)
+
+            if art.split('-')[-2] != count:
+                logger.error(f'Не совпадает кол-во {art}')
             try:
                 os.makedirs(folder, exist_ok=True)
                 for i in item['url_data']:
@@ -173,6 +177,7 @@ def main_download_site():
                                 logger.error(ex)
                                 os.remove(os.path.join(folder, file))
                     shutil.move(folder, out_dir)
+                    logger.success(f'{index}/{count_task} - {item["art"]}')
                 except Exception as ex:
                     logger.error(ex)
             except Exception as ex:

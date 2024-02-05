@@ -7,7 +7,7 @@ from utils import df_in_xlsx
 
 
 def main():
-    df = pd.read_excel(r'D:\попсокеты.xlsx')
+    df = pd.read_excel(r'D:\значки.xlsx')
     print(df.columns)
     arts_list_in_file = df['Артикул продавца'].apply(lambda x: remove_russian_letters(x.lower()).strip()).tolist()
     print(len(arts_list_in_file))
@@ -22,7 +22,7 @@ def main():
                   and 'box1-' not in i.lower()
                   and 'boshki-' not in i.lower()
                   and 'znachki-poster' not in i.lower()
-                  # and ('11new' in i.lower() or '12new' in i.lower() or '13new' in i.lower())
+                  and ('11new' in i.lower() or '12new' in i.lower() or '13new' in i.lower())
                   )
               # and ('37' in i.lower() or '56' in i.lower())
               # and ('25' in i.lower() or '44' in i.lower())

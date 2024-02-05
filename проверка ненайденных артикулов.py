@@ -1,5 +1,8 @@
+import glob
 import os
+import shutil
 
+import pandas as pd
 from loguru import logger
 import requests
 
@@ -44,11 +47,32 @@ def download_file(destination_path, url):
         logger.error(f"Error during downloading file: {e}")
 
 
+def read_all_files():
+    from utils import df_in_xlsx
+    combined_df = pd.DataFrame(columns=['Артикул'])
+    for file in glob.glob(os.path.join(directory, '*.xlsx')):
+        print(file)
+        df = pd.read_excel(file)
+
+        # Выбираем только столбец "Артикул"
+        if 'Артикул' in df.columns:
+            df = df[['Артикул']]
+
+            # Добавляем к общему DataFrame
+            combined_df = pd.concat([combined_df, df], ignore_index=True)
+    combined_df.drop_duplicates(inplace=True)
+    df_in_xlsx(df=combined_df, filename='Ненайденные артикула с отчетов')
+
+
 if __name__ == '__main__':
     directory = 'temp_excel'
+    shutil.rmtree(directory, ignore_errors=True)
     os.makedirs(directory, exist_ok=True)
     files = get_file_excel()
+    logger.debug(files)
+
     for name, url in files:
         destination_path = os.path.join(directory, name)
         download_file(destination_path, url)
 
+    read_all_files()

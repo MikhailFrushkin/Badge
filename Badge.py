@@ -20,6 +20,7 @@ from PyQt5.QtWidgets import (
 from loguru import logger
 from peewee import fn
 
+from api_rest import main_download_site
 from config import all_badge, token, machine_name
 from created_images import created_good_images
 from db import Article, Statistic, update_base_postgresql, GoogleTable, Orders, db, remove_russian_letters
@@ -667,25 +668,29 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # except Exception as ex:
             #     logger.error(ex)
 
-            if list_arts_popsocket:
-                try:
-                    from popsocket import scan_files
-                    os.makedirs(f'{all_badge}\\Popsockets', exist_ok=True)
-                    self.second_statusbar.showMessage(f"Скачивание файлов попсокетов", 10000)
-                    self.progress_bar.setValue(0)
-                    asyncio.run(scan_files(list_arts_popsocket))
-                except Exception as ex:
-                    logger.error(ex)
+            # if list_arts_popsocket:
+            #     try:
+            #         from popsocket import scan_files
+            #         os.makedirs(f'{all_badge}\\Popsockets', exist_ok=True)
+            #         self.second_statusbar.showMessage(f"Скачивание файлов попсокетов", 10000)
+            #         self.progress_bar.setValue(0)
+            #         asyncio.run(scan_files(list_arts_popsocket))
+            #     except Exception as ex:
+            #         logger.error(ex)
+            #
+            # self.second_statusbar.showMessage(f"Скачивание файлов значков", 10000)
+            # self.progress_bar.setValue(0)
+            # try:
+            #     if list_arts:
+            #         download_new_arts_in_comp(list_arts, self)
+            #         delete_files_with_name(starting_directory=all_badge)
+            # except Exception as ex:
+            #     logger.error(ex)
 
-            self.second_statusbar.showMessage(f"Скачивание файлов значков", 10000)
-            self.progress_bar.setValue(0)
             try:
-                if list_arts:
-                    download_new_arts_in_comp(list_arts, self)
-                    delete_files_with_name(starting_directory=all_badge)
+                main_download_site()
             except Exception as ex:
                 logger.error(ex)
-
             try:
                 logger.success('Проверка базы')
                 update_arts_db2()

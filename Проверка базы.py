@@ -137,12 +137,12 @@ if __name__ == '__main__':
     #         db.drop_tables([Article])
     # except Exception as ex:
     #     logger.error(ex)
-    #
-    # if not Article.table_exists():
-    #     Article.create_table(safe=True)
+
+    if not Article.table_exists():
+        Article.create_table(safe=True)
 
     sticker_dict = {i.replace('.pdf', '').lower(): os.path.abspath(os.path.join(sticker_path_all, i))
                     for i in os.listdir(sticker_path_all)}
-    # update_arts_db(dp_path, 'DP')
+    update_arts_db(dp_path, 'DP')
     update_arts_db(anikoya_path, 'AniKoya')
     update_arts_db(rf'{all_badge}\\Popsockets', 'Popsocket')
