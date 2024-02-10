@@ -36,4 +36,5 @@ def convert(file, name_file='new'):
 
 
 if __name__ == '__main__':
-    convert(r'E:\\База значков\\сделать\\старые\\SKZ-5NEW-NABOR56 ЛИСТ 2.xcf')
+    file_path = r'D:\\База значков\\сделать\\2.xcf'
+    convert(file_path)

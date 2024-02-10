@@ -12,13 +12,19 @@ from db import Article
 headers = {'Content-Type': 'application/json'}
 domain = 'http://127.0.0.1:8000/api_rest'
 
-domain = 'https://mycego.online/api_rest'
+
+# domain = 'https://mycego.online/api_rest'
 
 
-def get_products(art_list):
+def get_products(categories: list):
     url = f'{domain}/products/'
-    response = requests.get(url)
-    return response.json().get('data', None)
+    try:
+        json_data = json.dumps(categories)
+        response = requests.get(url, data=json_data, headers=headers)
+        logger.debug(response.status_code)
+        return response.json().get('data', [])
+    except Exception as ex:
+        logger.error(f'Ошибка в запросе по api {ex}')
 
 
 def get_info_publish_folder(public_url, files):
@@ -43,7 +49,7 @@ def get_info_publish_folder(public_url, files):
 def create_download_data(item):
     download_files = []
     if len(item.get('images')) != item['quantity'] and not item['the_same']:
-        pass
+        logger.error(f'Не совпадает количество\n{item}')
     else:
         download_files.extend(item['images'])
         download_files.extend(item['skin'])
@@ -99,19 +105,19 @@ def copy_image(image_path, count):
 def main_download_site():
     directory = 'temp'
     result_dict_arts = []
+    categories = ['Значки', 'Попсокеты']
 
     art_list = get_arts_in_base()
 
-    data = get_products(art_list)
+    data = get_products(categories)
 
-    logger.debug(len(data))
-    if data:
-        for item in data:
-            if item['art'] not in art_list:
-                logger.success(item['art'])
-                download_data = create_download_data(item)
-                if download_data:
-                    result_dict_arts.append(download_data)
+    logger.debug(f'Артикулов в ответе с сервера:{len(data)}')
+    data = [item for item in data if item['art'] not in art_list]
+    logger.success(f'Артикулов для загрузки:{len(data)}')
+    for item in data:
+        download_data = create_download_data(item)
+        if download_data:
+            result_dict_arts.append(download_data)
     # with open('json.json', 'w') as f:
     #     json.dump(result_dict_arts, f, indent=4, ensure_ascii=False)
     #
@@ -126,8 +132,7 @@ def main_download_site():
             size = item['size']
             count = item['quantity']
             folder = os.path.join(directory, art)
-
-            if art.split('-')[-2] != count:
+            if int(art.split('-')[-2]) != count:
                 logger.error(f'Не совпадает кол-во {art}')
             try:
                 os.makedirs(folder, exist_ok=True)
@@ -187,4 +192,6 @@ def main_download_site():
 
 
 if __name__ == '__main__':
-    main_download_site()
+    categories = ['Постеры']
+    data = get_products(categories)
+    pprint(data)
