@@ -1,7 +1,10 @@
+import asyncio
 import json
 import os
 import shutil
 from pprint import pprint
+
+import aiohttp
 from loguru import logger
 import requests
 
@@ -10,10 +13,8 @@ from config import all_badge, sticker_path_all
 from db import Article
 
 headers = {'Content-Type': 'application/json'}
-domain = 'http://127.0.0.1:8000/api_rest'
-
-
-# domain = 'https://mycego.online/api_rest'
+# domain = 'http://127.0.0.1:8000/api_rest'
+domain = 'https://mycego.online/api_rest'
 
 
 def get_products(categories: list):
@@ -30,7 +31,7 @@ def get_products(categories: list):
 def get_info_publish_folder(public_url, files):
     result_data = []
     res = requests.get(
-        f'https://cloud-api.yandex.net/v1/disk/public/resources?public_key={public_url}&fields=_embedded&limit=100')
+        f'https://cloud-api.yandex.net/v1/disk/public/resources?public_key={public_url}&fields=_embedded&limit=1000')
     if res.status_code == 200:
         data = res.json().get('_embedded', {}).get('items', [])
         for i in data:
@@ -118,11 +119,7 @@ def main_download_site():
         download_data = create_download_data(item)
         if download_data:
             result_dict_arts.append(download_data)
-    # with open('json.json', 'w') as f:
-    #     json.dump(result_dict_arts, f, indent=4, ensure_ascii=False)
-    #
-    # with open('json.json', 'r') as f:
-    #     data = json.load(f)
+
     count_task = len(result_dict_arts)
     for index, item in enumerate(result_dict_arts, start=1):
         art = item['art']
@@ -132,66 +129,62 @@ def main_download_site():
             size = item['size']
             count = item['quantity']
             folder = os.path.join(directory, art)
-            if int(art.split('-')[-2]) != count:
+            if category == 'Значки' and int(art.split('-')[-2]) != count:
                 logger.error(f'Не совпадает кол-во {art}')
-            try:
-                os.makedirs(folder, exist_ok=True)
-                for i in item['url_data']:
-                    destination_path = os.path.join(folder, i['name'])
-                    download_file(destination_path, i['file'])
-
+            else:
                 try:
-                    if size == 'Попсокет':
-                        size = 44
-                    else:
-                        size = int(size)
-                    blur_images(folder, size)
-                except Exception as ex:
-                    logger.error(ex)
+                    os.makedirs(folder, exist_ok=True)
+                    for i in item['url_data']:
+                        destination_path = os.path.join(folder, i['name'])
+                        download_file(destination_path, i['file'])
 
-                if item['the_same']:
                     try:
-                        image_path = os.path.join(folder, '1.png')
-                        if os.path.exists(image_path):
-                            copy_image(image_path, count)
+                        if size == 'Попсокет':
+                            size = 44
+                        elif size == 'Зеркальце':
+                            size = 56
                         else:
-                            image_path = os.path.join(folder, '1.jpg')
-                            if os.path.exists(image_path):
-                                copy_image(image_path, count)
-                            else:
-                                raise ValueError(f'Нет файла для копирования артикул: {item["art"]}')
+                            size = int(size)
+                        blur_images(folder, size)
                     except Exception as ex:
                         logger.error(ex)
 
-                try:
-                    out_dir = rf'{all_badge}\\сделать'
-                    if size == 'Попсокет':
-                        out_dir = rf'{all_badge}\\Popsockets'
-                    elif brand == 'AniKoya':
-                        out_dir = rf'{all_badge}\\AniKoya'
-                    elif brand == 'Дочке понравилось':
-                        out_dir = rf'{all_badge}\\DP'
-                    else:
-                        logger.error(f'Неизвестный бренд {item}')
+                    if item['the_same']:
+                        try:
+                            image_path = os.path.join(folder, '1.png')
+                            if os.path.exists(image_path):
+                                copy_image(image_path, count)
+                            else:
+                                image_path = os.path.join(folder, '1.jpg')
+                                if os.path.exists(image_path):
+                                    copy_image(image_path, count)
+                                else:
+                                    raise ValueError(f'Нет файла для копирования артикул: {item["art"]}')
+                        except Exception as ex:
+                            logger.error(ex)
 
-                    for file in os.listdir(folder):
-                        if file.endswith('.pdf'):
-                            try:
-                                shutil.move(os.path.join(folder, file), sticker_path_all)
-                            except Exception as ex:
-                                logger.error(ex)
-                                os.remove(os.path.join(folder, file))
-                    shutil.move(folder, out_dir)
-                    logger.success(f'{index}/{count_task} - {item["art"]}')
+                    try:
+                        out_dir = rf'{all_badge}\\сделать'
+                        if category == 'Попсокеты':
+                            out_dir = rf'{all_badge}\\Popsockets'
+                        elif brand == 'AniKoya':
+                            out_dir = rf'{all_badge}\\AniKoya'
+                        elif brand == 'Дочке понравилось':
+                            out_dir = rf'{all_badge}\\DP'
+                        else:
+                            logger.error(f'Неизвестный бренд {item}')
+
+                        for file in os.listdir(folder):
+                            if file.endswith('.pdf'):
+                                try:
+                                    shutil.move(os.path.join(folder, file), sticker_path_all)
+                                except Exception as ex:
+                                    os.remove(os.path.join(folder, file))
+                        shutil.move(folder, out_dir)
+                        logger.success(f'{index}/{count_task} - {item["art"]}')
+                    except Exception as ex:
+                        logger.error(ex)
                 except Exception as ex:
                     logger.error(ex)
-            except Exception as ex:
-                logger.error(ex)
         else:
             logger.warning(f'Артикул существует {item["art"]}')
-
-
-if __name__ == '__main__':
-    categories = ['Постеры']
-    data = get_products(categories)
-    pprint(data)

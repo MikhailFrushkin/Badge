@@ -137,5 +137,18 @@ def blur_size(size, directory=None):
                         logger.error(os.path.join(folder_name, filename))
 
 
+def blur_one_folder(size, folder):
+    for index, filename in enumerate(os.listdir(folder), start=1):
+        if (filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()) \
+                and os.path.isfile(os.path.join(folder, filename)):
+            if os.path.exists(os.path.join(folder, filename)):
+                try:
+                    blur_image(image_path=os.path.join(folder, filename),
+                               output_path=os.path.join(folder, filename), size_b=size)
+                except Exception as ex:
+                    logger.error(ex)
+                    logger.error(os.path.join(folder, filename))
+
+
 if __name__ == '__main__':
-    main(file=r'D:\PyCharm\Badge2\Полезное\да.txt', size_b=37)
+    blur_one_folder(56, r'D:\База значков\AniKoya\INITIALD-13NEW-4-56')

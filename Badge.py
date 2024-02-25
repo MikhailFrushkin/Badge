@@ -526,7 +526,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.version = 7.0
+        self.version = 8.0
         self.current_dir = Path.cwd()
         self.dialogs = []
 
@@ -651,11 +651,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         """Ивент на кнопку обновить базу"""
         try:
             list_arts, list_arts_popsocket = [], []
-            list_arts, list_arts_popsocket = update_db(self)
-            mes = "\n".join(list_arts)
-            dialog = CustomDialog()
-            dialog.set_text(mes)
-            dialog.exec_()
+            # list_arts, list_arts_popsocket = update_db(self)
+            # mes = "\n".join(list_arts)
+            # dialog = CustomDialog()
+            # dialog.set_text(mes)
+            # dialog.exec_()
 
             # logger.debug('Поиск новых стикеров ШК...')
             # try:
@@ -687,14 +687,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # except Exception as ex:
             #     logger.error(ex)
 
+            logger.warning('Обновление базы с сайта')
             try:
                 main_download_site()
             except Exception as ex:
                 logger.error(ex)
             try:
-                logger.success('Проверка базы')
+                logger.warning('Проверка базы')
                 update_arts_db2()
-                logger.success('Поиск новых стикеров для артикулов в базе')
+                # logger.success('Поиск новых стикеров для артикулов в базе')
                 update_sticker_path()
             except Exception as ex:
                 logger.error(ex)
@@ -782,7 +783,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 def run_script():
     while True:
         time_now = datetime.datetime.now().hour
-        if 0 < time_now < 18:
+        if 0 < time_now < 20:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             # try:

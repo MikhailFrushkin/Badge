@@ -65,6 +65,7 @@ def move_dirs():
             else:
                 shutil.move(os.path.join(directory, item), os.path.join(directory_out + '\\44', item))
 
+
 def check_duo_skin():
     """Проверка на 2 подложки и отсутствие"""
     directory = r'D:\База значков\AniKoya'

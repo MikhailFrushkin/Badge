@@ -19,7 +19,8 @@ def get_file_excel():
 
     params = {
         "path": 'Отчеты',
-        "fields": "_embedded.items"
+        "fields": "_embedded.items",
+        "limit": 1000
     }
 
     response = requests.get("https://cloud-api.yandex.net/v1/disk/resources", headers=headers, params=params)
@@ -69,7 +70,6 @@ if __name__ == '__main__':
     shutil.rmtree(directory, ignore_errors=True)
     os.makedirs(directory, exist_ok=True)
     files = get_file_excel()
-    logger.debug(files)
 
     for name, url in files:
         destination_path = os.path.join(directory, name)
