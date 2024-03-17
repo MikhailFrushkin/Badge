@@ -8,9 +8,9 @@ from PyQt5.QtCore import Qt
 
 
 class ImageLabelApp(QMainWindow):
-    def __init__(self):
+    def __init__(self, size):
         super().__init__()
-
+        self.size = size
         self.init_ui()
         self.load_articles()
 
@@ -55,7 +55,7 @@ class ImageLabelApp(QMainWindow):
     def load_articles(self):
         """3558"""
         offset_value = 3558
-        self.articles = Article.select().where(Article.size == 37).offset(offset_value)
+        self.articles = Article.select().where(Article.size == self.size).offset(offset_value)
         print(self.articles.count())
         if self.articles.count() > 0:
             self.load_image(self.current_article_index)
@@ -104,6 +104,6 @@ class ImageLabelApp(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    window = ImageLabelApp()
+    window = ImageLabelApp(44)
     window.show()
     sys.exit(app.exec_())

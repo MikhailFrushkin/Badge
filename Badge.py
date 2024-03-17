@@ -786,10 +786,10 @@ def run_script():
         if 0 < time_now < 20:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            # try:
-            #     delete_arts()
-            # except Exception as ex:
-            #     logger.error(ex)
+            try:
+                delete_arts()
+            except Exception as ex:
+                logger.error(ex)
 
             logger.success('Обновление...')
             try:

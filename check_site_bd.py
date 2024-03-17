@@ -5,41 +5,11 @@ import time
 import aiohttp
 from loguru import logger
 
+from api_rest import get_products
+
 headers = {'Content-Type': 'application/json'}
 # domain = 'http://127.0.0.1:8000/api_rest'
 domain = 'https://mycego.online/api_rest'
-
-
-# def get_info_publish_folder(public_url, art):
-#     result_data = {}
-#     stickers = []
-#     images = []
-#     skin = []
-#     other = []
-#     res = requests.get(
-#         f'https://cloud-api.yandex.net/v1/disk/public/resources?public_key={public_url}&fields=_embedded&limit=1000')
-#     if res.status_code == 200:
-#         data = res.json().get('_embedded', {}).get('items', [])
-#         for i in data:
-#             file_name = i.get('name', None)
-#             if file_name.endswith('.pdf') and 'изображения' not in file_name.lower():
-#                 stickers.append(file_name)
-#             elif 'подложка' in file_name.lower():
-#                 skin.append(file_name)
-#             elif (file_name.endswith('.png') or file_name.endswith('.jpg')) and file_name.split('.')[0].isdigit():
-#                 images.append(file_name)
-#             else:
-#                 other.append(file_name)
-#         result_data[f"{art} - {public_url}"] = {
-#             'stickers': stickers,
-#             'images': images,
-#             'skin': skin,
-#             'other': other,
-#         }
-#         return result_data
-#     else:
-#         logger.error(res.status_code)
-#         logger.error(res.text)
 
 
 async def fetch(session, semaphore, url):
@@ -80,10 +50,10 @@ async def get_info_publish_folder(semaphore, public_url, art):
                     'skin': skin,
                     'other': other,
                 }
-                return result_data
             else:
                 logger.error(res.status)
                 logger.error(await res.text())
+            return result_data
 
 
 async def process_chunk(semaphore, chunk):
@@ -129,6 +99,11 @@ if __name__ == '__main__':
     categories = ['all']
     bad_list = []
     bad_list_art = []
+    data = get_products(categories)
+    print(len(data))
+    # with open(f'all_arts.json', 'w', encoding='utf-8') as file:
+    #     json.dump(data, file, indent=4, ensure_ascii=False)
+    # print(len(data))
     # asyncio.run(main())
 
     # Запрос к серверу
@@ -170,10 +145,15 @@ if __name__ == '__main__':
     with open(f'scan.json', 'r', encoding='utf-8') as file:
         data = json.load(file)
     print(len(data))
-    for key, value in data.items():
-        if not value.get('skin'):
-            logger.error(f'Нет подложки{key}')
-        if not value.get('images'):
-            logger.error(f'Нет изображений {key}')
-        # if not value.get('stickers'):
-        #     logger.error(f'Нет ШК {key}')
+    # for key, value in data.items():
+    #     skin = value.get('skin', None)
+    #     images = value.get('images', None)
+    #     if skin and images:
+    #         if not skin:
+    #             logger.error(f'Нет подложки{key}')
+    #         if not images:
+    #             logger.error(f'Нет изображений {key}')
+    #         # if not value.get('stickers'):
+    #         #     logger.error(f'Нет ШК {key}')
+    #     else:
+    #         logger.error(key)
