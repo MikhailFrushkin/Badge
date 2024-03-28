@@ -191,7 +191,7 @@ if __name__ == '__main__':
                 'spidermannabor-7new-10-56', 'taylorswift-11new-6-37', 'taylorswift-11new-6-56',
                 'tomorrowxtogether-8new-10-37', 'tomorrowxtogether-8new-10-56', 'tomorrowxtogether-8new-6-37',
                 'tomorrowxtogether-8new-6-56', 'vipysknik_starsheigroup-11new-6-37',
-                'vipysknik_starsheigroup-11new-6-56']
+                'vipysknik_starsheigroup-11new-6-56', 'vinil.skrech-13new-6-37', 'vinil.skrech-13new-6-56']
 
     sticker_dict = {i.replace('.pdf', '').strip().lower(): os.path.abspath(os.path.join(sticker_path_all, i))
                     for i in os.listdir(sticker_path_all)}

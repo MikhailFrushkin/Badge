@@ -22,13 +22,12 @@ def get_products(categories: list):
     try:
         json_data = json.dumps(categories)
         response = requests.get(url, data=json_data, headers=headers)
-        logger.debug(response.status_code)
         return response.json().get('data', [])
     except Exception as ex:
         logger.error(f'Ошибка в запросе по api {ex}')
 
 
-def get_info_publish_folder(public_url, files):
+def get_info_publish_folder(public_url):
     result_data = []
     res = requests.get(
         f'https://cloud-api.yandex.net/v1/disk/public/resources?public_key={public_url}&fields=_embedded&limit=1000')
@@ -36,14 +35,21 @@ def get_info_publish_folder(public_url, files):
         data = res.json().get('_embedded', {}).get('items', [])
         for i in data:
             file_name = i.get('name', None)
-            if file_name in files:
+            if file_name:
+                file_name = file_name.strip().lower()
+
+            if (os.path.splitext(file_name)[0].isdigit()
+                    or 'подл' in file_name
+                    or file_name.endswith('.pdf')
+            ):
                 try:
                     result_data.append({
-                        'name': i.get('name'),
+                        'name': i.get('name').strip(),
                         'file': i.get('file')
                     })
                 except:
                     pass
+
         return result_data
 
 
@@ -52,11 +58,7 @@ def create_download_data(item):
     if len(item.get('images')) != item['quantity'] and not item['the_same']:
         logger.error(f'Не совпадает количество\n{item}')
     else:
-        download_files.extend(item['images'])
-        download_files.extend(item['skin'])
-        download_files.extend(item['sticker'])
-
-        url_data = get_info_publish_folder(item['directory_url'], download_files)
+        url_data = get_info_publish_folder(item['directory_url'])
         if url_data:
             item['url_data'] = url_data
             return item
@@ -64,7 +66,7 @@ def create_download_data(item):
 
 def get_arts_in_base():
     records = Article.select()
-    art_list = list(set(i.art.upper() for i in records))
+    art_list = list(set(i.art.upper().strip() for i in records))
     return art_list
 
 
@@ -113,7 +115,7 @@ def main_download_site():
     data = get_products(categories)
 
     logger.debug(f'Артикулов в ответе с сервера:{len(data)}')
-    data = [item for item in data if item['art'] not in art_list]
+    data = [item for item in data if item['art'].upper().strip() not in art_list]
     logger.success(f'Артикулов для загрузки:{len(data)}')
     for item in data:
         download_data = create_download_data(item)
@@ -159,7 +161,7 @@ def main_download_site():
                                 if os.path.exists(image_path):
                                     copy_image(image_path, count)
                                 else:
-                                    raise ValueError(f'Нет файла для копирования артикул: {item["art"]}')
+                                    raise ValueError(f'Нет файла для копирования артикул: {item}')
                         except Exception as ex:
                             logger.error(ex)
 
@@ -188,3 +190,7 @@ def main_download_site():
                     logger.error(ex)
         else:
             logger.warning(f'Артикул существует {item["art"]}')
+
+
+if __name__ == '__main__':
+    get_products(categories=['Значки'])
