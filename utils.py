@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 from dataclasses import dataclass
+from pprint import pprint
 from typing import Optional
 
 import pandas as pd
@@ -167,7 +168,18 @@ def read_excel_file(file: str) -> list:
         try:
             df = pd.read_excel(file)
             columns_list = list(map(str.lower, df.columns))
-            if len(columns_list) == 2:
+
+            if 'Информация о заказе' in df.columns:
+                df = pd.read_excel(file, skiprows=1)
+                df = df.rename(columns={'Ваш SKU': 'Артикул продавца'})
+
+                # Оставляем только нужные столбцы
+                df = df.loc[:, ['Артикул продавца', 'Количество']]
+
+                # Фильтруем строки по содержанию подстрок
+                keywords = ['25', '37', '44', '56', 'Popsocket', 'popsocket', 'POPSOCKET']
+                df = df[df['Артикул продавца'].str.contains('|'.join(keywords))]
+            elif len(columns_list) == 2:
                 logger.debug(f'Столбцы: {df.columns}')
                 try:
                     df = df.rename(columns={df.columns[0]: 'Артикул продавца', df.columns[1]: 'Количество'})
@@ -181,8 +193,6 @@ def read_excel_file(file: str) -> list:
                 df = df.rename(columns={'Стикер': 'Количество'})
         except Exception as ex:
             logger.error(ex)
-
-    # df_in_xlsx(df, 'Сгруппированный заказ')
 
     files_on_print = []
     try:
@@ -216,5 +226,26 @@ def split_row(row: str) -> list:
 
 
 if __name__ == '__main__':
-    print(
-        split_row('KAZAKHSTAN-11NEW-1-37,KAZAKHSTANNABOR-11NEW-6-37,KAZAKHSTAN-11NEW-1-56, KAZAKHSTANNABOR-11NEW-6-56'))
+    import pandas as pd
+
+    # Чтение данных из файла Excel
+    df = pd.read_excel('2.xlsx')
+
+    # Проверяем наличие столбца "Информация о заказе" и пропускаем первую строку, если он есть
+    if 'Информация о заказе' in df.columns:
+        df = pd.read_excel('2.xlsx', skiprows=1)
+
+    # Переименовываем столбцы
+    df = df.rename(columns={'Ваш SKU': 'Артикул продавца'})
+
+    # Оставляем только нужные столбцы
+    df = df.loc[:, ['Артикул продавца', 'Количество']]
+
+    # Фильтруем строки по содержанию подстрок
+    keywords = ['25', '37', '44', '56', 'Popsocket', 'popsocket', 'POPSOCKET']
+    df = df[df['Артикул продавца'].str.contains('|'.join(keywords))]
+
+    print(df)
+
+
+

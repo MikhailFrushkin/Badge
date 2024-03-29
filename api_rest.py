@@ -54,14 +54,10 @@ def get_info_publish_folder(public_url):
 
 
 def create_download_data(item):
-    download_files = []
-    if len(item.get('images')) != item['quantity'] and not item['the_same']:
-        logger.error(f'Не совпадает количество\n{item}')
-    else:
-        url_data = get_info_publish_folder(item['directory_url'])
-        if url_data:
-            item['url_data'] = url_data
-            return item
+    url_data = get_info_publish_folder(item['directory_url'])
+    if url_data:
+        item['url_data'] = url_data
+        return item
 
 
 def get_arts_in_base():

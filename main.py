@@ -592,7 +592,7 @@ def update_sticker_path():
         if name_sticker in all_stickers_rev_rush:
             sticker_file_path = os.path.join(sticker_path_all, all_stickers[all_stickers_rev_rush.index(name_sticker)])
             row.sticker = os.path.join(sticker_path_all, sticker_file_path)
-            print(f'{index} найден ШК: {row.art} ', os.path.join(sticker_path_all, sticker_file_path))
+            # print(f'{index} найден ШК: {row.art} ', os.path.join(sticker_path_all, sticker_file_path))
             row.save()
 
 

@@ -225,14 +225,9 @@ class Article(Model):
     def __str__(self):
         return self.art
 
-    def save(self, *args, **kwargs):
-        if self.art:
-            self.art = str(self.art).lower()
-        super(Article, self).save(*args, **kwargs)
-
     @classmethod
     def create_with_art(cls, art, folder, shop):
-        art = remove_russian_letters(art).lower()
+        art = remove_russian_letters(art).lower().strip()
         existing_article = cls.get_or_none(art=art)
         if existing_article:
             return existing_article
@@ -373,10 +368,6 @@ def contains_invalid_characters(file_name):
 
 
 if __name__ == '__main__':
-    # db.connect()
-    # db.create_tables([Statistic, GoogleTable, Orders, Article])
-    # db.close()
-    # update_base_postgresql()
     print(remove_russian_letters('Масленников_Артëм'))
     file_name = "example<>"
     if contains_invalid_characters(file_name):

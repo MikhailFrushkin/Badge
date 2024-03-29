@@ -1,5 +1,4 @@
 import asyncio
-import datetime
 import os
 import time
 from datetime import timedelta
@@ -8,7 +7,6 @@ from threading import Thread
 
 import pandas as pd
 import qdarkstyle
-import requests
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette, QFont
@@ -21,41 +19,16 @@ from loguru import logger
 from peewee import fn
 
 from api_rest import main_download_site
-from config import all_badge, token, machine_name
+from config import token, machine_name, sticker_path_all
 from created_images import created_good_images
 from db import Article, Statistic, update_base_postgresql, GoogleTable, Orders, db, remove_russian_letters
 from delete_bad_arts import delete_arts
-from dow_stickers import main_download_stickers
-from main import update_db, download_new_arts_in_comp, update_arts_db2, update_sticker_path
+from main import update_arts_db2, update_sticker_path
 from parser_ready_arts_in_y_d import missing_folders, main_parser
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
-from scan_shk import async_main_sh
+from scan_shk import main_search_sticker
 from upload_files import upload_statistic_files_async
-from utils import enum_printers, read_excel_file, FilesOnPrint, delete_files_with_name, df_in_xlsx, split_row
-
-
-def check_file():
-    return True
-    headers = {
-        "Authorization": f"OAuth {token}"
-    }
-
-    params = {
-        "path": 'Программы',
-        "fields": "_embedded.items.name"  # Запрашиваем только имена файлов
-    }
-
-    response = requests.get("https://cloud-api.yandex.net/v1/disk/resources", headers=headers, params=params)
-
-    if response.status_code == 200:
-        files = response.json()["_embedded"]["items"]
-        if 'Печать значков.txt' in [file["name"] for file in files]:
-            return True
-        else:
-            return False
-    else:
-        logger.error("Error:", response.status_code)
-        return []
+from utils import enum_printers, read_excel_file, FilesOnPrint, df_in_xlsx
 
 
 class GroupedRecordsDialog(QDialog):
@@ -545,19 +518,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         except Exception as ex:
             logger.debug(ex)
 
-        try:
-            if not check_file():
-                self.pushButton.setEnabled(False)
-                self.pushButton_3.setEnabled(False)
-                self.pushButton_8.setEnabled(False)
-                self.pushButton_9.setEnabled(False)
-                self.pushButton_6.setEnabled(False)
-                self.pushButton_5.setEnabled(False)
-                self.pushButton_4.setEnabled(False)
-                self.pushButton_2.setEnabled(False)
-        except Exception as ex:
-            logger.debug(ex)
-
         self.pushButton.clicked.connect(self.evt_btn_update)
         self.pushButton_3.clicked.connect(self.evt_btn_open_file_clicked)
         self.pushButton_8.clicked.connect(lambda: self.evt_btn_create_files(False))
@@ -589,8 +549,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def evt_btn_open_file_clicked(self):
         """Ивент на кнопку загрузить файл"""
-        file_name, _ = QFileDialog.getOpenFileName(self, 'Загрузить файл', str(self.current_dir),
-                                                   'CSV файлы (*.csv *.xlsx)')
+
+        def get_download_path():
+            return os.path.join(os.path.expanduser('~'), 'downloads')
+
+        try:
+            file_name, _ = QFileDialog.getOpenFileName(self, 'Загрузить файл', get_download_path(),
+                                                       'CSV файлы (*.csv *.xlsx)')
+        except Exception as ex:
+            logger.error(ex)
+            file_name, _ = QFileDialog.getOpenFileName(self, 'Загрузить файл', str(self.current_dir),
+                                                       'CSV файлы (*.csv *.xlsx)')
         if file_name:
             try:
                 self.lineEdit.setText(file_name)
@@ -695,7 +664,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             try:
                 logger.warning('Проверка базы')
                 update_arts_db2()
-                # logger.success('Поиск новых стикеров для артикулов в базе')
                 update_sticker_path()
             except Exception as ex:
                 logger.error(ex)
@@ -782,56 +750,48 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 def run_script():
     while True:
-        time_now = datetime.datetime.now().hour
-        if 0 < time_now < 20:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                delete_arts()
-            except Exception as ex:
-                logger.error(ex)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        logger.warning('Поиск артикулов для замены')
+        try:
+            delete_arts()
+        except Exception as ex:
+            logger.error(ex)
 
-            logger.success('Обновление...')
-            try:
-                missing_dict = missing_folders()
-                loop.run_until_complete(main_parser(missing_dict))
-            except Exception as ex:
-                logger.error(ex)
+        logger.warning('Обновление базы с сайта')
+        try:
+            main_download_site()
+        except Exception as ex:
+            logger.error(ex)
 
-            try:
-                logger.debug('Загрузка стикеров с гугл диска:')
-                main_download_stickers()
-            except Exception as ex:
-                logger.error(ex)
+        logger.success('Обновление готовых файлов')
+        try:
+            missing_dict = missing_folders()
+            loop.run_until_complete(main_parser(missing_dict))
+        except Exception as ex:
+            logger.error(ex)
 
-            try:
-                logger.debug('Загрузка стикеров я.диска:')
-                loop.run_until_complete(async_main_sh())
-            except Exception as ex:
-                logger.error(ex)
+        try:
+            logger.debug('Загрузка стикеров я.диска:')
+            directory_path_sticker = sticker_path_all
+            main_search_sticker(directory_path_sticker, token, folder_path='/Новая база (1)')
+        except Exception as ex:
+            logger.error(ex)
 
-            logger.debug('Проверка базы...')
-            try:
-                rows = Article.select()
-                for row in rows:
-                    row.art = remove_russian_letters(row.art).strip()
-                    row.save()
-            except Exception as ex:
-                logger.error(ex)
+        logger.debug('Проверка базы...')
+        try:
+            update_arts_db2()
+            update_sticker_path()
+        except Exception as ex:
+            logger.error(ex)
 
-            try:
-                update_arts_db2()
-                update_sticker_path()
-            except Exception as ex:
-                logger.error(ex)
+        try:
+            update_base_postgresql()
+        except Exception as ex:
+            logger.error(ex)
 
-            try:
-                update_base_postgresql()
-            except Exception as ex:
-                logger.error(ex)
-
-            logger.success('Обновление завершено')
-        time.sleep(15 * 60)
+        logger.success('Обновление завершено')
+        time.sleep(90 * 60)
 
 
 if __name__ == '__main__':
@@ -840,6 +800,13 @@ if __name__ == '__main__':
     db.connect()
     db.create_tables([Statistic, GoogleTable, Orders, Article])
     db.close()
+
+    logger.add(
+        "logs/logs.log",
+        rotation="20 MB",
+        level="INFO",
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {file!s} | {line} | {message}"
+    )
 
     app = QtWidgets.QApplication(sys.argv)
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
