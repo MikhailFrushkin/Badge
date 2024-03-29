@@ -757,10 +757,21 @@ def run_script():
             delete_arts()
         except Exception as ex:
             logger.error(ex)
+        logger.debug('Проверка базы...')
+        try:
+            update_arts_db2()
+        except Exception as ex:
+            logger.error(ex)
 
         logger.warning('Обновление базы с сайта')
         try:
             main_download_site()
+        except Exception as ex:
+            logger.error(ex)
+
+        logger.debug('Проверка базы...')
+        try:
+            update_arts_db2()
         except Exception as ex:
             logger.error(ex)
 
