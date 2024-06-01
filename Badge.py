@@ -24,7 +24,6 @@ from created_images import created_good_images
 from db import Article, Statistic, update_base_postgresql, GoogleTable, Orders, db, remove_russian_letters
 from delete_bad_arts import delete_arts
 from main import update_arts_db2, update_sticker_path
-from parser_ready_arts_in_y_d import missing_folders, main_parser
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
 from scan_shk import main_search_sticker
 from upload_files import upload_statistic_files_async
@@ -499,7 +498,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.version = 8.0
+        self.version = 10.0
         self.current_dir = Path.cwd()
         self.dialogs = []
 
@@ -769,18 +768,18 @@ def run_script():
         except Exception as ex:
             logger.error(ex)
 
-        logger.debug('Проверка базы...')
-        try:
-            update_arts_db2()
-        except Exception as ex:
-            logger.error(ex)
+        # logger.debug('Проверка базы...')
+        # try:
+        #     update_arts_db2()
+        # except Exception as ex:
+        #     logger.error(ex)
 
-        logger.success('Обновление готовых файлов')
-        try:
-            missing_dict = missing_folders()
-            loop.run_until_complete(main_parser(missing_dict))
-        except Exception as ex:
-            logger.error(ex)
+        # logger.success('Обновление готовых файлов')
+        # try:
+        #     missing_dict = missing_folders()
+        #     loop.run_until_complete(main_parser(missing_dict))
+        # except Exception as ex:
+        #     logger.error(ex)
 
         try:
             logger.debug('Загрузка стикеров я.диска:')

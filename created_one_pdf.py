@@ -1,10 +1,7 @@
 import glob
-import math
 import os
 import tempfile
 
-import PyPDF2
-import pandas as pd
 from PIL import Image
 from loguru import logger
 from reportlab.lib.pagesizes import A4

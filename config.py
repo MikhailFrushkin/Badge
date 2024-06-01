@@ -23,13 +23,4 @@ sticker_path_all = env.str('sticker_path_all')
 
 acrobat_path = env.str('acrobat_path')
 
-google_sticker_path1 = env.str('google_sticker_path1')
-google_sticker_path2 = env.str('google_sticker_path2')
-google_sticker_path3 = env.str('google_sticker_path3')
-
-id_google_table_DP = env.str('id_google_table_DP')
-id_google_table_anikoya = env.str('id_google_table_anikoya')
-
 path_base_y_disc = '/Значки ANIKOYA  02 23'
-
-ready_path = r'E:\База значков\Значки ШК'

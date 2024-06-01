@@ -17,85 +17,85 @@ from googleapiclient.discovery import build
 from loguru import logger
 
 from blur import blur_size
-from config import anikoya_path, dp_path, id_google_table_anikoya, id_google_table_DP, sticker_path_all, all_badge
+from config import anikoya_path, dp_path, sticker_path_all, all_badge
 from db import add_record_google_table, GoogleTable, Article, db, remove_russian_letters, contains_invalid_characters
 from utils import rename_files, move_ready_folder, ProgressBar
 
 
-def read_table_google(CREDENTIALS_FILE='Настройки\\google_acc.json',
-                      spreadsheet_id=id_google_table_anikoya,
-                      shop='AniKoya', self=None, sheet_name='2023'):
-    logger.debug(f'Читаю гугл таблицу {shop}')
-    if self:
-        self.second_statusbar.showMessage(f'Читаю гугл таблицу {shop}', 10000)
-
-    try:
-        credentials = service_account.Credentials.from_service_account_file(CREDENTIALS_FILE)
-        service = build('sheets', 'v4', credentials=credentials)
-        values = service.spreadsheets().values().get(
-            spreadsheetId=spreadsheet_id,
-            range=sheet_name,
-        ).execute()
-    except Exception as ex:
-        logger.error(f'Ошибка чтения гуглтаблицы {ex}')
-        try:
-            credentials = service_account.Credentials.from_service_account_file(CREDENTIALS_FILE)
-            service = build('sheets', 'v4', credentials=credentials)
-            values = service.spreadsheets().values().get(
-                spreadsheetId=spreadsheet_id,
-                range='2024',
-            ).execute()
-        except Exception as ex:
-            logger.error(f'Ошибка чтения гуглтаблицы {ex}')
-
-    data = values.get('values', [])
-    rows = data[1:]
-    headers = [i for i in data[0]]
-    headers.append(' ')
-    for row in data:
-        missing_columns = len(headers) - len(row)
-        if missing_columns > 0:
-            row += [''] * missing_columns
-    df = pd.DataFrame(data[1:], columns=headers)
-    art_name_col = None
-    url_name_col = None
-    name_name_col = None
-    for i in headers:
-        if shop == "AniKoya" or shop == "DP":
-            if 'артикул' in i.lower():
-                art_name_col = i
-        else:
-            if ('артикул' in i.lower()
-                    and 'вб' not in i.lower() and 'озон' not in i.lower()
-                    and 'wb' not in i.lower() and 'ozon' not in i.lower()):
-                art_name_col = i
-
-        if ('ссылка' in i.lower()
-                and 'вб' not in i.lower() and 'озон' not in i.lower()
-                and 'wb' not in i.lower() and 'ozon' not in i.lower()):
-            url_name_col = i
-        if 'наимен' in i.lower():
-            name_name_col = i
-
-    if len(headers) != len(rows[0]):
-        logger.error("Ошибка: количество столбцов не совпадает с количеством значений.")
-    else:
-        for index, row in df.iterrows():
-            try:
-                if row[art_name_col] == '' or '-' not in row[art_name_col] or not row[url_name_col].startswith(
-                        'https://disk'):
-                    continue
-                else:
-                    add_record_google_table(
-                        name=row[name_name_col] if name_name_col else 'Не найден столбец наименование',
-                        folder_link=row[url_name_col],
-                        article=row[art_name_col],
-                        shop=shop,
-                    )
-            except Exception as ex:
-                logger.error(row)
-                logger.error(ex)
-                QMessageBox.warning(self, 'Ошибка', f'Ошибка записи ссылки в базу\n{index}{ex}')
+# def read_table_google(CREDENTIALS_FILE='Настройки\\google_acc.json',
+#                       spreadsheet_id=id_google_table_anikoya,
+#                       shop='AniKoya', self=None, sheet_name='2023'):
+#     logger.debug(f'Читаю гугл таблицу {shop}')
+#     if self:
+#         self.second_statusbar.showMessage(f'Читаю гугл таблицу {shop}', 10000)
+#
+#     try:
+#         credentials = service_account.Credentials.from_service_account_file(CREDENTIALS_FILE)
+#         service = build('sheets', 'v4', credentials=credentials)
+#         values = service.spreadsheets().values().get(
+#             spreadsheetId=spreadsheet_id,
+#             range=sheet_name,
+#         ).execute()
+#     except Exception as ex:
+#         logger.error(f'Ошибка чтения гуглтаблицы {ex}')
+#         try:
+#             credentials = service_account.Credentials.from_service_account_file(CREDENTIALS_FILE)
+#             service = build('sheets', 'v4', credentials=credentials)
+#             values = service.spreadsheets().values().get(
+#                 spreadsheetId=spreadsheet_id,
+#                 range='2024',
+#             ).execute()
+#         except Exception as ex:
+#             logger.error(f'Ошибка чтения гуглтаблицы {ex}')
+#
+#     data = values.get('values', [])
+#     rows = data[1:]
+#     headers = [i for i in data[0]]
+#     headers.append(' ')
+#     for row in data:
+#         missing_columns = len(headers) - len(row)
+#         if missing_columns > 0:
+#             row += [''] * missing_columns
+#     df = pd.DataFrame(data[1:], columns=headers)
+#     art_name_col = None
+#     url_name_col = None
+#     name_name_col = None
+#     for i in headers:
+#         if shop == "AniKoya" or shop == "DP":
+#             if 'артикул' in i.lower():
+#                 art_name_col = i
+#         else:
+#             if ('артикул' in i.lower()
+#                     and 'вб' not in i.lower() and 'озон' not in i.lower()
+#                     and 'wb' not in i.lower() and 'ozon' not in i.lower()):
+#                 art_name_col = i
+#
+#         if ('ссылка' in i.lower()
+#                 and 'вб' not in i.lower() and 'озон' not in i.lower()
+#                 and 'wb' not in i.lower() and 'ozon' not in i.lower()):
+#             url_name_col = i
+#         if 'наимен' in i.lower():
+#             name_name_col = i
+#
+#     if len(headers) != len(rows[0]):
+#         logger.error("Ошибка: количество столбцов не совпадает с количеством значений.")
+#     else:
+#         for index, row in df.iterrows():
+#             try:
+#                 if row[art_name_col] == '' or '-' not in row[art_name_col] or not row[url_name_col].startswith(
+#                         'https://disk'):
+#                     continue
+#                 else:
+#                     add_record_google_table(
+#                         name=row[name_name_col] if name_name_col else 'Не найден столбец наименование',
+#                         folder_link=row[url_name_col],
+#                         article=row[art_name_col],
+#                         shop=shop,
+#                     )
+#             except Exception as ex:
+#                 logger.error(row)
+#                 logger.error(ex)
+#                 QMessageBox.warning(self, 'Ошибка', f'Ошибка записи ссылки в базу\n{index}{ex}')
 
 
 def download_file(url, local_path):
@@ -444,13 +444,13 @@ def download_new_arts(link, list_arts, shop, self=None):
 
 def update_db(self=None):
     # Чтение гугл таблицы
-    try:
-        read_table_google(spreadsheet_id=id_google_table_anikoya, shop='AniKoya', self=self)
-        read_table_google(spreadsheet_id=id_google_table_DP, shop='DP', self=self)
-        read_table_google(shop='Popsocket', sheet_name='ПОПСОКЕТЫ 2023')
-    except Exception as ex:
-        logger.error(ex)
-        QMessageBox.warning(self, 'Ошибка', f'Ошибка сканирования гугл таблицы\n {ex}')
+    # try:
+    #     read_table_google(spreadsheet_id=id_google_table_anikoya, shop='AniKoya', self=self)
+    #     read_table_google(spreadsheet_id=id_google_table_DP, shop='DP', self=self)
+    #     read_table_google(shop='Popsocket', sheet_name='ПОПСОКЕТЫ 2023')
+    # except Exception as ex:
+    #     logger.error(ex)
+    #     QMessageBox.warning(self, 'Ошибка', f'Ошибка сканирования гугл таблицы\n {ex}')
     records = GoogleTable.select().where(~GoogleTable.status_download)
     list_arts = []
     list_arts_popsocket = []

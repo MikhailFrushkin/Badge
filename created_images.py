@@ -4,7 +4,6 @@ import os
 import shutil
 import time
 from io import BytesIO
-from pprint import pprint
 
 import PyPDF2
 import pandas as pd

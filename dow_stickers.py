@@ -7,8 +7,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from loguru import logger
 
-from config import google_sticker_path1, google_sticker_path2, \
-    google_sticker_path3, sticker_path_all
+from config import sticker_path_all
 from utils import ProgressBar
 
 
@@ -116,20 +115,20 @@ async def download_missing_files_from_drive(folder_url: str, local_directory: st
 
 
 def main_download_stickers(self=None):
-    sticker_paths = [
-        google_sticker_path1,
-        google_sticker_path2,
-        google_sticker_path3
-    ]
-
-    for google_sticker_path in sticker_paths:
-        folder_url = f"https://drive.google.com/drive/folders/{google_sticker_path}"
-        local_directory = f"{sticker_path_all}"
-        asyncio.run(download_missing_files_from_drive(folder_url, local_directory, self))
-
-    if self:
-        self.second_statusbar.showMessage(f'Скачивание стикеров завершено', 1000)
-
+    # sticker_paths = [
+    #     google_sticker_path1,
+    #     google_sticker_path2,
+    #     google_sticker_path3
+    # ]
+    #
+    # for google_sticker_path in sticker_paths:
+    #     folder_url = f"https://drive.google.com/drive/folders/{google_sticker_path}"
+    #     local_directory = f"{sticker_path_all}"
+    #     asyncio.run(download_missing_files_from_drive(folder_url, local_directory, self))
+    #
+    # if self:
+    #     self.second_statusbar.showMessage(f'Скачивание стикеров завершено', 1000)
+    pass
 
 if __name__ == '__main__':
     main_download_stickers()
