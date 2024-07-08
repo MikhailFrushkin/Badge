@@ -1,24 +1,16 @@
-import asyncio
-import datetime
 import os
 import re
 import shutil
 import subprocess
-from pprint import pprint
 
 import cv2
 import numpy as np
-import pandas as pd
 import requests
 import tqdm
-from PyQt5.QtWidgets import QMessageBox
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
 from loguru import logger
 
-from blur import blur_size
 from config import anikoya_path, dp_path, sticker_path_all, all_badge
-from db import add_record_google_table, GoogleTable, Article, db, remove_russian_letters, contains_invalid_characters
+from db import GoogleTable, Article, remove_russian_letters, contains_invalid_characters
 from utils import rename_files, move_ready_folder, ProgressBar
 
 
@@ -552,6 +544,13 @@ def update_arts_db2():
                 Article.create_with_art(dir, os.path.join(root, dir), 'Popsocket')
                 print('\r', count, end='', flush=True)
 
+    for root, dirs, files in os.walk(rf'{all_badge}\\Bidjo'):
+        for dir in dirs:
+            if len(dir) > 10:
+                count += 1
+                Article.create_with_art(dir, os.path.join(root, dir), 'Bidjo')
+                print('\r', count, end='', flush=True)
+
     print('\nНет подложек')
     records = Article.select().where(Article.skin >> None)
     for i in records:
@@ -594,7 +593,6 @@ def update_sticker_path():
             row.sticker = os.path.join(sticker_path_all, sticker_file_path)
             # print(f'{index} найден ШК: {row.art} ', os.path.join(sticker_path_all, sticker_file_path))
             row.save()
-
 
 
 if __name__ == '__main__':

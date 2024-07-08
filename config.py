@@ -18,6 +18,7 @@ host = env.str('host')
 all_badge = env.str('all_badge')
 anikoya_path = env.str('anikoya_path')
 dp_path = env.str('dp_path')
+Bidjo_path = env.str('Bidjo_path')
 
 sticker_path_all = env.str('sticker_path_all')
 

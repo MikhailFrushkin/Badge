@@ -498,7 +498,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.version = 10.0
+        self.version = 11.0
         self.current_dir = Path.cwd()
         self.dialogs = []
 
@@ -756,11 +756,11 @@ def run_script():
             delete_arts()
         except Exception as ex:
             logger.error(ex)
-        logger.debug('Проверка базы...')
-        try:
-            update_arts_db2()
-        except Exception as ex:
-            logger.error(ex)
+        # logger.debug('Проверка базы...')
+        # try:
+        #     update_arts_db2()
+        # except Exception as ex:
+        #     logger.error(ex)
 
         logger.warning('Обновление базы с сайта')
         try:
@@ -780,6 +780,12 @@ def run_script():
         #     loop.run_until_complete(main_parser(missing_dict))
         # except Exception as ex:
         #     logger.error(ex)
+        logger.debug('Проверка базы...')
+        update_arts_db2()
+        try:
+            update_base_postgresql()
+        except Exception as ex:
+            logger.error(ex)
 
         try:
             logger.debug('Загрузка стикеров я.диска:')
@@ -788,15 +794,8 @@ def run_script():
         except Exception as ex:
             logger.error(ex)
 
-        logger.debug('Проверка базы...')
         try:
-            update_arts_db2()
             update_sticker_path()
-        except Exception as ex:
-            logger.error(ex)
-
-        try:
-            update_base_postgresql()
         except Exception as ex:
             logger.error(ex)
 

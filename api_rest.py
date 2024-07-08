@@ -1,5 +1,4 @@
 import json
-import json
 import os
 import shutil
 
@@ -111,7 +110,7 @@ def main_download_site():
 
     logger.debug(f'Артикулов в ответе с сервера:{len(data)}')
     data = [item for item in data if item['art'].upper().strip() not in art_list]
-    data = data[:500]
+    data = data[:50]
     logger.success(f'Артикулов для загрузки:{len(data)}')
     for item in data:
         download_data = create_download_data(item)
@@ -171,7 +170,7 @@ def main_download_site():
                             elif brand == 'Дочке понравилось':
                                 out_dir = rf'{all_badge}\\DP'
                             else:
-                                logger.error(f'Неизвестный бренд {item}')
+                                out_dir = rf'{all_badge}\\{brand}'
 
                             for file in os.listdir(folder):
                                 if file.endswith('.pdf'):

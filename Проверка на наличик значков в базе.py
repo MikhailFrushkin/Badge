@@ -1,12 +1,7 @@
 import json
-from pprint import pprint
 
 import pandas as pd
-import os
 
-from loguru import logger
-
-from config import anikoya_path, dp_path
 from db import Article, remove_russian_letters
 from utils import df_in_xlsx
 
@@ -27,7 +22,7 @@ def main():
     for i, value in data.items():
         i = i.lower().strip()
         if value['subjectName'] == 'Значки' and (
-            'box1' not in i and 'znachki-' not in i and 'sumka-' not in i and 'boshki' not in i
+                'box1' not in i and 'znachki-' not in i and 'sumka-' not in i and 'boshki' not in i
         ):
             arts_list_in_file_badge.append(remove_russian_letters(i))
         elif value['subjectName'] == 'Плакаты' or value['subjectName'] == 'Постеры':
