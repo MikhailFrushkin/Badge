@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+from pprint import pprint
 
 import requests
 from loguru import logger
@@ -102,7 +103,7 @@ def copy_image(image_path, count):
 def main_download_site():
     directory = 'temp'
     result_dict_arts = []
-    categories = ['Значки', 'Попсокеты']
+    categories = ['Значки']
 
     art_list = get_arts_in_base()
 
@@ -110,7 +111,19 @@ def main_download_site():
 
     logger.debug(f'Артикулов в ответе с сервера:{len(data)}')
     data = [item for item in data if item['art'].upper().strip() not in art_list]
-    data = data[:50]
+    # data = data[:10]
+
+    with open('debug\\data_download.json', 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+    # bad_arts = []
+    # for item in data:
+    #     if 'images' not in item or not item['images']:
+    #         bad_arts.append(item)
+    #     elif item['the_same'] == 1 and len(item['images']) != 1:
+    #         bad_arts.append(item)
+    # with open('debug\\badarts.json', 'w', encoding='utf-8') as f:
+    #     json.dump(bad_arts, f, ensure_ascii=False, indent=4)
+
     logger.success(f'Артикулов для загрузки:{len(data)}')
     for item in data:
         download_data = create_download_data(item)
@@ -192,4 +205,6 @@ def main_download_site():
 
 
 if __name__ == '__main__':
-    get_products(categories=['Значки'])
+    data = get_products(categories=['Значки'])
+    with open('debug\\data.json', 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)

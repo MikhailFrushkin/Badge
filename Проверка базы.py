@@ -53,6 +53,8 @@ class Article(Model):
             if '11new' in art or '12new' in art or '13new' in art or '14new' in art or '15new' in art:
                 logger.error(art)
                 logger.error(os.path.abspath(folder))
+                # shutil.rmtree(os.path.abspath(folder))
+                return
             nums = None
             if art.endswith('56'):
                 size = 56
@@ -76,9 +78,9 @@ class Article(Model):
                 break
         else:
             logger.error(f'Не найдена подложка {art} {folder_name}')
-            # logger.error(f'Удален {art}')
-            # self.delete_instance()
-            # shutil.rmtree(self.folder)
+            logger.error(f'Удален {art}')
+            self.delete_instance()
+            shutil.rmtree(self.folder)
             return
 
         for file in file_list:

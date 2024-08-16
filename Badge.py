@@ -1,5 +1,6 @@
 import asyncio
 import os
+import shutil
 import time
 from datetime import timedelta
 from pathlib import Path
@@ -498,7 +499,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.version = 11.0
+        self.version = 12.0
         self.current_dir = Path.cwd()
         self.dialogs = []
 
@@ -618,43 +619,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def evt_btn_update(self):
         """Ивент на кнопку обновить базу"""
         try:
-            list_arts, list_arts_popsocket = [], []
-            # list_arts, list_arts_popsocket = update_db(self)
-            # mes = "\n".join(list_arts)
-            # dialog = CustomDialog()
-            # dialog.set_text(mes)
-            # dialog.exec_()
-
-            # logger.debug('Поиск новых стикеров ШК...')
-            # try:
-            #     logger.debug('Загрузка стикеров с гугл диска:')
-            #     main_download_stickers(self)
-            #     logger.success('Поиск новых стикеров на я.диске')
-            #     loop = asyncio.new_event_loop()
-            #     asyncio.set_event_loop(loop)
-            #     loop.run_until_complete(async_main_sh())
-            # except Exception as ex:
-            #     logger.error(ex)
-
-            # if list_arts_popsocket:
-            #     try:
-            #         from popsocket import scan_files
-            #         os.makedirs(f'{all_badge}\\Popsockets', exist_ok=True)
-            #         self.second_statusbar.showMessage(f"Скачивание файлов попсокетов", 10000)
-            #         self.progress_bar.setValue(0)
-            #         asyncio.run(scan_files(list_arts_popsocket))
-            #     except Exception as ex:
-            #         logger.error(ex)
-            #
-            # self.second_statusbar.showMessage(f"Скачивание файлов значков", 10000)
-            # self.progress_bar.setValue(0)
-            # try:
-            #     if list_arts:
-            #         download_new_arts_in_comp(list_arts, self)
-            #         delete_files_with_name(starting_directory=all_badge)
-            # except Exception as ex:
-            #     logger.error(ex)
-
             logger.warning('Обновление базы с сайта')
             try:
                 main_download_site()
@@ -756,11 +720,6 @@ def run_script():
             delete_arts()
         except Exception as ex:
             logger.error(ex)
-        # logger.debug('Проверка базы...')
-        # try:
-        #     update_arts_db2()
-        # except Exception as ex:
-        #     logger.error(ex)
 
         logger.warning('Обновление базы с сайта')
         try:
@@ -768,18 +727,13 @@ def run_script():
         except Exception as ex:
             logger.error(ex)
 
-        # logger.debug('Проверка базы...')
-        # try:
-        #     update_arts_db2()
-        # except Exception as ex:
-        #     logger.error(ex)
-
         # logger.success('Обновление готовых файлов')
         # try:
         #     missing_dict = missing_folders()
         #     loop.run_until_complete(main_parser(missing_dict))
         # except Exception as ex:
         #     logger.error(ex)
+
         logger.debug('Проверка базы...')
         update_arts_db2()
         try:
@@ -805,7 +759,7 @@ def run_script():
 
 if __name__ == '__main__':
     import sys
-
+    shutil.rmtree('temp', ignore_errors=True)
     db.connect()
     db.create_tables([Statistic, GoogleTable, Orders, Article])
     db.close()
