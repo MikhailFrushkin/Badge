@@ -4,30 +4,9 @@ import os
 import cv2
 import numpy as np
 from loguru import logger
-from peewee import *
 
 from config import all_badge
-
-db = SqliteDatabase('mydatabase.db')
-
-
-class Article(Model):
-    art = CharField(null=True, index=True)
-    folder = CharField(null=True)
-    nums = IntegerField(null=True)
-    nums_in_folder = IntegerField(null=True)
-    size = IntegerField(null=True)
-    skin = CharField(null=True)
-    sticker = CharField(null=True)
-    images = TextField(null=True)
-    shop = CharField(null=True)
-    created_at = DateTimeField(default=datetime.datetime.now)
-
-    class Meta:
-        database = db
-
-    def __str__(self):
-        return self.art
+from db import Article
 
 
 def blur_image(image_path, output_path, size_b):
@@ -148,7 +127,3 @@ def blur_one_folder(size, folder):
                 except Exception as ex:
                     logger.error(ex)
                     logger.error(os.path.join(folder, filename))
-
-
-if __name__ == '__main__':
-    blur_one_folder(56, r'D:\База значков\AniKoya\INITIALD-13NEW-4-56')

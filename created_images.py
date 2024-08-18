@@ -1,5 +1,4 @@
 import json
-import json
 import os
 import shutil
 import time
@@ -151,7 +150,6 @@ def combine_images_to_pdf(input_files, output_pdf, size=None, progress=None, sel
                         except Exception as ex:
                             logger.error(f"Не удалось добавить подложку для {img.art} {ex} 2й раз")
                             bad_skin_list.append(img.art)
-
             c.showPage()
         c.save()
 

@@ -13,7 +13,7 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from peewee import fn
 
 from blur import blur_image
-from config import anikoya_path, all_badge
+from config import all_badge, brands_paths
 from db import Article
 
 
@@ -60,7 +60,7 @@ def df_in_xlsx(df: pd.DataFrame, filename: str, directory: str = 'Файлы с�
 
 
 def move_ready_folder(directory: str = f'{all_badge}\\Скаченные с диска',
-                      target_directory: str = f'{anikoya_path}',
+                      target_directory: str = brands_paths['AniKoya'],
                       shop: str = 'AniKoya'):
     """Перемещение папки и блюр на значки, занесение в базу"""
     for folder in os.listdir(directory):
@@ -128,8 +128,8 @@ def enum_printers(start=None) -> list:
             if port.strip().startswith('USB'):
                 usb_printers.append(printer['pPrinterName'])
 
-    logger.info("Доступные принтеры, подключенные по USB: {}".format(", ".join(usb_printers)))
-    return usb_printers
+    # logger.info("Доступные принтеры, подключенные по USB: {}".format(", ".join(usb_printers)))
+    return []
 
 
 @dataclass
@@ -180,7 +180,6 @@ def read_excel_file(file: str) -> list:
                 keywords = ['25', '37', '44', '56', 'Popsocket', 'popsocket', 'POPSOCKET']
                 df = df[df['Артикул продавца'].str.contains('|'.join(keywords))]
             elif len(columns_list) == 2:
-                logger.debug(f'Столбцы: {df.columns}')
                 try:
                     df = df.rename(columns={df.columns[0]: 'Артикул продавца', df.columns[1]: 'Количество'})
                 except Exception as ex:

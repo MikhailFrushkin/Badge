@@ -20,11 +20,11 @@ from loguru import logger
 from peewee import fn
 
 from api_rest import main_download_site
-from config import token, machine_name, sticker_path_all
+from config import token, machine_name, sticker_path_all, path_root
 from created_images import created_good_images
 from db import Article, Statistic, update_base_postgresql, GoogleTable, Orders, db, remove_russian_letters
 from delete_bad_arts import delete_arts
-from main import update_arts_db2, update_sticker_path
+from main import update_sticker_path, update_arts_db
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
 from scan_shk import main_search_sticker
 from upload_files import upload_statistic_files_async
@@ -285,6 +285,12 @@ class QueueDialog(QWidget):
         selected_data = self.get_selected_data()
         if selected_data:
             created_good_images(selected_data, self, self.A3_flag)
+            try:
+                path = os.path.join(path_root, 'Файлы на печать')
+                print(path)
+                os.startfile(path)
+            except Exception as ex:
+                logger.error(ex)
         else:
             QMessageBox.information(self, 'Отправка на печать', 'Ни одна строка не выбрана')
 
@@ -299,6 +305,12 @@ class QueueDialog(QWidget):
                 logger.error(ex)
             try:
                 created_good_images(all_data, self, self.A3_flag)
+                try:
+                    path = os.path.join(path_root, 'Файлы на печать')
+                    print(path)
+                    os.startfile(path)
+                except Exception as ex:
+                    logger.error(ex)
             except Exception as ex:
                 logger.error(ex)
         else:
@@ -357,9 +369,8 @@ class Ui_MainWindow(object):
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout.addWidget(self.pushButton)
 
-        # Кнопка обновления
-        if machine_name != 'Mikhail':
-            self.pushButton.setEnabled(False)
+
+
 
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
         font = QtGui.QFont()
@@ -449,6 +460,13 @@ class Ui_MainWindow(object):
         self.pushButton_9.setObjectName("pushButton_9")
         self.gridLayout_2.addWidget(self.pushButton_9, 1, 2, 1, 1)
         self.verticalLayout.addLayout(self.gridLayout_2)
+
+        # Кнопка обновления
+        if machine_name != 'Mikhail':
+            self.pushButton.setEnabled(False)
+            self.pushButton_5.setEnabled(False)
+            self.pushButton_6.setEnabled(False)
+            self.pushButton_4.setEnabled(False)
 
         self.listView = QtWidgets.QListView(self.centralwidget)
         self.listView.setObjectName("listView")
@@ -626,7 +644,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 logger.error(ex)
             try:
                 logger.warning('Проверка базы')
-                update_arts_db2()
+                update_arts_db()
                 update_sticker_path()
             except Exception as ex:
                 logger.error(ex)
@@ -735,7 +753,7 @@ def run_script():
         #     logger.error(ex)
 
         logger.debug('Проверка базы...')
-        update_arts_db2()
+        update_arts_db()
         try:
             update_base_postgresql()
         except Exception as ex:
@@ -754,11 +772,12 @@ def run_script():
             logger.error(ex)
 
         logger.success('Обновление завершено')
-        time.sleep(90 * 60)
+        time.sleep(120 * 60)
 
 
 if __name__ == '__main__':
     import sys
+
     shutil.rmtree('temp', ignore_errors=True)
     db.connect()
     db.create_tables([Statistic, GoogleTable, Orders, Article])

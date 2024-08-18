@@ -6,7 +6,7 @@ from datetime import datetime
 from loguru import logger
 from peewee import *
 
-from config import sticker_path_all, dp_path, anikoya_path, all_badge, Bidjo_path
+from config import sticker_path_all, brands_paths, bad_list, all_badge
 
 db = SqliteDatabase('mydatabase.db')
 
@@ -43,6 +43,8 @@ class Article(Model):
     def create_with_art(cls, art, folder, shop):
         art = remove_russian_letters(art).lower()
         existing_article = cls.get_or_none(art=art)
+        if '(' in art or ')' in art:
+            shutil.rmtree(os.path.abspath(folder))
         if existing_article:
             return existing_article
         try:
@@ -53,11 +55,13 @@ class Article(Model):
             if '11new' in art or '12new' in art or '13new' in art or '14new' in art or '15new' in art:
                 logger.error(art)
                 logger.error(os.path.abspath(folder))
-                # shutil.rmtree(os.path.abspath(folder))
+                shutil.rmtree(os.path.abspath(folder))
                 return
             nums = None
             if art.endswith('56'):
                 size = 56
+            elif art.endswith('25'):
+                size = 25
             elif 'Popsockets' in folder:
                 size = 44
             else:
@@ -100,8 +104,6 @@ class Article(Model):
 
 
 def update_arts_db(path, shop):
-    if not Article.table_exists():
-        Article.create_table(safe=True)
     global count
     if os.path.exists(path):
         for root, dirs, files in os.walk(path):
@@ -109,7 +111,8 @@ def update_arts_db(path, shop):
                 if dir not in ignore_dirs:
                     count += 1
                     Article.create_with_art(dir, os.path.join(root, dir), shop)
-                    print('\r', count, end='', flush=True)
+                    # print('\r', count, end='', flush=True)
+                    print(dir)
 
 
 def check_bd():
@@ -127,15 +130,6 @@ def check_bd():
     logger.debug('НЕ соответствует число картинок с базой')
     records = Article.select().where(Article.nums_in_folder != Article.nums)
     for i in records:
-        # logger.info(os.path.abspath(i.folder))
-        # if os.path.exists(os.path.abspath(i.folder)):
-        #     try:
-        #         subprocess.Popen(['explorer', os.path.abspath(i.folder)], shell=True)
-        #     except Exception as e:
-        #         print(f"Не удалось открыть папку: {e}")
-        # else:
-        #     print("Указанной папки не существует")
-
         if i.art.lower() not in bad_list:
             bad_list_new.append(i.art)
             logger.error(f'Удален {i.art}')
@@ -165,43 +159,15 @@ if __name__ == '__main__':
     )
     try:
         count = 0
-        ignore_dirs = ['AniKoya', 'DP', 'Bidjo', 'Popsockets', 'Значки ШК', 'сделать']
-        bad_list = ['amazingmauricenabor-12new-6-44', 'che_guevara-44-6', 'harrypotternabor-12new-6-44',
-                    'rodi_deadplate-13new-2-44', 'sk-13new-1-44', 'spongebob-13new-6-44', 'tatianakosach-13new-44-1',
-                    'tatianakosach-13new-44-6', 'toya_kaito-13new-2-44', 'velvet_venir-13new-2-44', 'yanderirui-13new-44-1',
-                    'yanderirui-13new-44-6', 'zavdv-nabor-13new-6-44', 'zvezdnoenebo-13new-44-1', 'aespanabor-7new-8-37',
-                    'allforthegamenabor-7new-10-37', 'allforthegamenabor-7new-10-56', 'allforthegamenabor-7new-6-37',
-                    'allforthegamenabor-7new-6-56', 'bsd.dadzai_azushi-13new-6-37', 'bsd.dadzai_azushi-13new-6-56',
-                    'coldheartnabor-7new-10-37', 'coldheartnabor-7new-10-56', 'coldheartnabor-7new-6-37',
-                    'coldheartnabor-7new-6-56', 'doki_ny-13new-6-37', 'doki_ny-13new-6-56', 'glaza2-13new-1-37',
-                    'glaza2-13new-1-56', 'hask2-13new-2-56', 'initiald-13new-4-37', 'initiald-13new-4-56',
-                    'jojonabor-7new-10-37', 'jojonabor-7new-10-56', 'jojonabor-7new-6-37', 'jojonabor-7new-6-56',
-                    'justinbieber-11new-6-37', 'justinbieber-11new-6-56', 'kamilla_valieva-13new-6-37',
-                    'kamilla_valieva-13new-6-56', 'kang_yuna-13new-6-37', 'kang_yuna-13new-6-56',
-                    'kimkardashian-11new-6-37', 'kimkardashian-11new-6-56', 'kittyisnotacat-13new-6-37',
-                    'kittyisnotacat-13new-6-56', 'maiorgromnabor-7new-10-37', 'maiorgromnabor-7new-10-56',
-                    'maiorgromnabor-7new-6-37', 'maiorgromnabor-7new-6-56', 'minecraft-nabor-7new-10-37',
-                    'minecraft-nabor-7new-10-56', 'minecraft-nabor-7new-6-37', 'minecraft-nabor-7new-6-56',
-                    'newjeans8-13new-6-37', 'newjeans8-13new-6-56', 'nydragon_simvol-13new-6-37',
-                    'nydragon_simvol-13new-6-56', 'omori_hero-13new-6-37', 'omori_hero-13new-6-56',
-                    'papini.dochki-13new-6-37', 'papini.dochki-13new-6-56', 'pokrov3-13new-6-37', 'pokrov3-13new-6-56',
-                    'pomni-13new-8-37', 'pomni-13new-8-56', 'pyro_genshini-13new-6-37', 'pyro_genshini-13new-6-56',
-                    'rojdestwo-13new-6-37', 'rojdestwo-13new-6-56', 'sekaiproject-11new-6-37', 'sekaiproject-11new-6-56',
-                    'seohaebom-13new-6-37', 'seohaebom-13new-6-56', 'sindromvosmiklassnika-6-37',
-                    'sindromvosmiklassnika-6-56', 'socialpath_sk-13new-6-56', 'spidermannabor-7new-10-37',
-                    'spidermannabor-7new-10-56', 'taylorswift-11new-6-37', 'taylorswift-11new-6-56',
-                    'tomorrowxtogether-8new-10-37', 'tomorrowxtogether-8new-10-56', 'tomorrowxtogether-8new-6-37',
-                    'tomorrowxtogether-8new-6-56', 'vipysknik_starsheigroup-11new-6-37',
-                    'vipysknik_starsheigroup-11new-6-56', 'vinil.skrech-13new-6-37', 'vinil.skrech-13new-6-56']
-
+        ignore_dirs = ['AniKoya', 'DP', 'Bidjo', 'Popsockets', 'Значки ШК', 'Дочке понравилось', 'ПостерДом']
         sticker_dict = {i.replace('.pdf', '').strip().lower(): os.path.abspath(os.path.join(sticker_path_all, i))
                         for i in os.listdir(sticker_path_all)}
 
         clear_bd()
-
-        update_arts_db(dp_path, 'DP')
-        update_arts_db(anikoya_path, 'AniKoya')
-        update_arts_db(Bidjo_path, 'Bidjo')
+        if not Article.table_exists():
+            Article.create_table(safe=True)
+        for brand, path_brand in brands_paths.items():
+            update_arts_db(path_brand, brand)
         update_arts_db(rf'{all_badge}\\Popsockets', 'Popsocket')
 
         bad_list_new = check_bd()

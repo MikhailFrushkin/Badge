@@ -109,7 +109,6 @@ async def process_arts_dict(session, token, arts_dict, local_base_path):
 
 async def scan_files(public_urls):
     pop_path = f'{all_badge}\\Popsockets'
-    os.makedirs(pop_path, exist_ok=True)
     for public_url in public_urls:
         try:
             async with aiohttp.ClientSession() as session:
