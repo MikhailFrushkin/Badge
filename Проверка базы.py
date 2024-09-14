@@ -168,7 +168,6 @@ if __name__ == '__main__':
             Article.create_table(safe=True)
         for brand, path_brand in brands_paths.items():
             update_arts_db(path_brand, brand)
-        update_arts_db(rf'{all_badge}\\Popsockets', 'Popsocket')
 
         bad_list_new = check_bd()
         if bad_list_new:

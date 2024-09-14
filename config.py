@@ -30,7 +30,7 @@ brands_paths = {
     'Дочке понравилось': f'{all_badge}\\Дочке понравилось',
     'POSUTA': f'{all_badge}\\POSUTA',
     'ПостерДом': f'{all_badge}\\ПостерДом',
-    'Popsocket': f'{all_badge}\\Popsocket',
+    'Popsocket': f'{all_badge}\\Popsockets',
     'Bidjo': f'{all_badge}\\Bidjo',
 }
 for brand, brand_dir in brands_paths.items():

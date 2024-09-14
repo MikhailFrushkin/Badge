@@ -462,7 +462,7 @@ class Ui_MainWindow(object):
         self.verticalLayout.addLayout(self.gridLayout_2)
 
         # Кнопка обновления
-        if machine_name != 'Mikhail':
+        if machine_name != 'ADMIN':
             self.pushButton.setEnabled(False)
             self.pushButton_5.setEnabled(False)
             self.pushButton_6.setEnabled(False)
@@ -591,13 +591,26 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def evt_btn_create_files(self, flag_A3):
         """Ивент на кнопку Создать файлы"""
         filename = self.lineEdit.text()
+        replace_dict = {}
+        # Работа с артикулами для замены
+        try:
+            if os.path.exists("Замена артикулов.xlsx"):
+                df = pd.read_excel("Замена артикулов.xlsx")
+                for index, row in df.iterrows():
+                    replace_dict[row["Артикул"].strip().lower()] = row["Замена"].strip().upper()
+        except Exception as ex:
+            logger.error(ex)
         if filename:
             try:
                 counts_art = read_excel_file(filename)
                 for item in counts_art:
                     status = None
                     try:
-                        art = remove_russian_letters(item.art.upper())
+                        if item.art in replace_dict:
+                            art = replace_dict[item.art]
+                        else:
+                            art = remove_russian_letters(item.art.upper())
+                        print(art)
                         status = Article.get_or_none(fn.UPPER(Article.art) == art)
                     except Exception as ex:
                         logger.error(ex)
@@ -794,7 +807,7 @@ if __name__ == '__main__':
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     w = MainWindow()
     w.show()
-    if machine_name != 'Mikhail':
+    if machine_name != 'ADMIN':
         script_thread = Thread(target=run_script)
         script_thread.daemon = True
         script_thread.start()

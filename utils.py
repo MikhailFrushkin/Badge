@@ -148,6 +148,8 @@ def read_excel_file(file: str) -> list:
         shutil.rmtree('Файлы связанные с заказом', ignore_errors=True)
     except:
         pass
+
+
     if file.endswith('.csv'):
         try:
             df = pd.read_csv(file, delimiter=';')
