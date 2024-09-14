@@ -109,8 +109,8 @@ def main_download_site():
     data = [item for item in data if item['art'].upper().strip() not in art_list]
     # data = data[:10]
 
-    with open('debug\\data_download.json', 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+    # with open('debug\\data_download.json', 'w', encoding='utf-8') as f:
+    #     json.dump(data, f, ensure_ascii=False, indent=4)
     # bad_arts = []
     # for item in data:
     #     if 'images' not in item or not item['images']:
@@ -127,8 +127,8 @@ def main_download_site():
             result_dict_arts.append(download_data)
 
     count_task = len(result_dict_arts)
-    with open('data.json', 'w', encoding='utf-8') as f:
-        json.dump(result_dict_arts, f, ensure_ascii=False, indent=4)
+    # with open('data.json', 'w', encoding='utf-8') as f:
+    #     json.dump(result_dict_arts, f, ensure_ascii=False, indent=4)
 
     for index, item in enumerate(result_dict_arts, start=1):
         art = item['art']

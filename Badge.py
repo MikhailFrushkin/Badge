@@ -322,11 +322,12 @@ class QueueDialog(QWidget):
         data = []
         for row in selected_rows:
             name = ''
+            origin_art = self.tableWidget.item(row.row(), 0).text()
             art = self.tableWidget.item(row.row(), 1).text()
             count = self.tableWidget.item(row.row(), 2).text()
             status = self.tableWidget.item(row.row(), 3).text()
             if status == '✅':
-                data.append(FilesOnPrint(name=name, art=art, count=int(count), status='✅'))
+                data.append(FilesOnPrint(name=name, origin_art=origin_art, art=art, count=int(count), status='✅'))
         return data
 
     def get_all_data(self):
@@ -334,11 +335,12 @@ class QueueDialog(QWidget):
         for row in range(self.tableWidget.rowCount()):
             try:
                 name = ''
+                origin_art = self.tableWidget.item(row, 0).text()
                 art = self.tableWidget.item(row, 1).text()
                 count = self.tableWidget.item(row, 2).text()
                 status = self.tableWidget.item(row, 3).text()
                 if status == '✅':
-                    data.append(FilesOnPrint(name=name, art=art, count=int(count), status='✅'))
+                    data.append(FilesOnPrint(name=name, art=art, origin_art=origin_art, count=int(count), status='✅'))
             except Exception as ex:
                 logger.error(ex)
         return data
@@ -463,8 +465,8 @@ class Ui_MainWindow(object):
         if machine_name != 'ADMIN':
             self.pushButton.setEnabled(False)
             self.pushButton_5.setEnabled(False)
-            self.pushButton_6.setEnabled(False)
             self.pushButton_4.setEnabled(False)
+        self.pushButton_6.setEnabled(True)
 
         self.listView = QtWidgets.QListView(self.centralwidget)
         self.listView.setObjectName("listView")
@@ -504,7 +506,7 @@ class Ui_MainWindow(object):
         self.pushButton.setText(_translate("MainWindow", "Обновить базу"))
         self.pushButton_2.setText(_translate("MainWindow", "Статистика"))
         self.pushButton_3.setText(_translate("MainWindow", "Загрузить файл"))
-        self.pushButton_6.setText(_translate("MainWindow", "Печать стикеров"))
+        self.pushButton_6.setText(_translate("MainWindow", "Создать стикеры"))
         self.pushButton_5.setText(_translate("MainWindow", "Печать обложек"))
         self.pushButton_4.setText(_translate("MainWindow", "Печать значков"))
         self.pushButton_8.setText(_translate("MainWindow", "Создать файлы"))
@@ -580,7 +582,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             try:
                 self.lineEdit.setText(file_name)
                 counts_art = read_excel_file(self.lineEdit.text())
-                values = [f"{item.art}: {item.count} шт." for item in counts_art]
+                values = [f"{item.origin_art}: {item.count} шт." for item in counts_art]
                 self.update_list_view(values)
             except Exception as ex:
                 logger.error(f'ошибка чтения xlsx {ex}')
@@ -660,11 +662,54 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def evt_btn_print_stickers(self):
         """Ивент на кнопку напечатать стикеры"""
-        logger.info(self.lineEdit.text())
         if self.lineEdit.text() != '':
-            button_names = enum_printers()
-            dialog = Dialog(button_names=button_names)
-            dialog.exec_()
+            import PyPDF2
+            # button_names = enum_printers()
+            # dialog = Dialog(button_names=button_names)
+            # dialog.exec_()
+            def find_files_in_directory(directory, file_list):
+                found_files = []
+                not_found_files = []
+                sticker_dict = {}
+                for file in os.listdir(directory):
+                    exp = os.path.splitext(file)[-1]
+                    file_name = file.replace(f'{exp}', '').lower().strip().replace(' ', '')
+                    sticker_dict[file_name] = os.path.join(directory, file)
+                for art in file_list:
+                    file_name = art.origin_art.lower().strip().replace(' ', '')
+                    if file_name in sticker_dict:
+                        found_files.append(sticker_dict[file_name])
+                    else:
+                        not_found_files.append(art.origin_art)
+                return found_files, not_found_files
+
+            def merge_pdfs_stickers(arts_paths, output_path):
+                pdf_writer = PyPDF2.PdfWriter()
+                for index, input_path in enumerate(arts_paths, start=1):
+                    try:
+                        with open(input_path, 'rb') as pdf_file:
+                            pdf_reader = PyPDF2.PdfReader(pdf_file)
+                            for page in pdf_reader.pages:
+                                pdf_writer.add_page(page)
+                    except Exception:
+                        pass
+                current_output_path = f"{output_path}.pdf"
+                with open(current_output_path, 'wb') as output_file:
+                    pdf_writer.write(output_file)
+                PyPDF2.PdfWriter()
+
+            def create_order_shk(arts, name_doc=""):
+                found_files_stickers, not_found_stickers = find_files_in_directory(sticker_path_all,
+                                                                                   arts)
+                if found_files_stickers:
+                    merge_pdfs_stickers(found_files_stickers, f'Файлы на печать\\!ШК {name_doc}')
+                    logger.success(f'{name_doc} ШК сохранены!')
+                else:
+                    logger.error(f'{name_doc} ШК не найдены!')
+                return not_found_stickers
+
+            arts = read_excel_file(self.lineEdit.text())
+            create_order_shk(arts, "Все ")
         else:
             QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
 
