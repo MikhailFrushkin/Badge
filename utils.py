@@ -2,7 +2,6 @@ import os
 import re
 import shutil
 from dataclasses import dataclass
-from pprint import pprint
 from typing import Optional
 
 import pandas as pd
@@ -136,6 +135,7 @@ def enum_printers(start=None) -> list:
 class FilesOnPrint:
     art: str
     count: int
+    origin_art: Optional[str] = None
     name: Optional[str] = None
     status: str = '❌'
     # '✅'
@@ -148,7 +148,15 @@ def read_excel_file(file: str) -> list:
         shutil.rmtree('Файлы связанные с заказом', ignore_errors=True)
     except:
         pass
-
+    replace_dict = {}
+    # Работа с артикулами для замены
+    try:
+        if os.path.exists("Замена артикулов.xlsx"):
+            df = pd.read_excel("Замена артикулов.xlsx")
+            for index, row in df.iterrows():
+                replace_dict[row["Артикул"].strip().upper()] = row["Замена"].strip().upper()
+    except Exception as ex:
+        logger.error(ex)
 
     if file.endswith('.csv'):
         try:
@@ -199,12 +207,22 @@ def read_excel_file(file: str) -> list:
     try:
         for index, row in df.iterrows():
             if '-poster-' in row['Артикул продавца'].lower():
-                file_on_print = FilesOnPrint(art=replace_bad_simbols(row['Артикул продавца'].strip().lower()),
-                                             count=row['Количество'])
+                file_on_print = FilesOnPrint(
+                    art=replace_bad_simbols(row['Артикул продавца'].strip().lower()),
+                    origin_art=row['Артикул продавца'],
+                    count=row['Количество']
+                )
                 files_on_print.append(file_on_print)
             elif 'poster-' not in row['Артикул продавца'].lower():
-                file_on_print = FilesOnPrint(art=replace_bad_simbols(row['Артикул продавца'].strip().lower()),
-                                             count=row['Количество'])
+                if row['Артикул продавца'] in replace_dict:
+                    art_replace = replace_dict[row['Артикул продавца']]
+                else:
+                    art_replace = row['Артикул продавца']
+                file_on_print = FilesOnPrint(
+                    art=replace_bad_simbols(art_replace.strip().lower()),
+                    origin_art=row['Артикул продавца'],
+                    count=row['Количество']
+                )
                 files_on_print.append(file_on_print)
     except Exception as ex:
         logger.error(ex)
@@ -245,8 +263,4 @@ if __name__ == '__main__':
     # Фильтруем строки по содержанию подстрок
     keywords = ['25', '37', '44', '56', 'Popsocket', 'popsocket', 'POPSOCKET']
     df = df[df['Артикул продавца'].str.contains('|'.join(keywords))]
-
-    print(df)
-
-
 

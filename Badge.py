@@ -63,7 +63,7 @@ class GroupedRecordsDialog(QDialog):
         data = []
         row = 0
         for group in grouped_records:
-            art_item = QTableWidgetItem(group.art)
+            art_item = QTableWidgetItem(group.origin_art)
             count_item = QTableWidgetItem(str(group.count))
             sum_of_nums_item = QTableWidgetItem(str(group.sum_of_nums))
             self.table_widget.insertRow(row)
@@ -232,10 +232,10 @@ class QueueDialog(QWidget):
         layout.addWidget(self.create_pdf_checkbox)
 
         self.tableWidget = QTableWidget(self)
-        self.tableWidget.setColumnCount(3)  # Добавление колонки 3 колонок
+        self.tableWidget.setColumnCount(4)  # Добавление колонки 3 колонок
         self.tableWidget.setMinimumSize(800, 300)
         self.tableWidget.setHorizontalHeaderLabels(
-            ["Артикул", "Количество", "Найден"])  # заголовки
+            ["Артикул", "Замена", "Количество", "Найден"])  # заголовки
 
         font = self.tableWidget.font()
         font.setPointSize(14)
@@ -244,12 +244,14 @@ class QueueDialog(QWidget):
         self.tableWidget.setRowCount(len(self.files_on_print))
 
         for row, file_on_print in enumerate(self.files_on_print):
+            origin_art_item = QTableWidgetItem(file_on_print.origin_art)
             art_item = QTableWidgetItem(file_on_print.art)
             count_item = QTableWidgetItem(str(file_on_print.count))
             status_item = QTableWidgetItem(str(file_on_print.status))
-            self.tableWidget.setItem(row, 0, art_item)
-            self.tableWidget.setItem(row, 1, count_item)
-            self.tableWidget.setItem(row, 2, status_item)
+            self.tableWidget.setItem(row, 0, origin_art_item)
+            self.tableWidget.setItem(row, 1, art_item)
+            self.tableWidget.setItem(row, 2, count_item)
+            self.tableWidget.setItem(row, 3, status_item)
 
         layout.addWidget(self.tableWidget)
 
@@ -272,6 +274,7 @@ class QueueDialog(QWidget):
         header.setSectionResizeMode(0, QHeaderView.Stretch)
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
 
         self.progress_label = QLabel("Прогресс:", self)
         self.progress_label.setFont(font)
@@ -287,7 +290,6 @@ class QueueDialog(QWidget):
             created_good_images(selected_data, self, self.A3_flag)
             try:
                 path = os.path.join(path_root, 'Файлы на печать')
-                print(path)
                 os.startfile(path)
             except Exception as ex:
                 logger.error(ex)
@@ -307,7 +309,6 @@ class QueueDialog(QWidget):
                 created_good_images(all_data, self, self.A3_flag)
                 try:
                     path = os.path.join(path_root, 'Файлы на печать')
-                    print(path)
                     os.startfile(path)
                 except Exception as ex:
                     logger.error(ex)
@@ -321,9 +322,9 @@ class QueueDialog(QWidget):
         data = []
         for row in selected_rows:
             name = ''
-            art = self.tableWidget.item(row.row(), 0).text()
-            count = self.tableWidget.item(row.row(), 1).text()
-            status = self.tableWidget.item(row.row(), 2).text()
+            art = self.tableWidget.item(row.row(), 1).text()
+            count = self.tableWidget.item(row.row(), 2).text()
+            status = self.tableWidget.item(row.row(), 3).text()
             if status == '✅':
                 data.append(FilesOnPrint(name=name, art=art, count=int(count), status='✅'))
         return data
@@ -333,9 +334,9 @@ class QueueDialog(QWidget):
         for row in range(self.tableWidget.rowCount()):
             try:
                 name = ''
-                art = self.tableWidget.item(row, 0).text()
-                count = self.tableWidget.item(row, 1).text()
-                status = self.tableWidget.item(row, 2).text()
+                art = self.tableWidget.item(row, 1).text()
+                count = self.tableWidget.item(row, 2).text()
+                status = self.tableWidget.item(row, 3).text()
                 if status == '✅':
                     data.append(FilesOnPrint(name=name, art=art, count=int(count), status='✅'))
             except Exception as ex:
@@ -368,9 +369,6 @@ class Ui_MainWindow(object):
         self.pushButton.setFont(font)
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout.addWidget(self.pushButton)
-
-
-
 
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
         font = QtGui.QFont()
@@ -517,7 +515,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.version = 12.0
+        self.version = 13.0
         self.current_dir = Path.cwd()
         self.dialogs = []
 
@@ -591,26 +589,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def evt_btn_create_files(self, flag_A3):
         """Ивент на кнопку Создать файлы"""
         filename = self.lineEdit.text()
-        replace_dict = {}
-        # Работа с артикулами для замены
-        try:
-            if os.path.exists("Замена артикулов.xlsx"):
-                df = pd.read_excel("Замена артикулов.xlsx")
-                for index, row in df.iterrows():
-                    replace_dict[row["Артикул"].strip().lower()] = row["Замена"].strip().upper()
-        except Exception as ex:
-            logger.error(ex)
+
         if filename:
             try:
                 counts_art = read_excel_file(filename)
                 for item in counts_art:
                     status = None
                     try:
-                        if item.art in replace_dict:
-                            art = replace_dict[item.art]
-                        else:
-                            art = remove_russian_letters(item.art.upper())
-                        print(art)
+                        art = remove_russian_letters(item.art.upper())
                         status = Article.get_or_none(fn.UPPER(Article.art) == art)
                     except Exception as ex:
                         logger.error(ex)

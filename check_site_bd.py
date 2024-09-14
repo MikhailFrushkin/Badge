@@ -100,7 +100,6 @@ if __name__ == '__main__':
     bad_list = []
     bad_list_art = []
     data = get_products(categories)
-    print(len(data))
     # with open(f'all_arts.json', 'w', encoding='utf-8') as file:
     #     json.dump(data, file, indent=4, ensure_ascii=False)
     # print(len(data))
@@ -144,7 +143,6 @@ if __name__ == '__main__':
     # Проверка на наличик стикеров и других файлов
     with open(f'scan.json', 'r', encoding='utf-8') as file:
         data = json.load(file)
-    print(len(data))
     # for key, value in data.items():
     #     skin = value.get('skin', None)
     #     images = value.get('images', None)

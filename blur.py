@@ -83,7 +83,6 @@ def main(file, size_b):
         count += 1
         list_db.append(article.art)
         folder_name = article.folder
-        print(count)
         for index, filename in enumerate(os.listdir(folder_name), start=1):
             if (filename.startswith('!') or filename[0].strip().isdigit()) \
                     and os.path.isfile(os.path.join(folder_name, filename)):
