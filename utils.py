@@ -12,7 +12,7 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from peewee import fn
 
 from blur import blur_image
-from config import all_badge, brands_paths
+from config import all_badge, brands_paths, replace_dict
 from db import Article
 
 
@@ -148,15 +148,6 @@ def read_excel_file(file: str) -> list:
         shutil.rmtree('Файлы связанные с заказом', ignore_errors=True)
     except:
         pass
-    replace_dict = {}
-    # Работа с артикулами для замены
-    try:
-        if os.path.exists("Замена артикулов.xlsx"):
-            df = pd.read_excel("Замена артикулов.xlsx")
-            for index, row in df.iterrows():
-                replace_dict[row["Артикул"].strip().upper()] = row["Замена"].strip().upper()
-    except Exception as ex:
-        logger.error(ex)
 
     if file.endswith('.csv'):
         try:

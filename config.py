@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import pandas as pd
 from environs import Env
 from loguru import logger
 
@@ -24,6 +25,15 @@ sticker_path_all = env.str('sticker_path_all')
 acrobat_path = env.str('acrobat_path')
 
 path_base_y_disc = '/Значки ANIKOYA  02 23'
+replace_dict = {}
+# Работа с артикулами для замены
+try:
+    if os.path.exists("Замена артикулов.xlsx"):
+        df = pd.read_excel("Замена артикулов.xlsx")
+        for index, row in df.iterrows():
+            replace_dict[row["Артикул"].strip().upper()] = row["Замена"].strip().upper()
+except Exception as ex:
+    logger.error(ex)
 
 brands_paths = {
     'AniKoya': f'{all_badge}\\AniKoya',

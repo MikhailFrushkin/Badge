@@ -19,7 +19,7 @@ async def traverse_yandex_disk(session, folder_path, offset=0):
             data = await response.json()
             tasks = []
             for item in data["_embedded"]["items"]:
-                if item["type"] == "file" and item["name"].endswith(".pdf") and item['size'] < 30000:
+                if item["type"] == "file" and item["name"].endswith(".pdf") and item['size'] < 40000:
                     result_dict[item["name"].lower().strip()] = item["file"]
                 elif item["type"] == "dir":
                     task = traverse_yandex_disk(session, item["path"])  # Рекурсивный вызов
@@ -33,7 +33,8 @@ async def traverse_yandex_disk(session, folder_path, offset=0):
                 await traverse_yandex_disk(session, folder_path, offset=offset)
 
     except Exception as ex:
-        logger.error(f'Ошибка при поиске папки {folder_path} {ex}')
+        pass
+        # logger.error(f'Ошибка при поиске папки {folder_path} {ex}')
 
 
 async def main_search(folder_path):

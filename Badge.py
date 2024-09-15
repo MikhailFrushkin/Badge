@@ -798,10 +798,10 @@ def run_script():
 
         logger.debug('Проверка базы...')
         update_arts_db()
-        try:
-            update_base_postgresql()
-        except Exception as ex:
-            logger.error(ex)
+        # try:
+        #     update_base_postgresql()
+        # except Exception as ex:
+        #     logger.error(ex)
 
         try:
             logger.debug('Загрузка стикеров я.диска:')

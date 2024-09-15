@@ -246,6 +246,7 @@ class Article(Model):
                 size = 37
         article = cls.create(art=art, folder=os.path.abspath(folder), nums=nums, size=size, shop=shop)
         article.fill_additional_columns()
+        logger.success(f"Успешно создан {article.art}")
         return article
 
     def find_skin_filename(self, folder_name):

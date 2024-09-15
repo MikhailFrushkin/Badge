@@ -8,7 +8,7 @@ from loguru import logger
 
 from blur import blur_image
 from config import all_badge, sticker_path_all
-from db import Article
+from db import Article, remove_russian_letters
 
 headers = {'Content-Type': 'application/json'}
 # domain = 'http://127.0.0.1:8000/api_rest'
@@ -97,7 +97,6 @@ def copy_image(image_path, count):
 
 
 def main_download_site():
-    directory = 'temp'
     result_dict_arts = []
     categories = ['Значки']
 
@@ -106,7 +105,7 @@ def main_download_site():
     data = get_products(categories)
 
     logger.debug(f'Артикулов в ответе с сервера:{len(data)}')
-    data = [item for item in data if item['art'].upper().strip() not in art_list]
+    data = [item for item in data if remove_russian_letters(item['art'].upper().strip()) not in art_list]
     # data = data[:10]
 
     # with open('debug\\data_download.json', 'w', encoding='utf-8') as f:
