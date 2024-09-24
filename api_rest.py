@@ -82,12 +82,12 @@ def blur_images(folder, size):
                 and os.path.isfile(os.path.join(folder, filename)):
             if os.path.exists(os.path.join(folder, filename)):
                 try:
-                    blur_image(image_path=os.path.join(folder, filename),
-                               output_path=os.path.join(folder, filename), size_b=size)
+                    flag = blur_image(image_path=os.path.join(folder, filename),
+                                      output_path=os.path.join(folder, filename), size_b=size)
                 except Exception as ex:
                     logger.error(ex)
                     logger.error(os.path.join(folder, filename))
-
+    return flag
 
 def copy_image(image_path, count):
     folder_art = os.path.dirname(image_path)
@@ -106,7 +106,7 @@ def main_download_site():
 
     logger.debug(f'Артикулов в ответе с сервера:{len(data)}')
     data = [item for item in data if remove_russian_letters(item['art'].upper().strip()) not in art_list]
-    # data = data[:10]
+    data = data[:10]
 
     # with open('debug\\data_download.json', 'w', encoding='utf-8') as f:
     #     json.dump(data, f, ensure_ascii=False, indent=4)
@@ -133,6 +133,7 @@ def main_download_site():
         art = item['art']
         try:
             if art not in art_list:
+                blur_flag = False
                 brand = item['brand']
                 category = item['category']
                 size = item['size']
@@ -149,7 +150,7 @@ def main_download_site():
 
                     try:
                         size = int(size)
-                        blur_images(folder, size)
+                        blur_flag = blur_images(folder, size)
                     except Exception as ex:
                         logger.error(ex)
 
@@ -177,9 +178,10 @@ def main_download_site():
                         logger.success(f'{index}/{count_task} - {item["art"]}')
                     except Exception as ex:
                         logger.error(ex)
-
-                    Article.create_with_art(art, folder, brand)
-
+                    if blur_flag:
+                        Article.create_with_art(art, folder, brand)
+                    else:
+                        shutil.rmtree(folder, ignore_errors=True)
                 except Exception as ex:
                     logger.error(ex)
             else:
