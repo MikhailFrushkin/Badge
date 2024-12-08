@@ -1,28 +1,46 @@
 import os
+import sys
 from pathlib import Path
 
 import pandas as pd
+from dotenv import load_dotenv
 from environs import Env
 from loguru import logger
 
+
+def get_base_dir():
+    """Возвращает текущую директорию, где расположен исполняемый файл или скрипт, на уровень выше."""
+    if getattr(sys, 'frozen', False):
+        # Если приложение собрано в exe
+        return os.path.dirname(sys.executable)
+    else:
+        # Если приложение запущено как скрипт .py
+        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+BASE_DIR = get_base_dir()
+
 path_root = Path(__file__).resolve().parent
 
-env = Env()
-env.read_env()
+load_dotenv('1.env')
 
-token = env.str('token')
+token = os.getenv('token')
+try:
+    token2 = os.getenv('token2')
+except Exception as ex:
+    logger.error(ex)
 
-machine_name = env.str('machine_name')
-dbname = env.str('dbname')
-user = env.str('user')
-password = env.str('password')
-host = env.str('host')
+machine_name = os.getenv('machine_name')
+dbname = os.getenv('dbname')
+user = os.getenv('user')
+password = os.getenv('password')
+host = os.getenv('host')
 
-all_badge = env.str('all_badge')
+all_badge = os.getenv('all_badge')
 
-sticker_path_all = env.str('sticker_path_all')
+sticker_path_all = os.getenv('sticker_path_all')
 
-acrobat_path = env.str('acrobat_path')
+acrobat_path = os.getenv('acrobat_path')
 
 path_base_y_disc = '/Значки ANIKOYA  02 23'
 replace_dict = {}
@@ -75,4 +93,4 @@ bad_list = ['amazingmauricenabor-12new-6-44', 'che_guevara-44-6', 'harrypotterna
             'spidermannabor-7new-10-56', 'taylorswift-11new-6-37', 'taylorswift-11new-6-56',
             'tomorrowxtogether-8new-10-37', 'tomorrowxtogether-8new-10-56', 'tomorrowxtogether-8new-6-37',
             'tomorrowxtogether-8new-6-56', 'vipysknik_starsheigroup-11new-6-37',
-        'vipysknik_starsheigroup-11new-6-56', 'vinil.skrech-13new-6-37', 'vinil.skrech-13new-6-56']
+            'vipysknik_starsheigroup-11new-6-56', 'vinil.skrech-13new-6-37', 'vinil.skrech-13new-6-56']

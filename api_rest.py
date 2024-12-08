@@ -80,13 +80,12 @@ def blur_images(folder, size):
     for index, filename in enumerate(os.listdir(folder), start=1):
         if (filename.split('.')[0].startswith('!') or filename.split('.')[0].strip().isdigit()) \
                 and os.path.isfile(os.path.join(folder, filename)):
-            if os.path.exists(os.path.join(folder, filename)):
-                try:
-                    flag = blur_image(image_path=os.path.join(folder, filename),
-                                      output_path=os.path.join(folder, filename), size_b=size)
-                except Exception as ex:
-                    logger.error(ex)
-                    logger.error(os.path.join(folder, filename))
+            try:
+                flag = blur_image(image_path=os.path.join(folder, filename),
+                                  output_path=os.path.join(folder, filename), size_b=size)
+            except Exception as ex:
+                logger.error(ex)
+                logger.error(os.path.join(folder, filename))
     return flag
 
 def copy_image(image_path, count):
@@ -98,7 +97,8 @@ def copy_image(image_path, count):
 
 def main_download_site():
     result_dict_arts = []
-    categories = ['Значки']
+    # categories = ['Значки']
+    categories = ['Адвент календари', 'Значки']
 
     art_list = get_arts_in_base()
 
@@ -106,7 +106,7 @@ def main_download_site():
 
     logger.debug(f'Артикулов в ответе с сервера:{len(data)}')
     data = [item for item in data if remove_russian_letters(item['art'].upper().strip()) not in art_list]
-    data = data[:10]
+    # data = data[:2]
 
     # with open('debug\\data_download.json', 'w', encoding='utf-8') as f:
     #     json.dump(data, f, ensure_ascii=False, indent=4)
@@ -142,6 +142,7 @@ def main_download_site():
                 if category == 'Значки' and art.split('-')[-1].isdigit() and int(art.split('-')[-2]) != count:
                     logger.error(f'Не совпадает кол-во {art}')
                     continue
+                logger.debug(folder)
                 try:
                     os.makedirs(folder, exist_ok=True)
                     for i in item['url_data']:
@@ -149,7 +150,11 @@ def main_download_site():
                         download_file(destination_path, i['file'])
 
                     try:
-                        size = int(size)
+                        if category == "Значки":
+                            size = int(size)
+                        else:
+                            size = 37
+                        logger.debug(size)
                         blur_flag = blur_images(folder, size)
                     except Exception as ex:
                         logger.error(ex)
@@ -178,6 +183,7 @@ def main_download_site():
                         logger.success(f'{index}/{count_task} - {item["art"]}')
                     except Exception as ex:
                         logger.error(ex)
+                    logger.warning(blur_flag)
                     if blur_flag:
                         Article.create_with_art(art, folder, brand)
                     else:

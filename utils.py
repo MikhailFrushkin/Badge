@@ -197,21 +197,22 @@ def read_excel_file(file: str) -> list:
     files_on_print = []
     try:
         for index, row in df.iterrows():
-            if '-poster-' in row['Артикул продавца'].lower():
+            art = str(row['Артикул продавца'])
+            if '-poster-' in art.lower():
                 file_on_print = FilesOnPrint(
-                    art=replace_bad_simbols(row['Артикул продавца'].strip().lower()),
-                    origin_art=row['Артикул продавца'],
+                    art=replace_bad_simbols(art.strip().lower()),
+                    origin_art=art,
                     count=row['Количество']
                 )
                 files_on_print.append(file_on_print)
-            elif 'poster-' not in row['Артикул продавца'].lower():
-                if row['Артикул продавца'] in replace_dict:
-                    art_replace = replace_dict[row['Артикул продавца']]
+            elif 'poster-' not in art.lower():
+                if art in replace_dict:
+                    art_replace = replace_dict[art]
                 else:
-                    art_replace = row['Артикул продавца']
+                    art_replace = art
                 file_on_print = FilesOnPrint(
                     art=replace_bad_simbols(art_replace.strip().lower()),
-                    origin_art=row['Артикул продавца'],
+                    origin_art=art,
                     count=row['Количество']
                 )
                 files_on_print.append(file_on_print)

@@ -18,7 +18,6 @@ def blur_image(image_path, output_path, size_b):
         56: 1.14,
     }
     original_image = cv2.imread(image_path)
-
     try:
         # Получите размеры изображения
         height, width, _ = original_image.shape
@@ -39,7 +38,8 @@ def blur_image(image_path, output_path, size_b):
         result_image[mask > 0] = original_image[mask > 0]
 
         # Примените размытие к круговой области
-        blurred_circle = cv2.GaussianBlur(result_image, (71, 71), 30)  # Измените параметры размытия по вашему усмотрению
+        blurred_circle = cv2.GaussianBlur(result_image, (71, 71),
+                                          30)  # Измените параметры размытия по вашему усмотрению
 
         # Создайте круговую маску для result_image
         circle_mask = np.zeros((result_image.shape[0], result_image.shape[1]), dtype=np.uint8)
@@ -59,7 +59,8 @@ def blur_image(image_path, output_path, size_b):
         # Вставьте увеличенное изображение с размытым кругом в общий результат
         enlarged_result[offset_y:offset_y + result_image.shape[0], offset_x:offset_x + result_image.shape[1]] = \
             np.where(circle_mask[:, :, None] > 0, result_image,
-                     enlarged_result[offset_y:offset_y + result_image.shape[0], offset_x:offset_x + result_image.shape[1]])
+                     enlarged_result[offset_y:offset_y + result_image.shape[0],
+                     offset_x:offset_x + result_image.shape[1]])
 
         # Сохраните увеличенное изображение с размытым кругом
 
@@ -68,6 +69,8 @@ def blur_image(image_path, output_path, size_b):
         # logger.debug(f"Изображение сохранено в: {output_path}")
     except Exception as e:
         logger.error(f'Ошибка создания файла: {image_path} {e}')
+    return True
+
 
 def main(file, size_b):
     start = datetime.datetime.now()
@@ -128,3 +131,10 @@ def blur_one_folder(size, folder):
                 except Exception as ex:
                     logger.error(ex)
                     logger.error(os.path.join(folder, filename))
+
+
+if __name__ == '__main__':
+    image_path = r"G:\База значков\AniKoya\ADVENT-UV-BLAG.NEBOZHITELEY\1.png"
+    output_path = r"G:\База значков\AniKoya\ADVENT-UV-BLAG.NEBOZHITELEY\1111.png"
+    size_b = 37
+    blur_image(image_path, output_path, size_b)

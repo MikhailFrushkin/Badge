@@ -5,6 +5,7 @@ import time
 from io import BytesIO
 
 import PyPDF2
+import fitz
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 from PyPDF2 import PdfReader, PdfWriter
@@ -79,7 +80,7 @@ def combine_images_to_pdf(input_files, output_pdf, size=None, progress=None, sel
     y_offset = 20
     big_list_skin = []
     for i in input_files:
-        if i.nums_in_folder >= 40:
+        if i.nums_in_folder >= 40 or "advent" in i.art.lower():
             big_list_skin.append(i)
     input_files = [i for i in input_files if i not in big_list_skin]
     if A3_flag:
@@ -369,25 +370,39 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False, popso
             logger.error(img)
 
 
-def merge_pdfs_stickers(queryset, output_path):
-    pdf_writer = PyPDF2.PdfWriter()
-    input_paths = [i.sticker for i in queryset if i.sticker]
-    if not input_paths:
-        return
-    for index, input_path in enumerate(input_paths, start=1):
-        try:
-            with open(input_path, 'rb') as pdf_file:
-                pdf_reader = PyPDF2.PdfReader(pdf_file)
+# def merge_pdfs_stickers(queryset, output_path):
+#     pdf_writer = PyPDF2.PdfWriter()
+#     input_paths = [i.sticker for i in queryset if i.sticker]
+#     if not input_paths:
+#         return
+#     for index, input_path in enumerate(input_paths, start=1):
+#         try:
+#             with open(input_path, 'rb') as pdf_file:
+#                 pdf_reader = PyPDF2.PdfReader(pdf_file)
+#
+#                 # Add all pages from PdfReader to PdfWriter
+#                 for page in pdf_reader.pages:
+#                     pdf_writer.add_page(page)
+#         except Exception:
+#             pass
+#     current_output_path = f"{output_path}.pdf"
+#     with open(current_output_path, 'wb') as output_file:
+#         pdf_writer.write(output_file)
+#     PyPDF2.PdfWriter()
 
-                # Add all pages from PdfReader to PdfWriter
-                for page in pdf_reader.pages:
-                    pdf_writer.add_page(page)
-        except Exception:
-            pass
-    current_output_path = f"{output_path}.pdf"
-    with open(current_output_path, 'wb') as output_file:
-        pdf_writer.write(output_file)
-    PyPDF2.PdfWriter()
+def merge_pdfs_stickers(queryset, output_path):
+    pdf_writer = fitz.open()  # Создаем новый PDF
+    input_paths = [i.sticker for i in queryset if i.sticker]
+    for input_path in input_paths:
+        try:
+            pdf_reader = fitz.open(input_path)  # Открываем PDF
+            pdf_writer.insert_pdf(pdf_reader)  # Вставляем страницы
+            pdf_reader.close()  # Закрываем PDF
+        except Exception as e:
+            print(f"Error processing {input_path}: {e}")
+
+    pdf_writer.save(f"{output_path}.pdf")  # Сохраняем итоговый PDF
+    pdf_writer.close()  # Закрываем итоговый PDF
 
 
 def created_good_images(all_arts, self, A3_flag=False):
@@ -431,19 +446,31 @@ def created_good_images(all_arts, self, A3_flag=False):
         # Присваивание номера записям Orders
         sorted_orders = Orders.sorted_records()
         for index, row in enumerate(sorted_orders, start=1):
-            if not os.path.exists(row.folder):
-                logger.error(f'Папка не найдена {row.folder}')
+            try:
+                if not os.path.exists(row.folder):
+                    logger.error(f'Папка не найдена {row.folder}')
+                    row.delete_instance()
+            except Exception as ex:
+                logger.error(ex)
                 row.delete_instance()
+
+            try:
+                if not os.path.exists(row.sticker):
+                    logger.error(f'Стикер  не найден {row.sticker}')
+                    row.sticker = None
+                    row.save()
+            except Exception as ex:
+                logger.error(ex)
             if not row.sticker:
                 bad_arts_stickers.append((row.art, row.size))
 
-        # Запись ненайденных артикулов и с отсутсвующих стикеров в файл
-        if bad_arts_stickers:
-            try:
-                df_bad_sticker = pd.DataFrame(bad_arts_stickers, columns=['Артикул', 'Размер'])
-                df_in_xlsx(df_bad_sticker, 'Не найденные ШК в заказе')
-            except Exception as ex:
-                logger.error(ex)
+        # # Запись ненайденных артикулов и с отсутсвующих стикеров в файл
+        # if bad_arts_stickers:
+        #     try:
+        #         df_bad_sticker = pd.DataFrame(bad_arts_stickers, columns=['Артикул', 'Размер'])
+        #         df_in_xlsx(df_bad_sticker, 'Не найденные ШК в заказе')
+        #     except Exception as ex:
+        #         logger.error(ex)
 
         records = Orders.select(Orders.size).where(Orders.shop != 'Popsocket').order_by('-size').distinct()
         records = sorted([i.size for i in records])

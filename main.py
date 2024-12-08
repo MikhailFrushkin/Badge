@@ -42,7 +42,7 @@ def get_yandex_disk_files(public_url):
         logger.error(f'{public_url} {ex}')
 
 
-def download_folder(public_link, local_path, comp_path, self=None):
+def download_folder(public_link, local_path, comp_path="asd", self=None):
     """Загрузка публичной папки со значками"""
     api_url = 'https://cloud-api.yandex.net/v1/disk/public/resources/download'
     params = {
@@ -58,7 +58,7 @@ def download_folder(public_link, local_path, comp_path, self=None):
         if os.path.exists(os.path.join(comp_path, path)):
             return
         if contains_invalid_characters(path):
-            logger.error(f'f"Имя файла {path} содержит недопустимые символы."')
+            logger.error(f"Имя файла {path} содержит недопустимые символы.")
             logger.error(href)
             return
         if not os.path.exists(folder_path):
@@ -108,7 +108,7 @@ def update_arts_db():
         if i.art.lower() not in bad_list:
             logger.error(f'Удален {i.art}')
             i.delete_instance()
-            shutil.rmtree(i.folder)
+            shutil.rmtree(i.folder, ignore_errors=True)
         else:
             i.nums = i.nums_in_folder
             i.save()

@@ -3,9 +3,9 @@ import os
 import shutil
 import time
 from datetime import timedelta
-from pathlib import Path
 from threading import Thread
 
+import fitz
 import pandas as pd
 import qdarkstyle
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -17,12 +17,13 @@ from PyQt5.QtWidgets import (
     QFileDialog, QCheckBox, QProgressBar
 )
 from loguru import logger
+from pathlib import Path
 from peewee import fn
 
 from api_rest import main_download_site
-from config import token, machine_name, sticker_path_all, path_root
+from config import token, machine_name, sticker_path_all, path_root, token2, BASE_DIR
 from created_images import created_good_images
-from db import Article, Statistic, update_base_postgresql, GoogleTable, Orders, db, remove_russian_letters
+from db import Article, Statistic, GoogleTable, Orders, db, remove_russian_letters
 from delete_bad_arts import delete_arts
 from main import update_sticker_path, update_arts_db
 from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
@@ -308,7 +309,7 @@ class QueueDialog(QWidget):
             try:
                 created_good_images(all_data, self, self.A3_flag)
                 try:
-                    path = os.path.join(path_root, 'Файлы на печать')
+                    path = os.path.join(BASE_DIR, 'Файлы на печать')
                     os.startfile(path)
                 except Exception as ex:
                     logger.error(ex)
@@ -337,7 +338,7 @@ class QueueDialog(QWidget):
                 name = ''
                 origin_art = self.tableWidget.item(row, 0).text()
                 art = self.tableWidget.item(row, 1).text()
-                count = self.tableWidget.item(row, 2).text()
+                count = self.tableWidget.item(row, 2).text().replace(".0", "")
                 status = self.tableWidget.item(row, 3).text()
                 if status == '✅':
                     data.append(FilesOnPrint(name=name, art=art, origin_art=origin_art, count=int(count), status='✅'))
@@ -605,16 +606,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     if status and os.path.exists(status.folder):
                         item.status = '✅'
                 counts_art = sorted(counts_art, key=lambda x: x.status, reverse=True)
-                try:
-                    bad_arts = [(i.art, i.count) for i in counts_art
-                                if i.status == '❌']
-                    if bad_arts:
-                        df_bad = pd.DataFrame(bad_arts, columns=['Артикул', 'Количество'])
-                        df_in_xlsx(df_bad, f'Не найденные артикула в заказе '
-                                           f'{os.path.basename(filename)}_v_{self.version}_{machine_name}')
-
-                except Exception as ex:
-                    logger.error(ex)
+                # try:
+                #     bad_arts = [(i.art, i.count) for i in counts_art
+                #                 if i.status == '❌']
+                #     if bad_arts:
+                #         df_bad = pd.DataFrame(bad_arts, columns=['Артикул', 'Количество'])
+                #         df_in_xlsx(df_bad, f'Не найденные артикула в заказе '
+                #                            f'{os.path.basename(filename)}_v_{self.version}_{machine_name}')
+                #
+                # except Exception as ex:
+                #     logger.error(ex)
             except Exception as ex:
                 logger.error(ex)
 
@@ -649,11 +650,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 update_sticker_path()
             except Exception as ex:
                 logger.error(ex)
-
+            directory_path_sticker = sticker_path_all
             try:
-                update_base_postgresql()
+                logger.debug('Загрузка стикеров я.диска:')
+                main_search_sticker(directory_path_sticker, token, folder_path='/Новая база (1)')
             except Exception as ex:
                 logger.error(ex)
+            try:
+                logger.debug('Загрузка стикеров я.диска 2:')
+                main_search_sticker(directory_path_sticker, token2, folder_path='/Новая база')
+            except Exception as ex:
+                logger.error(ex)
+            # try:
+            #     update_base_postgresql()
+            # except Exception as ex:
+            #     logger.error(ex)
 
             QMessageBox.information(self, 'Загрузка', 'Загрузка закончена')
             self.progress_bar.setValue(100)
@@ -663,45 +674,45 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def evt_btn_print_stickers(self):
         """Ивент на кнопку напечатать стикеры"""
         if self.lineEdit.text() != '':
-            import PyPDF2
             # button_names = enum_printers()
             # dialog = Dialog(button_names=button_names)
             # dialog.exec_()
-            def find_files_in_directory(directory, file_list):
+            def find_files_in_directory(directory, arts_list):
                 found_files = []
                 not_found_files = []
                 sticker_dict = {}
                 for file in os.listdir(directory):
-                    exp = os.path.splitext(file)[-1]
-                    file_name = file.replace(f'{exp}', '').lower().strip().replace(' ', '')
+                    file_name_no_exp = file.replace(".pdf", "")
+                    file_name = file_name_no_exp.lower().replace(' ', '').strip()
                     sticker_dict[file_name] = os.path.join(directory, file)
-                for art in file_list:
+                for art in arts_list:
                     file_name = art.origin_art.lower().strip().replace(' ', '')
                     if file_name in sticker_dict:
                         found_files.append(sticker_dict[file_name])
                     else:
                         not_found_files.append(art.origin_art)
+                logger.debug(not_found_files)
                 return found_files, not_found_files
 
             def merge_pdfs_stickers(arts_paths, output_path):
-                pdf_writer = PyPDF2.PdfWriter()
-                for index, input_path in enumerate(arts_paths, start=1):
+                pdf_writer = fitz.open()  # Создаем новый PDF
+
+                for input_path in arts_paths:
                     try:
-                        with open(input_path, 'rb') as pdf_file:
-                            pdf_reader = PyPDF2.PdfReader(pdf_file)
-                            for page in pdf_reader.pages:
-                                pdf_writer.add_page(page)
-                    except Exception:
-                        pass
-                current_output_path = f"{output_path}.pdf"
-                with open(current_output_path, 'wb') as output_file:
-                    pdf_writer.write(output_file)
-                PyPDF2.PdfWriter()
+                        pdf_reader = fitz.open(input_path)  # Открываем PDF
+                        pdf_writer.insert_pdf(pdf_reader)  # Вставляем страницы
+                        pdf_reader.close()  # Закрываем PDF
+                    except Exception as e:
+                        print(f"Error processing {input_path}: {e}")
+
+                pdf_writer.save(f"{output_path}.pdf")  # Сохраняем итоговый PDF
+                pdf_writer.close()  # Закрываем итоговый PDF
 
             def create_order_shk(arts, name_doc=""):
                 found_files_stickers, not_found_stickers = find_files_in_directory(sticker_path_all,
                                                                                    arts)
                 if found_files_stickers:
+                    logger.debug(found_files_stickers)
                     merge_pdfs_stickers(found_files_stickers, f'Файлы на печать\\!ШК {name_doc}')
                     logger.success(f'{name_doc} ШК сохранены!')
                 else:
@@ -709,7 +720,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 return not_found_stickers
 
             arts = read_excel_file(self.lineEdit.text())
-            create_order_shk(arts, "Все ")
+            not_found_stickers_arts = create_order_shk(arts, "Все ")
+            if not_found_stickers_arts:
+                QMessageBox.warning(self, 'Проблема', f'Не найдены шк для:\n{", ".join(not_found_stickers_arts)}')
+            try:
+                os.startfile(BASE_DIR)
+            except Exception as ex:
+                logger.error(ex)
         else:
             QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
 
@@ -802,11 +819,15 @@ def run_script():
         #     update_base_postgresql()
         # except Exception as ex:
         #     logger.error(ex)
-
+        directory_path_sticker = sticker_path_all
         try:
             logger.debug('Загрузка стикеров я.диска:')
-            directory_path_sticker = sticker_path_all
             main_search_sticker(directory_path_sticker, token, folder_path='/Новая база (1)')
+        except Exception as ex:
+            logger.error(ex)
+        try:
+            logger.debug('Загрузка стикеров я.диска 2:')
+            main_search_sticker(directory_path_sticker, token2, folder_path='/Новая база')
         except Exception as ex:
             logger.error(ex)
 
