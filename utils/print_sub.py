@@ -7,8 +7,8 @@ import time
 from PyQt5.QtWidgets import QMessageBox
 from loguru import logger
 
+from base.db import Orders
 from config import acrobat_path
-from db import Orders
 
 
 def print_pdf_sticker(printer_name, self=None):

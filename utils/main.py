@@ -5,8 +5,9 @@ import requests
 import tqdm
 from loguru import logger
 
+from base.db import contains_invalid_characters, Article
 from config import sticker_path_all, all_badge, brands_paths, bad_list
-from db import Article, remove_russian_letters, contains_invalid_characters
+from utils.utils import remove_russian_letters
 
 
 def download_file(url, local_path):

@@ -1,7 +1,5 @@
 import asyncio
 import os
-import time
-from pprint import pprint
 from urllib.parse import quote
 
 import aiofiles
@@ -10,7 +8,7 @@ import pandas as pd
 from loguru import logger
 
 from config import token, all_badge
-from utils import df_in_xlsx
+from utils.utils import df_in_xlsx
 
 semaphore = asyncio.Semaphore(2)
 

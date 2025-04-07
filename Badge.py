@@ -3,6 +3,7 @@ import os
 import shutil
 import time
 from datetime import timedelta
+from pathlib import Path
 from threading import Thread
 
 import fitz
@@ -17,19 +18,19 @@ from PyQt5.QtWidgets import (
     QFileDialog, QCheckBox, QProgressBar
 )
 from loguru import logger
-from pathlib import Path
 from peewee import fn
 
 from api_rest import main_download_site
-from config import token, machine_name, sticker_path_all, path_root, token2, BASE_DIR
-from created_images import created_good_images
-from db import Article, Statistic, GoogleTable, Orders, db, remove_russian_letters
-from delete_bad_arts import delete_arts
-from main import update_sticker_path, update_arts_db
-from print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
-from scan_shk import main_search_sticker
-from upload_files import upload_statistic_files_async
-from utils import enum_printers, read_excel_file, FilesOnPrint, df_in_xlsx
+from base.db import Article, Statistic, GoogleTable, db, Orders
+from config import machine_name, sticker_path_all, BASE_DIR
+from gui.main_window import Ui_MainWindow
+from utils.created_images import created_good_images
+from utils.delete_bad_arts import delete_arts
+from utils.main import update_arts_db, update_sticker_path
+from utils.print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
+from utils.read_excel import read_excel_file
+from utils.upload_files import upload_statistic_files_async
+from utils.utils import enum_printers, FilesOnPrint, df_in_xlsx, remove_russian_letters
 
 
 class GroupedRecordsDialog(QDialog):
@@ -290,7 +291,7 @@ class QueueDialog(QWidget):
         if selected_data:
             created_good_images(selected_data, self, self.A3_flag)
             try:
-                path = os.path.join(path_root, 'Файлы на печать')
+                path = os.path.join(BASE_DIR, 'Файлы на печать')
                 os.startfile(path)
             except Exception as ex:
                 logger.error(ex)
@@ -350,168 +351,6 @@ class QueueDialog(QWidget):
         progress = int(current_value / total_value * 100)
         self.progress_bar.setValue(progress)
         QApplication.processEvents()
-
-
-class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(660, 685)
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
-        self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
-        self.verticalLayout.setObjectName("verticalLayout")
-        self.horizontalLayout = QtWidgets.QHBoxLayout()
-        self.horizontalLayout.setObjectName("horizontalLayout")
-        self.pushButton = QtWidgets.QPushButton(self.centralwidget)
-        font = QtGui.QFont()
-        font.setFamily("Times New Roman")
-        font.setPointSize(15)
-        font.setBold(True)
-        font.setItalic(False)
-        font.setWeight(75)
-        self.pushButton.setFont(font)
-        self.pushButton.setObjectName("pushButton")
-        self.horizontalLayout.addWidget(self.pushButton)
-
-        self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
-        font = QtGui.QFont()
-        font.setFamily("Times New Roman")
-        font.setPointSize(15)
-        font.setBold(True)
-        font.setItalic(False)
-        font.setWeight(75)
-        self.pushButton_2.setFont(font)
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.horizontalLayout.addWidget(self.pushButton_2)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout.addItem(spacerItem)
-        self.verticalLayout.addLayout(self.horizontalLayout)
-        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        self.lineEdit = QtWidgets.QLineEdit(self.centralwidget)
-        self.lineEdit.setObjectName("lineEdit")
-        self.horizontalLayout_2.addWidget(self.lineEdit)
-        self.pushButton_3 = QtWidgets.QPushButton(self.centralwidget)
-        font = QtGui.QFont()
-        font.setFamily("Times New Roman")
-        font.setPointSize(15)
-        font.setBold(True)
-        font.setItalic(False)
-        font.setWeight(75)
-        self.pushButton_3.setFont(font)
-        self.pushButton_3.setObjectName("pushButton_3")
-        self.horizontalLayout_2.addWidget(self.pushButton_3)
-        self.verticalLayout.addLayout(self.horizontalLayout_2)
-        self.gridLayout = QtWidgets.QGridLayout()
-        self.gridLayout.setObjectName("gridLayout")
-        self.verticalLayout.addLayout(self.gridLayout)
-        self.gridLayout_2 = QtWidgets.QGridLayout()
-        self.gridLayout_2.setObjectName("gridLayout_2")
-        self.pushButton_6 = QtWidgets.QPushButton(self.centralwidget)
-        font = QtGui.QFont()
-        font.setFamily("Times New Roman")
-        font.setPointSize(15)
-        font.setBold(True)
-        font.setItalic(False)
-        font.setWeight(75)
-        self.pushButton_6.setFont(font)
-        self.pushButton_6.setObjectName("pushButton_6")
-        self.gridLayout_2.addWidget(self.pushButton_6, 2, 1, 1, 1)
-        self.pushButton_5 = QtWidgets.QPushButton(self.centralwidget)
-        font = QtGui.QFont()
-        font.setFamily("Times New Roman")
-        font.setPointSize(15)
-        font.setBold(True)
-        font.setItalic(False)
-        font.setWeight(75)
-        self.pushButton_5.setFont(font)
-        self.pushButton_5.setObjectName("pushButton_5")
-        self.gridLayout_2.addWidget(self.pushButton_5, 2, 2, 1, 1)
-        self.pushButton_4 = QtWidgets.QPushButton(self.centralwidget)
-        font = QtGui.QFont()
-        font.setFamily("Times New Roman")
-        font.setPointSize(15)
-        font.setBold(True)
-        font.setItalic(False)
-        font.setWeight(75)
-        self.pushButton_4.setFont(font)
-        self.pushButton_4.setObjectName("pushButton_4")
-        self.gridLayout_2.addWidget(self.pushButton_4, 2, 3, 1, 1)
-
-        self.pushButton_8 = QtWidgets.QPushButton(self.centralwidget)
-        font = QtGui.QFont()
-        font.setFamily("Times New Roman")
-        font.setPointSize(15)
-        font.setBold(True)
-        font.setItalic(False)
-        font.setWeight(75)
-        self.pushButton_8.setFont(font)
-        self.pushButton_8.setObjectName("pushButton_8")
-        self.gridLayout_2.addWidget(self.pushButton_8, 0, 2, 1, 1)
-        self.verticalLayout.addLayout(self.gridLayout_2)
-
-        self.pushButton_9 = QtWidgets.QPushButton(self.centralwidget)
-        font = QtGui.QFont()
-        font.setFamily("Times New Roman")
-        font.setPointSize(15)
-        font.setBold(True)
-        font.setItalic(False)
-        font.setWeight(75)
-        self.pushButton_9.setFont(font)
-        self.pushButton_9.setObjectName("pushButton_9")
-        self.gridLayout_2.addWidget(self.pushButton_9, 1, 2, 1, 1)
-        self.verticalLayout.addLayout(self.gridLayout_2)
-
-        # Кнопка обновления
-        if machine_name != 'ADMIN':
-            self.pushButton.setEnabled(False)
-            self.pushButton_5.setEnabled(False)
-            self.pushButton_4.setEnabled(False)
-        self.pushButton_6.setEnabled(True)
-
-        self.listView = QtWidgets.QListView(self.centralwidget)
-        self.listView.setObjectName("listView")
-        self.verticalLayout.addWidget(self.listView)
-        MainWindow.setCentralWidget(self.centralwidget)
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
-        self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
-
-        # Создаем второй статус бар
-        self.second_statusbar = QtWidgets.QStatusBar(MainWindow)
-        self.second_statusbar.setObjectName("second_statusbar")
-
-        # Создаем первый QDockWidget для первого статус бара
-        self.dock_widget_1 = QtWidgets.QDockWidget("", MainWindow)
-        self.dock_widget_1.setObjectName("dock_widget_1")
-        self.dock_widget_1.setWidget(self.second_statusbar)
-        MainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.dock_widget_1)
-
-        # Создаем второй QDockWidget для второго статус бара
-        self.dock_widget_2 = QtWidgets.QDockWidget("", MainWindow)
-        self.dock_widget_2.setObjectName("dock_widget_2")
-        self.dock_widget_2.setWidget(self.statusbar)
-        MainWindow.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.dock_widget_2)
-
-        # Устанавливаем новый шрифт для всего второго статус бара
-        font = self.second_statusbar.font()
-        font.setPointSize(10)  # Установите желаемый размер шрифта
-        self.second_statusbar.setFont(font)
-
-        self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-    def retranslateUi(self, MainWindow):
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "Печать значков"))
-        self.pushButton.setText(_translate("MainWindow", "Обновить базу"))
-        self.pushButton_2.setText(_translate("MainWindow", "Статистика"))
-        self.pushButton_3.setText(_translate("MainWindow", "Загрузить файл"))
-        self.pushButton_6.setText(_translate("MainWindow", "Создать стикеры"))
-        self.pushButton_5.setText(_translate("MainWindow", "Печать обложек"))
-        self.pushButton_4.setText(_translate("MainWindow", "Печать значков"))
-        self.pushButton_8.setText(_translate("MainWindow", "Создать файлы"))
-        self.pushButton_9.setText(_translate("MainWindow", "Создать файлы A3"))
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -651,16 +490,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             except Exception as ex:
                 logger.error(ex)
             directory_path_sticker = sticker_path_all
-            try:
-                logger.debug('Загрузка стикеров я.диска:')
-                main_search_sticker(directory_path_sticker, token, folder_path='/Новая база (1)')
-            except Exception as ex:
-                logger.error(ex)
-            try:
-                logger.debug('Загрузка стикеров я.диска 2:')
-                main_search_sticker(directory_path_sticker, token2, folder_path='/Новая база')
-            except Exception as ex:
-                logger.error(ex)
+            # try:
+            #     logger.debug('Загрузка стикеров я.диска:')
+            #     main_search_sticker(directory_path_sticker, token, folder_path='/Новая база (1)')
+            # except Exception as ex:
+            #     logger.error(ex)
+            # try:
+            #     logger.debug('Загрузка стикеров я.диска 2:')
+            #     main_search_sticker(directory_path_sticker, token2, folder_path='/Новая база')
+            # except Exception as ex:
+            #     logger.error(ex)
             # try:
             #     update_base_postgresql()
             # except Exception as ex:
@@ -674,9 +513,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def evt_btn_print_stickers(self):
         """Ивент на кнопку напечатать стикеры"""
         if self.lineEdit.text() != '':
-            # button_names = enum_printers()
-            # dialog = Dialog(button_names=button_names)
-            # dialog.exec_()
             def find_files_in_directory(directory, arts_list):
                 found_files = []
                 not_found_files = []
@@ -820,16 +656,16 @@ def run_script():
         # except Exception as ex:
         #     logger.error(ex)
         directory_path_sticker = sticker_path_all
-        try:
-            logger.debug('Загрузка стикеров я.диска:')
-            main_search_sticker(directory_path_sticker, token, folder_path='/Новая база (1)')
-        except Exception as ex:
-            logger.error(ex)
-        try:
-            logger.debug('Загрузка стикеров я.диска 2:')
-            main_search_sticker(directory_path_sticker, token2, folder_path='/Новая база')
-        except Exception as ex:
-            logger.error(ex)
+        # try:
+        #     logger.debug('Загрузка стикеров я.диска:')
+        #     main_search_sticker(directory_path_sticker, token, folder_path='/Новая база (1)')
+        # except Exception as ex:
+        #     logger.error(ex)
+        # try:
+        #     logger.debug('Загрузка стикеров я.диска 2:')
+        #     main_search_sticker(directory_path_sticker, token2, folder_path='/Новая база')
+        # except Exception as ex:
+        #     logger.error(ex)
 
         try:
             update_sticker_path()
@@ -837,7 +673,7 @@ def run_script():
             logger.error(ex)
 
         logger.success('Обновление завершено')
-        time.sleep(120 * 60)
+        time.sleep(5 * 60)
 
 
 if __name__ == '__main__':
@@ -845,9 +681,11 @@ if __name__ == '__main__':
 
     shutil.rmtree('temp', ignore_errors=True)
     db.connect()
-    db.create_tables([Statistic, GoogleTable, Orders, Article])
+    db.create_tables([Statistic, GoogleTable, Orders, Article], safe=True)
     db.close()
-
+    directories = ['logs', 'base', 'Файлы на печать']
+    for dir_name in directories:
+        os.makedirs(dir_name, exist_ok=True)
     logger.add(
         "logs/logs.log",
         rotation="20 MB",

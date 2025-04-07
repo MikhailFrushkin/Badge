@@ -3,11 +3,10 @@ import os
 
 import cv2
 import numpy as np
-from PIL import Image
 from loguru import logger
 
+from base.db import Article
 from config import all_badge
-from db import Article
 
 
 def blur_image(image_path, output_path, size_b):

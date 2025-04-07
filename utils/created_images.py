@@ -4,9 +4,7 @@ import shutil
 import time
 from io import BytesIO
 
-import PyPDF2
 import fitz
-import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 from PyPDF2 import PdfReader, PdfWriter
 from PyQt5.QtWidgets import QMessageBox
@@ -17,10 +15,9 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
-from created_one_pdf import created_pdfs
-from db import Article, Orders, Statistic, files_base_postgresql, orders_base_postgresql, remove_russian_letters, \
-    push_number
-from utils import ProgressBar, df_in_xlsx
+from base.db import push_number, Orders, Article, Statistic
+from utils.created_one_pdf import created_pdfs
+from utils.utils import ProgressBar, remove_russian_letters
 
 pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
 Image.MAX_IMAGE_PIXELS = None

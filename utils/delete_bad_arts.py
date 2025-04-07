@@ -6,8 +6,8 @@ import aiohttp
 from loguru import logger
 from peewee import fn
 
+from base.db import Article
 from config import token
-from db import Article
 
 
 async def traverse_yandex_disk(session, folder_path, list_arts, offset=0):

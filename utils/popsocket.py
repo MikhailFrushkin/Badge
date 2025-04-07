@@ -5,9 +5,9 @@ from pathlib import Path
 import aiohttp
 from loguru import logger
 
+from base.db import GoogleTable
 from blur import blur_image
 from config import token, all_badge
-from db import GoogleTable
 
 semaphore = asyncio.Semaphore(3)
 

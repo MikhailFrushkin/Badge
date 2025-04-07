@@ -7,8 +7,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from loguru import logger
 
-from config import sticker_path_all
-from utils import ProgressBar
+from utils.utils import ProgressBar
 
 
 async def download_file(session, url, file_name, local_directory):
@@ -129,6 +128,7 @@ def main_download_stickers(self=None):
     # if self:
     #     self.second_statusbar.showMessage(f'Скачивание стикеров завершено', 1000)
     pass
+
 
 if __name__ == '__main__':
     main_download_stickers()

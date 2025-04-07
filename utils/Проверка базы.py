@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+import time
 from datetime import datetime
 
 from loguru import logger
@@ -8,7 +9,7 @@ from peewee import *
 
 from config import sticker_path_all, brands_paths, bad_list, all_badge
 
-db = SqliteDatabase('mydatabase.db')
+db = SqliteDatabase('base/mydatabase.db')
 
 
 def remove_russian_letters(input_string):
@@ -159,7 +160,8 @@ if __name__ == '__main__':
     )
     try:
         count = 0
-        ignore_dirs = ['AniKoya', 'DP', 'Bidjo', 'Popsockets', 'Значки ШК', 'Дочке понравилось', 'ПостерДом']
+        ignore_dirs = ['AniKoya', 'DP', 'Bidjo', 'Popsockets', 'ШК', 'Дочке понравилось', 'ПостерДом',
+                       'Дочке понравилось']
         sticker_dict = {i.replace('.pdf', '').strip().lower(): os.path.abspath(os.path.join(sticker_path_all, i))
                         for i in os.listdir(sticker_path_all)}
 
@@ -177,4 +179,5 @@ if __name__ == '__main__':
                 f.write('\n'.join(bad_list_new))
     except Exception as ex:
         logger.error(ex)
+        time.sleep(5)
     logger.success(datetime.now() - start)

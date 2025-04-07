@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pandas as pd
 from dotenv import load_dotenv
-from environs import Env
 from loguru import logger
 
 
@@ -15,14 +14,14 @@ def get_base_dir():
         return os.path.dirname(sys.executable)
     else:
         # Если приложение запущено как скрипт .py
-        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        return os.path.dirname(os.path.abspath(__file__))
 
 
 BASE_DIR = get_base_dir()
 
 path_root = Path(__file__).resolve().parent
 
-load_dotenv('1.env')
+load_dotenv('.env')
 
 token = os.getenv('token')
 try:
@@ -31,6 +30,7 @@ except Exception as ex:
     logger.error(ex)
 
 machine_name = os.getenv('machine_name')
+#Подключение к Postgres
 dbname = os.getenv('dbname')
 user = os.getenv('user')
 password = os.getenv('password')

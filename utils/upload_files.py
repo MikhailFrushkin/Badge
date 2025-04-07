@@ -1,7 +1,7 @@
-import os
 import asyncio
+import os
+
 import aiohttp
-from loguru import logger
 
 from config import token
 
@@ -52,4 +52,3 @@ async def upload_statistic_files_async(order=None):
 
 if __name__ == '__main__':
     asyncio.run(upload_statistic_files_async())
-

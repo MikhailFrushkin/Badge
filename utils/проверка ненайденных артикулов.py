@@ -3,9 +3,6 @@ import os
 import shutil
 
 import pandas as pd
-from loguru import logger
-import requests
-
 import requests
 from loguru import logger
 

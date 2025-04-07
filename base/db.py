@@ -9,21 +9,11 @@ from loguru import logger
 from peewee import *
 
 from config import sticker_path_all, dbname, user, password, host, machine_name
+from utils.utils import remove_russian_letters
 
-db = SqliteDatabase('mydatabase.db')
+db = SqliteDatabase('base/mydatabase.db')
 
 all_stickers = os.listdir(sticker_path_all)
-
-
-def remove_russian_letters(input_string):
-    """Удаление русских букв из строки"""
-    # Используем регулярное выражение для поиска всех русских букв
-    russian_letters_pattern = re.compile('[а-яА-Я]')
-
-    # Заменяем найденные русские буквы на пустую строку
-    result_string = re.sub(russian_letters_pattern, '', input_string)
-
-    return result_string.strip()
 
 
 def update_base_postgresql():
@@ -366,12 +356,3 @@ def contains_invalid_characters(file_name):
     """Проверка на наличие запрещенных символов при создании файлов в винде"""
     pattern = r'[<>:"/\\|?*]'
     return bool(re.search(pattern, file_name))
-
-
-if __name__ == '__main__':
-    print(remove_russian_letters('Масленников_Артëм'))
-    file_name = "example<>"
-    if contains_invalid_characters(file_name):
-        print(f"Имя файла {file_name} содержит недопустимые символы.")
-    else:
-        print(f"Имя файла {file_name} допустимо.")

@@ -7,7 +7,7 @@ from loguru import logger
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
-from utils import ProgressBar
+from utils.utils import ProgressBar
 
 
 def one_pdf(folder_path, pdf_file_path, progress):

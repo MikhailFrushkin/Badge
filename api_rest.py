@@ -1,14 +1,14 @@
 import json
 import os
 import shutil
-from pprint import pprint
 
 import requests
 from loguru import logger
 
-from blur import blur_image
+from base.db import Article
 from config import all_badge, sticker_path_all
-from db import Article, remove_russian_letters
+from utils.blur import blur_image
+from utils.utils import remove_russian_letters, copy_image
 
 headers = {'Content-Type': 'application/json'}
 # domain = 'http://127.0.0.1:8000/api_rest'
@@ -88,12 +88,6 @@ def blur_images(folder, size):
                 logger.error(os.path.join(folder, filename))
     return flag
 
-def copy_image(image_path, count):
-    folder_art = os.path.dirname(image_path)
-    exp = image_path.split('.')[-1]
-    for i in range(count - 1):
-        shutil.copy2(image_path, os.path.join(folder_art, f'{i + 2}.{exp}'))
-
 
 def main_download_site():
     result_dict_arts = []
@@ -106,28 +100,16 @@ def main_download_site():
 
     logger.debug(f'Артикулов в ответе с сервера:{len(data)}')
     data = [item for item in data if remove_russian_letters(item['art'].upper().strip()) not in art_list]
-    # data = data[:2]
+    logger.debug(f'Артикулов для загрузки с сервера:{len(data)}')
+    data = data[:10]
 
-    # with open('debug\\data_download.json', 'w', encoding='utf-8') as f:
-    #     json.dump(data, f, ensure_ascii=False, indent=4)
-    # bad_arts = []
-    # for item in data:
-    #     if 'images' not in item or not item['images']:
-    #         bad_arts.append(item)
-    #     elif item['the_same'] == 1 and len(item['images']) != 1:
-    #         bad_arts.append(item)
-    # with open('debug\\badarts.json', 'w', encoding='utf-8') as f:
-    #     json.dump(bad_arts, f, ensure_ascii=False, indent=4)
-
-    logger.success(f'Артикулов для загрузки:{len(data)}')
+    logger.success(f'Будет загружено:{len(data)}')
     for item in data:
         download_data = create_download_data(item)
         if download_data:
             result_dict_arts.append(download_data)
 
     count_task = len(result_dict_arts)
-    # with open('data.json', 'w', encoding='utf-8') as f:
-    #     json.dump(result_dict_arts, f, ensure_ascii=False, indent=4)
 
     for index, item in enumerate(result_dict_arts, start=1):
         art = item['art']
@@ -142,7 +124,6 @@ def main_download_site():
                 if category == 'Значки' and art.split('-')[-1].isdigit() and int(art.split('-')[-2]) != count:
                     logger.error(f'Не совпадает кол-во {art}')
                     continue
-                logger.debug(folder)
                 try:
                     os.makedirs(folder, exist_ok=True)
                     for i in item['url_data']:
@@ -154,7 +135,6 @@ def main_download_site():
                             size = int(size)
                         else:
                             size = 37
-                        logger.debug(size)
                         blur_flag = blur_images(folder, size)
                     except Exception as ex:
                         logger.error(ex)
@@ -183,7 +163,6 @@ def main_download_site():
                         logger.success(f'{index}/{count_task} - {item["art"]}')
                     except Exception as ex:
                         logger.error(ex)
-                    logger.warning(blur_flag)
                     if blur_flag:
                         Article.create_with_art(art, folder, brand)
                     else:
