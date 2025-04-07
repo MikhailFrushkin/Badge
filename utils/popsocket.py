@@ -16,7 +16,7 @@ async def get_yandex_disk_files(session, token, public_link):
     arts_dict = {}
     headers = {"Authorization": f"OAuth {token}"}
     url = "https://cloud-api.yandex.net/v1/disk/public/resources"
-    path = '/'
+    path = "/"
     stack = [(public_link, path)]
     while stack:
         current_folder_path, path = stack.pop()
@@ -25,7 +25,7 @@ async def get_yandex_disk_files(session, token, public_link):
             async with session.get(url, headers=headers, params=params) as response:
                 if response.status == 200:
                     data = await response.json()
-                    files = data['_embedded']["items"]
+                    files = data["_embedded"]["items"]
                     if files:
                         files_on_yandex_disk = []
                         art = None
@@ -36,42 +36,52 @@ async def get_yandex_disk_files(session, token, public_link):
                             elif item["type"] == "file":
                                 file_name = item["name"]
                                 file_path = item["path"]
-                                if ('поп' in file_name.lower()
-                                        and '1' in file_name
-                                        and file_name.lower().endswith(('.png', '.jpg'))):
-                                    files_on_yandex_disk.append(('Подложка.png', file_path))
-                                elif file_name.replace(' ', '').strip()[0].isdigit():
+                                if (
+                                    "поп" in file_name.lower()
+                                    and "1" in file_name
+                                    and file_name.lower().endswith((".png", ".jpg"))
+                                ):
+                                    files_on_yandex_disk.append(
+                                        ("Подложка.png", file_path)
+                                    )
+                                elif file_name.replace(" ", "").strip()[0].isdigit():
                                     files_on_yandex_disk.append((file_name, file_path))
-                                elif file_name.endswith('.pdf'):
-                                    art = file_name.replace('.pdf', '').strip()
+                                elif file_name.endswith(".pdf"):
+                                    art = file_name.replace(".pdf", "").strip()
                         if art and len(files_on_yandex_disk) == 2:
                             arts_dict[art] = files_on_yandex_disk
-                            arts_dict['url'] = public_link
+                            arts_dict["url"] = public_link
                         else:
-                            logger.error(f'Нет шк для артикула {public_link}')
-                        if "offset" in data['_embedded']:
-                            params["offset"] = data['_embedded']["offset"] + data['_embedded']["limit"]
+                            logger.error(f"Нет шк для артикула {public_link}")
+                        if "offset" in data["_embedded"]:
+                            params["offset"] = (
+                                data["_embedded"]["offset"] + data["_embedded"]["limit"]
+                            )
                         else:
                             break
                     else:
                         break
                 else:
-                    raise RuntimeError(f"Ошибка при получении файлов: {response.status}")
+                    raise RuntimeError(
+                        f"Ошибка при получении файлов: {response.status}"
+                    )
 
-    logger.success(f'Найденно новых артикулов: {len(arts_dict)}')
+    logger.success(f"Найденно новых артикулов: {len(arts_dict)}")
     return arts_dict
 
 
 async def get_download_links(session, token, arts_dict):
     headers = {"Authorization": f"OAuth {token}"}
     download_links = {}
-    public_url = arts_dict['url']
+    public_url = arts_dict["url"]
 
     for art, files in arts_dict.items():
         if isinstance(files, list):
             download_links[art] = []
             for file_name, file_path in files:
-                download_url = await get_file_download_link(session, headers, public_url, file_path)
+                download_url = await get_file_download_link(
+                    session, headers, public_url, file_path
+                )
                 download_links[art].append((file_name, download_url))
     return download_links
 
@@ -84,7 +94,9 @@ async def get_file_download_link(session, headers, public_url, file_path):
             data = await response.json()
             return data["href"]
         else:
-            raise RuntimeError(f"Ошибка при получении ссылки на скачивание: {response.status}")
+            raise RuntimeError(
+                f"Ошибка при получении ссылки на скачивание: {response.status}"
+            )
 
 
 async def download_file(session, token, file_url, local_path):
@@ -108,33 +120,42 @@ async def process_arts_dict(session, token, arts_dict, local_base_path):
 
 
 async def scan_files(public_urls):
-    pop_path = f'{all_badge}\\Popsockets'
+    pop_path = f"{all_badge}\\Popsockets"
     for public_url in public_urls:
         try:
             async with aiohttp.ClientSession() as session:
-                arts_dict = await get_yandex_disk_files(session, token, public_url.folder_link)
+                arts_dict = await get_yandex_disk_files(
+                    session, token, public_url.folder_link
+                )
                 if arts_dict:
                     try:
-                        download_links = await get_download_links(session, token, arts_dict)
+                        download_links = await get_download_links(
+                            session, token, arts_dict
+                        )
                         try:
                             for art in download_links.keys():
                                 local_art_path = os.path.join(pop_path, art)
                                 Path(local_art_path).mkdir(parents=True, exist_ok=True)
-                            await process_arts_dict(session, token, download_links, pop_path)
+                            await process_arts_dict(
+                                session, token, download_links, pop_path
+                            )
 
                             for art in download_links.keys():
                                 try:
                                     path_dir = os.path.join(pop_path, art)
                                     for file in os.listdir(path_dir):
                                         file_path = os.path.join(path_dir, file)
-                                        if os.path.isfile(file_path) and file[0].isdigit():
+                                        if (
+                                            os.path.isfile(file_path)
+                                            and file[0].isdigit()
+                                        ):
                                             blur_image(file_path, file_path, 44)
                                 except Exception as ex:
-                                    logger.error(f'Ошибка  {ex}')
+                                    logger.error(f"Ошибка  {ex}")
                         except Exception as ex:
-                            logger.error(f'Ошибка  {ex}')
+                            logger.error(f"Ошибка  {ex}")
                     except Exception as ex:
-                        logger.error(f'Ошибка  {ex}')
+                        logger.error(f"Ошибка  {ex}")
         except Exception as e:
             logger.error(f"Произошла ошибка: {e}")
         finally:

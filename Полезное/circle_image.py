@@ -13,8 +13,11 @@ def delete_files_except_matching_folders(directory):
         if os.path.isfile(file_path):
             file_name_lower = file_name.lower()
             file_base_name, file_ext = os.path.splitext(file_name_lower)
-            if file_ext in ['.jpg', '.png'] and file_base_name in [folder.lower() for folder in os.listdir(directory) if
-                                                                   os.path.isdir(os.path.join(directory, folder))]:
+            if file_ext in [".jpg", ".png"] and file_base_name in [
+                folder.lower()
+                for folder in os.listdir(directory)
+                if os.path.isdir(os.path.join(directory, folder))
+            ]:
                 continue
             os.remove(file_path)
 
@@ -46,8 +49,16 @@ def circle_one_image(file_paths):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (5, 5), 0)
         # Детекция кругов на изображении
-        circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, minDist=410,
-                                   param1=110, param2=70, minRadius=300, maxRadius=430)
+        circles = cv2.HoughCircles(
+            gray,
+            cv2.HOUGH_GRADIENT,
+            1,
+            minDist=410,
+            param1=110,
+            param2=70,
+            minRadius=300,
+            maxRadius=430,
+        )
         if circles is not None:
             # Округление координат и радиусов кругов
             circles = np.round(circles[0, :]).astype(int)
@@ -57,21 +68,25 @@ def circle_one_image(file_paths):
             for i, (x, y, r) in enumerate(circles, start=1):
                 print(i, (x, y, r))
                 # Вырезаем найденный круг из исходного изображения с добавлением отступа
-                padding = 0  # Размер отступа в пикселях (можно настроить по необходимости)
+                padding = (
+                    0  # Размер отступа в пикселях (можно настроить по необходимости)
+                )
                 x_min = max(x - r - padding, 0)
                 x_max = min(x + r + padding, image.shape[1])
                 y_min = max(y - r - padding, 0)
                 y_max = min(y + r + padding, image.shape[0])
                 circle_img = image[y_min:y_max, x_min:x_max]
                 # Сохраняем круг в файл
-                cv2.imwrite(os.path.join(output_folder, f'{index}{i}{i}.png'), circle_img)
+                cv2.imwrite(
+                    os.path.join(output_folder, f"{index}{i}{i}.png"), circle_img
+                )
 
-            print(f'{len(circles)} кругов сохранены в папке {output_folder}.')
+            print(f"{len(circles)} кругов сохранены в папке {output_folder}.")
         else:
-            with open('bad.txt', 'a') as f:
+            with open("bad.txt", "a") as f:
                 f.write(f"{file_paths}\n")
             print("Круги не найдены на изображении.")
     try:
         rename_files(output_folder)
     except Exception as ex:
-        logger.error(f'Не удалось переименовать файлы в {output_folder}')
+        logger.error(f"Не удалось переименовать файлы в {output_folder}")

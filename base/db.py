@@ -11,36 +11,33 @@ from peewee import *
 from config import sticker_path_all, dbname, user, password, host, machine_name
 from utils.utils import remove_russian_letters
 
-db = SqliteDatabase('base/mydatabase.db')
+db = SqliteDatabase("base/mydatabase.db")
 
 all_stickers = os.listdir(sticker_path_all)
 
 
 def update_base_postgresql():
     """Запись инфы по обновлению в бд пг"""
-    db_params = {
-        "host": host,
-        "database": dbname,
-        "user": user,
-        "password": password
-    }
+    db_params = {"host": host, "database": dbname, "user": user, "password": password}
 
     arts_value = Article.select().count()
 
     # Создание подключения и контекстного менеджера
     with psycopg2.connect(**db_params) as connection:
         # Создание таблицы, если она не существует
-        create_table_query = '''
+        create_table_query = """
         CREATE TABLE IF NOT EXISTS Update_base (
             machin VARCHAR,
             update_timestamp TIMESTAMP DEFAULT current_timestamp,
             arts INT
         );
-        '''
+        """
         with connection.cursor() as cursor:
             cursor.execute(create_table_query)
 
-            cursor.execute("SELECT * FROM Update_base WHERE machin = %s;", (machine_name,))
+            cursor.execute(
+                "SELECT * FROM Update_base WHERE machin = %s;", (machine_name,)
+            )
 
             existing_record = cursor.fetchone()
             if existing_record:
@@ -60,19 +57,14 @@ def update_base_postgresql():
 
 def files_base_postgresql(self):
     """Запись информации по файлам в бд пг"""
-    if machine_name == 'Mikhail':
+    if machine_name == "Mikhail":
         return 0
-    db_params = {
-        "host": host,
-        "database": dbname,
-        "user": user,
-        "password": password
-    }
+    db_params = {"host": host, "database": dbname, "user": user, "password": password}
     num_lists = self.list_on_print
     # Создание подключения и контекстного менеджера
     with psycopg2.connect(**db_params) as connection:
         # Создание таблицы, если она не существует
-        create_table_query = '''
+        create_table_query = """
         CREATE TABLE IF NOT EXISTS files (
             machin VARCHAR,
             update_timestamp TIMESTAMP DEFAULT current_timestamp,
@@ -81,7 +73,7 @@ def files_base_postgresql(self):
             num_badges INT,
             num_lists INT
         );
-        '''
+        """
         with connection.cursor() as cursor:
             cursor.execute(create_table_query)
 
@@ -89,10 +81,19 @@ def files_base_postgresql(self):
             found_arts = Orders.select().count()
             num_badges = Orders.select(fn.SUM(Orders.nums_in_folder)).scalar()
 
-            insert_query = ("INSERT INTO files (machin, update_timestamp, "
-                            "name_file, found_arts, num_badges, num_lists) "
-                            "VALUES (%s, %s, %s, %s, %s, %s);")
-            insert_values = (machine_name, datetime.now(), name_file, found_arts, num_badges, num_lists)
+            insert_query = (
+                "INSERT INTO files (machin, update_timestamp, "
+                "name_file, found_arts, num_badges, num_lists) "
+                "VALUES (%s, %s, %s, %s, %s, %s);"
+            )
+            insert_values = (
+                machine_name,
+                datetime.now(),
+                name_file,
+                found_arts,
+                num_badges,
+                num_lists,
+            )
             cursor.execute(insert_query, insert_values)
 
         # Подтверждение изменений (commit) выполняется один раз
@@ -102,19 +103,14 @@ def files_base_postgresql(self):
 
 def orders_base_postgresql(self, lists):
     """Запись заказов в бд пг"""
-    if machine_name == 'Mikhail':
+    if machine_name == "Mikhail":
         return
-    db_params = {
-        "host": host,
-        "database": dbname,
-        "user": user,
-        "password": password
-    }
+    db_params = {"host": host, "database": dbname, "user": user, "password": password}
 
     # Создание подключения и контекстного менеджера
     with psycopg2.connect(**db_params) as connection:
         # Создание таблицы, если она не существует
-        create_table_query = '''
+        create_table_query = """
         CREATE TABLE IF NOT EXISTS orders (
             art VARCHAR,
             num INT,
@@ -125,7 +121,7 @@ def orders_base_postgresql(self, lists):
             num_on_list INT,
             lists INT
         );
-        '''
+        """
         with connection.cursor() as cursor:
             cursor.execute(create_table_query)
 
@@ -134,16 +130,29 @@ def orders_base_postgresql(self, lists):
             query = Orders.select()
             for order in query:
                 art = order.art
-                check_query = "SELECT COUNT(*) FROM orders WHERE art = %s AND name_file = %s;"
+                check_query = (
+                    "SELECT COUNT(*) FROM orders WHERE art = %s AND name_file = %s;"
+                )
                 cursor.execute(check_query, (art, name_file))
                 count = cursor.fetchone()[0]
                 if count == 0:
-                    orders.append((art, order.nums_in_folder, order.size, machine_name, name_file, datetime.now(),
-                                   order.num_on_list, lists))
+                    orders.append(
+                        (
+                            art,
+                            order.nums_in_folder,
+                            order.size,
+                            machine_name,
+                            name_file,
+                            datetime.now(),
+                            order.num_on_list,
+                            lists,
+                        )
+                    )
 
             insert_data_query = (
                 "INSERT INTO orders (art, num, size, machin, name_file, update_timestamp, num_on_list, lists)"
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s);")
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
+            )
 
             cursor.executemany(insert_data_query, orders)
 
@@ -222,19 +231,21 @@ class Article(Model):
         if existing_article:
             return existing_article
         try:
-            if art.lower().startswith('popsocket'):
+            if art.lower().startswith("popsocket"):
                 nums, size = 1, 44
             else:
-                nums, size = art.split('-')[-2:]
+                nums, size = art.split("-")[-2:]
                 nums = int(nums)
                 size = int(size)
         except (ValueError, IndexError):
             nums = None
-            if art.endswith('56'):
+            if art.endswith("56"):
                 size = 56
             else:
                 size = 37
-        article = cls.create(art=art, folder=os.path.abspath(folder), nums=nums, size=size, shop=shop)
+        article = cls.create(
+            art=art, folder=os.path.abspath(folder), nums=nums, size=size, shop=shop
+        )
         article.fill_additional_columns()
         logger.success(f"Успешно создан {article.art}")
         return article
@@ -256,21 +267,27 @@ class Article(Model):
         image_filenames = []
 
         for index, filename in enumerate(os.listdir(folder_name), start=1):
-            if (filename[0].startswith('!') or filename.strip()[0].isdigit()) \
-                    and os.path.isfile(os.path.join(folder_name, filename)):
-                image_filenames.append(os.path.join(folder_name, f'{filename}'))
+            if (
+                filename[0].startswith("!") or filename.strip()[0].isdigit()
+            ) and os.path.isfile(os.path.join(folder_name, filename)):
+                image_filenames.append(os.path.join(folder_name, f"{filename}"))
 
-        self.images = ', '.join(image_filenames) if image_filenames else None
+        self.images = ", ".join(image_filenames) if image_filenames else None
         self.nums_in_folder = len(image_filenames)
 
-        name_sticker = self.art + '.pdf'
+        name_sticker = self.art + ".pdf"
         sticker_file_path = None
 
         # Поиск файла с учетом разных регистров
 
-        all_stickers_rev_rush = list(map(remove_russian_letters, list(map(str.lower, all_stickers))))
+        all_stickers_rev_rush = list(
+            map(remove_russian_letters, list(map(str.lower, all_stickers)))
+        )
         if name_sticker in all_stickers_rev_rush:
-            sticker_file_path = os.path.join(sticker_path_all, all_stickers[all_stickers_rev_rush.index(name_sticker)])
+            sticker_file_path = os.path.join(
+                sticker_path_all,
+                all_stickers[all_stickers_rev_rush.index(name_sticker)],
+            )
         self.sticker = sticker_file_path
         self.save()
 
@@ -308,7 +325,7 @@ class Orders(Article):
 
     class Meta:
         database = db
-        ordering = ['created_at']
+        ordering = ["created_at"]
 
     @classmethod
     def sorted_records(cls):

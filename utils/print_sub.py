@@ -13,14 +13,14 @@ from config import acrobat_path
 
 def print_pdf_sticker(printer_name, self=None):
     # Проверка, поддерживается ли печать через subprocess на вашей платформе
-    if sys.platform != 'win32':
+    if sys.platform != "win32":
         print("Печать PDF поддерживается только в Windows.")
     # Проверка наличия файла Adobe Acrobat Reader
     if not os.path.isfile(acrobat_path):
         print("Adobe Acrobat Reader не найден.")
         return
     bad_list_arts = []
-    arts = Orders.select().order_by('num_on_list')
+    arts = Orders.select().order_by("num_on_list")
     sorted_arts = sorted([i for i in arts], key=lambda x: x.num_on_list)
     try:
         print_processes = []
@@ -30,25 +30,29 @@ def print_pdf_sticker(printer_name, self=None):
                 print_process = subprocess.Popen(print_command, shell=True)
                 print_processes.append(print_process)
                 time.sleep(0.5)
-                logger.success(f'Файл {i.sticker} отправлен на печать на принтер {printer_name}')
+                logger.success(
+                    f"Файл {i.sticker} отправлен на печать на принтер {printer_name}"
+                )
             else:
-                logger.error(f'Нет стикера на арт: {i.art}')
+                logger.error(f"Нет стикера на арт: {i.art}")
                 bad_list_arts.append(i.art)
         if self and len(bad_list_arts) != 0:
             text_arts = "\n".join(bad_list_arts)
-            QMessageBox.information(self, 'Отправка на печать', f'Нет стикеров на печать:\n{text_arts}')
+            QMessageBox.information(
+                self, "Отправка на печать", f"Нет стикеров на печать:\n{text_arts}"
+            )
     except Exception as e:
-        logger.error(f'Возникла ошибка при печати файла: {e}')
+        logger.error(f"Возникла ошибка при печати файла: {e}")
 
 
 def print_pdf_skin(printers):
     file_list = []
     tuple_printing = tuple()
-    ready_path = 'Файлы на печать'
+    ready_path = "Файлы на печать"
 
-    for file in os.listdir(f'{ready_path}'):
+    for file in os.listdir(f"{ready_path}"):
         if os.path.isfile(os.path.join(ready_path, file)):
-            if file.split('.')[1] == 'pdf' and file.split('.')[0].strip().isdigit():
+            if file.split(".")[1] == "pdf" and file.split(".")[0].strip().isdigit():
                 file_path = os.path.join(ready_path, file)
                 file_list.append(file_path)
 
@@ -61,30 +65,38 @@ def print_pdf_skin(printers):
             print_command = f'"{acrobat_path}" /N /T "{file_path}" "{printer_name}"'
             print_process = subprocess.Popen(print_command, shell=True)
             print_processes.append(print_process)
-            logger.success(f'Файл {file_path} отправлен на печать на принтер {printer_name}')
+            logger.success(
+                f"Файл {file_path} отправлен на печать на принтер {printer_name}"
+            )
         except Exception as e:
-            logger.error(f'Возникла ошибка при печати файла: {e}')
+            logger.error(f"Возникла ошибка при печати файла: {e}")
 
 
 def print_png_images(printers):
     file_list = []
-    ready_path = 'Файлы на печать'
+    ready_path = "Файлы на печать"
     for root, dirs, files in os.walk(ready_path):
         for file in files:
-            if file.endswith('png'):
+            if file.endswith("png"):
                 file_list.append(os.path.join(root, file))
 
     tuple_printing = list(zip(file_list, itertools.cycle(printers)))
 
     for file_path, printer_name in tuple_printing:
         try:
-            subprocess.run(['mspaint', '/pt', file_path, printer_name, '/p:a4'], check=True)
-            logger.success(f'Файл {file_path} отправлен на печать на принтер {printer_name}')
+            subprocess.run(
+                ["mspaint", "/pt", file_path, printer_name, "/p:a4"], check=True
+            )
+            logger.success(
+                f"Файл {file_path} отправлен на печать на принтер {printer_name}"
+            )
         except subprocess.CalledProcessError:
             print("Ошибка при печати файла.")
 
 
-if __name__ == '__main__':
-    file_path = r"E:\Новая база значков\AniKoya\Готовые\6\37\REZERO-4NEW-NABOR37\!10003.png"
+if __name__ == "__main__":
+    file_path = (
+        r"E:\Новая база значков\AniKoya\Готовые\6\37\REZERO-4NEW-NABOR37\!10003.png"
+    )
     printer_name = "Отправить в OneNote 16"
     print_pdf_skin(printer_name)

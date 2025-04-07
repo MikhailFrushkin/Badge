@@ -20,11 +20,11 @@ async def traverse_yandex_disk(session, folder_path, list_arts, offset=0):
             for item in data["_embedded"]["items"]:
                 list_arts.append(item["name"].lower())
     except Exception as ex:
-        logger.debug(f'Ошибка при поиске папки {folder_path} {ex}')
+        logger.debug(f"Ошибка при поиске папки {folder_path} {ex}")
 
 
 async def main_search():
-    folder_path = '/Исправить'
+    folder_path = "/Исправить"
     list_arts = []
     async with aiohttp.ClientSession() as session:
         await traverse_yandex_disk(session, folder_path, list_arts)
@@ -38,7 +38,7 @@ def delete_arts():
         results = Article.select().where(fn.Lower(Article.art).in_(list_arts))
         for article in results:
             try:
-                print(f'Удален {article.art}')
+                print(f"Удален {article.art}")
                 article.delete_instance()
                 shutil.rmtree(article.folder)
             except Exception as ex:

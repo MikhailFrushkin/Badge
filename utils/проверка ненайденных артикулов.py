@@ -10,21 +10,17 @@ from config import token
 
 
 def get_file_excel():
-    headers = {
-        "Authorization": f"OAuth {token}"
-    }
+    headers = {"Authorization": f"OAuth {token}"}
 
-    params = {
-        "path": 'Отчеты',
-        "fields": "_embedded.items",
-        "limit": 1000
-    }
+    params = {"path": "Отчеты", "fields": "_embedded.items", "limit": 1000}
 
-    response = requests.get("https://cloud-api.yandex.net/v1/disk/resources", headers=headers, params=params)
+    response = requests.get(
+        "https://cloud-api.yandex.net/v1/disk/resources", headers=headers, params=params
+    )
 
     if response.status_code == 200:
-        files = response.json().get('_embedded', {}).get('items', None)
-        result = [(i['name'], i['file']) for i in files]
+        files = response.json().get("_embedded", {}).get("items", None)
+        result = [(i["name"], i["file"]) for i in files]
         return result
     else:
         logger.error("Error:", response.status_code)
@@ -34,7 +30,7 @@ def download_file(destination_path, url):
     try:
         response = requests.get(url, stream=True)
         if response.status_code == 200:
-            with open(destination_path, 'wb') as file:
+            with open(destination_path, "wb") as file:
                 for chunk in response.iter_content(chunk_size=1024):
                     if chunk:  # filter out keep-alive new chunks
                         file.write(chunk)
@@ -47,23 +43,24 @@ def download_file(destination_path, url):
 
 def read_all_files():
     from utils import df_in_xlsx
-    combined_df = pd.DataFrame(columns=['Артикул'])
-    for file in glob.glob(os.path.join(directory, '*.xlsx')):
+
+    combined_df = pd.DataFrame(columns=["Артикул"])
+    for file in glob.glob(os.path.join(directory, "*.xlsx")):
         print(file)
         df = pd.read_excel(file)
 
         # Выбираем только столбец "Артикул"
-        if 'Артикул' in df.columns:
-            df = df[['Артикул']]
+        if "Артикул" in df.columns:
+            df = df[["Артикул"]]
 
             # Добавляем к общему DataFrame
             combined_df = pd.concat([combined_df, df], ignore_index=True)
     combined_df.drop_duplicates(inplace=True)
-    df_in_xlsx(df=combined_df, filename='Ненайденные артикула с отчетов')
+    df_in_xlsx(df=combined_df, filename="Ненайденные артикула с отчетов")
 
 
-if __name__ == '__main__':
-    directory = 'temp_excel'
+if __name__ == "__main__":
+    directory = "temp_excel"
     shutil.rmtree(directory, ignore_errors=True)
     os.makedirs(directory, exist_ok=True)
     files = get_file_excel()

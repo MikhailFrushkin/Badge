@@ -7,9 +7,9 @@ from loguru import logger
 
 from api_rest import get_products
 
-headers = {'Content-Type': 'application/json'}
+headers = {"Content-Type": "application/json"}
 # domain = 'http://127.0.0.1:8000/api_rest'
-domain = 'https://mycego.online/api_rest'
+domain = "https://mycego.online/api_rest"
 
 
 async def fetch(session, semaphore, url):
@@ -27,28 +27,33 @@ async def get_info_publish_folder(semaphore, public_url, art):
 
     async with aiohttp.ClientSession() as session:
         async with session.get(
-                f'https://cloud-api.yandex.net/v1/disk/public/resources?public_key={public_url}&fields=_embedded&limit=1000') as res:
+            f"https://cloud-api.yandex.net/v1/disk/public/resources?public_key={public_url}&fields=_embedded&limit=1000"
+        ) as res:
             if res.status == 200:
                 data = await res.json()
-                items = data.get('_embedded', {}).get('items', [])
+                items = data.get("_embedded", {}).get("items", [])
 
                 for i in items:
-                    file_name = i.get('name', None)
-                    if file_name.endswith('.pdf') and 'изображения' not in file_name.lower():
+                    file_name = i.get("name", None)
+                    if (
+                        file_name.endswith(".pdf")
+                        and "изображения" not in file_name.lower()
+                    ):
                         stickers.append(file_name)
-                    elif 'подложка' in file_name.lower():
+                    elif "подложка" in file_name.lower():
                         skin.append(file_name)
-                    elif (file_name.endswith('.png') or file_name.endswith('.jpg')) and file_name.split('.')[
-                        0].isdigit():
+                    elif (
+                        file_name.endswith(".png") or file_name.endswith(".jpg")
+                    ) and file_name.split(".")[0].isdigit():
                         images.append(file_name)
                     else:
                         other.append(file_name)
 
                 result_data[f"{art} - {public_url}"] = {
-                    'stickers': stickers,
-                    'images': images,
-                    'skin': skin,
-                    'other': other,
+                    "stickers": stickers,
+                    "images": images,
+                    "skin": skin,
+                    "other": other,
                 }
             else:
                 logger.error(res.status)
@@ -60,7 +65,7 @@ async def process_chunk(semaphore, chunk):
     tasks = []
     for i in chunk:
         try:
-            task = get_info_publish_folder(semaphore, i['directory_url'], i['art'])
+            task = get_info_publish_folder(semaphore, i["directory_url"], i["art"])
             tasks.append(task)
         except Exception as ex:
             logger.error(i)
@@ -70,7 +75,7 @@ async def process_chunk(semaphore, chunk):
 
 async def main():
     semaphore = asyncio.Semaphore(10)
-    with open(f'all_arts.json', 'r', encoding='utf-8') as file:
+    with open(f"all_arts.json", "r", encoding="utf-8") as file:
         data = json.load(file)
 
     all_data = {}
@@ -82,7 +87,7 @@ async def main():
         chunk_end = min(chunk_start + chunk_size, len_data)
         chunk = data[chunk_start:chunk_end]
 
-        print(f'Processing chunk {chunk_start + 1}-{chunk_end} / {len_data}')
+        print(f"Processing chunk {chunk_start + 1}-{chunk_end} / {len_data}")
 
         results = await process_chunk(semaphore, chunk)
 
@@ -91,12 +96,12 @@ async def main():
 
         time.sleep(pause_duration)
 
-    with open(f'scan.json', 'w', encoding='utf-8') as file:
+    with open(f"scan.json", "w", encoding="utf-8") as file:
         json.dump(all_data, file, indent=4, ensure_ascii=False)
 
 
-if __name__ == '__main__':
-    categories = ['all']
+if __name__ == "__main__":
+    categories = ["all"]
     bad_list = []
     bad_list_art = []
     data = get_products(categories)
@@ -141,7 +146,7 @@ if __name__ == '__main__':
     #     json.dump(all_data, file, indent=4, ensure_ascii=False)
 
     # Проверка на наличик стикеров и других файлов
-    with open(f'scan.json', 'r', encoding='utf-8') as file:
+    with open(f"scan.json", "r", encoding="utf-8") as file:
         data = json.load(file)
     # for key, value in data.items():
     #     skin = value.get('skin', None)

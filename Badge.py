@@ -12,11 +12,22 @@ import qdarkstyle
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette, QFont
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QTextEdit, QPushButton, QDialog, QMessageBox, QWidget, \
-    QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView, QLabel, QCalendarWidget
 from PyQt5.QtWidgets import (
-    QFileDialog, QCheckBox, QProgressBar
+    QApplication,
+    QVBoxLayout,
+    QTextEdit,
+    QPushButton,
+    QDialog,
+    QMessageBox,
+    QWidget,
+    QTableWidget,
+    QTableWidgetItem,
+    QAbstractItemView,
+    QHeaderView,
+    QLabel,
+    QCalendarWidget,
 )
+from PyQt5.QtWidgets import QFileDialog, QCheckBox, QProgressBar
 from loguru import logger
 from peewee import fn
 
@@ -36,7 +47,7 @@ from utils.utils import enum_printers, FilesOnPrint, df_in_xlsx, remove_russian_
 class GroupedRecordsDialog(QDialog):
     def __init__(self, parent, start_date, end_date):
         super(GroupedRecordsDialog, self).__init__(parent)
-        self.setWindowTitle('Статистика печати')
+        self.setWindowTitle("Статистика печати")
         self.start_date = start_date
         self.end_date = end_date
         self.layout = QVBoxLayout(self)
@@ -49,18 +60,20 @@ class GroupedRecordsDialog(QDialog):
 
     def populate_table(self):
         self.table_widget.setColumnCount(3)  # Add one more column for "Sum of nums"
-        self.table_widget.setHorizontalHeaderLabels(["Артикул", "Количество", "Количество значков"])
+        self.table_widget.setHorizontalHeaderLabels(
+            ["Артикул", "Количество", "Количество значков"]
+        )
         end_date_inclusive = self.end_date.toPython() + timedelta(days=1)
         records = Statistic.select().where(
-            (Statistic.created_at >= self.start_date.toPython()) &
-            (Statistic.created_at < end_date_inclusive)
+            (Statistic.created_at >= self.start_date.toPython())
+            & (Statistic.created_at < end_date_inclusive)
         )
 
         grouped_records = records.group_by(Statistic.art).select(
             Statistic.art,
             Statistic.size,
-            fn.COUNT(Statistic.id).alias('count'),
-            fn.SUM(Statistic.nums).alias('sum_of_nums')
+            fn.COUNT(Statistic.id).alias("count"),
+            fn.SUM(Statistic.nums).alias("sum_of_nums"),
         )
         data = []
         row = 0
@@ -73,15 +86,21 @@ class GroupedRecordsDialog(QDialog):
             self.table_widget.setItem(row, 1, count_item)
             self.table_widget.setItem(row, 2, sum_of_nums_item)
             row += 1
-            data.append({'Артикул': group.art, 'Размер': group.size, 'Количество': group.count,
-                         'Сумма значков': group.sum_of_nums})
+            data.append(
+                {
+                    "Артикул": group.art,
+                    "Размер": group.size,
+                    "Количество": group.count,
+                    "Сумма значков": group.sum_of_nums,
+                }
+            )
         df = pd.DataFrame(data)
-        size_list = df['Размер'].unique().tolist()
-        os.makedirs('Файлы статистики', exist_ok=True)
+        size_list = df["Размер"].unique().tolist()
+        os.makedirs("Файлы статистики", exist_ok=True)
         if size_list:
             for size in size_list:
-                df_temp = df[df['Размер'] == str(size)]
-                df_in_xlsx(df_temp, f'Статистика {size}', directory='Файлы статистики')
+                df_temp = df[df["Размер"] == str(size)]
+                df_in_xlsx(df_temp, f"Статистика {size}", directory="Файлы статистики")
         self.table_widget.resizeColumnsToContents()
 
     def adjust_dialog_size(self):
@@ -97,7 +116,7 @@ class DateRangeDialog(QDialog):
         layout = QVBoxLayout(self)
         self.calendar = QCalendarWidget(self)
         layout.addWidget(self.calendar)
-        self.ok_button = QPushButton('OK', self)
+        self.ok_button = QPushButton("OK", self)
         self.ok_button.setEnabled(False)
         self.ok_button.clicked.connect(self.on_ok_button_clicked)
         layout.addWidget(self.ok_button)
@@ -123,7 +142,9 @@ class DateRangeDialog(QDialog):
         if len(self.selected_dates) == 2:
             current_date = self.selected_dates[0]
             while current_date <= self.selected_dates[1]:
-                self.calendar.setDateTextFormat(current_date, self.date_format_for_highlight())
+                self.calendar.setDateTextFormat(
+                    current_date, self.date_format_for_highlight()
+                )
                 current_date = current_date.addDays(1)
 
     def date_format_for_highlight(self):
@@ -164,7 +185,6 @@ class CustomDialog(QDialog):
         layout.addWidget(self.text_edit)
         layout.addWidget(self.close_button)
         self.setLayout(layout)
-
 
 
 # class Dialog(QDialog):
@@ -219,7 +239,7 @@ class QueueDialog(QWidget):
         self.files_on_print = files_on_print
         self.setWindowTitle(title)
         self.A3_flag = A3_flag
-        self.name_doc = os.path.abspath(name_doc).split('\\')[-1].replace('.xlsx', '')
+        self.name_doc = os.path.abspath(name_doc).split("\\")[-1].replace(".xlsx", "")
         self.list_on_print = 0
 
         layout = QVBoxLayout(self)
@@ -228,14 +248,17 @@ class QueueDialog(QWidget):
         self.create_pdf_checkbox = QCheckBox("Создать 1 PDF файл", self)
         self.create_pdf_checkbox.setChecked(True)
         self.create_pdf_checkbox.setFont(QFont("Arial", 16))  # Set font size
-        self.create_pdf_checkbox.setStyleSheet("QCheckBox { font-size: 16pt; }")  # Set font size using style sheet
+        self.create_pdf_checkbox.setStyleSheet(
+            "QCheckBox { font-size: 16pt; }"
+        )  # Set font size using style sheet
         layout.addWidget(self.create_pdf_checkbox)
 
         self.tableWidget = QTableWidget(self)
         self.tableWidget.setColumnCount(4)  # Добавление колонки 3 колонок
         self.tableWidget.setMinimumSize(800, 300)
         self.tableWidget.setHorizontalHeaderLabels(
-            ["Артикул", "Замена", "Количество", "Найден"])  # заголовки
+            ["Артикул", "Замена", "Количество", "Найден"]
+        )  # заголовки
 
         font = self.tableWidget.font()
         font.setPointSize(14)
@@ -289,12 +312,14 @@ class QueueDialog(QWidget):
         if selected_data:
             created_good_images(selected_data, self, self.A3_flag)
             try:
-                path = os.path.join(BASE_DIR, 'Файлы на печать')
+                path = os.path.join(BASE_DIR, "Файлы на печать")
                 os.startfile(path)
             except Exception as ex:
                 logger.error(ex)
         else:
-            QMessageBox.information(self, 'Отправка на печать', 'Ни одна строка не выбрана')
+            QMessageBox.information(
+                self, "Отправка на печать", "Ни одна строка не выбрана"
+            )
 
     def evt_btn_print_all_clicked(self):
         """Создание файлов всех строк с артикулами"""
@@ -302,45 +327,63 @@ class QueueDialog(QWidget):
         all_data = self.get_all_data()
         if all_data:
             try:
-                asyncio.run(upload_statistic_files_async(os.path.basename(self.name_doc)))
+                asyncio.run(
+                    upload_statistic_files_async(os.path.basename(self.name_doc))
+                )
             except Exception as ex:
                 logger.error(ex)
             try:
                 created_good_images(all_data, self, self.A3_flag)
                 try:
-                    path = os.path.join(BASE_DIR, 'Файлы на печать')
+                    path = os.path.join(BASE_DIR, "Файлы на печать")
                     os.startfile(path)
                 except Exception as ex:
                     logger.error(ex)
             except Exception as ex:
                 logger.error(ex)
         else:
-            QMessageBox.information(self, 'Отправка на печать', 'Таблица пуста')
+            QMessageBox.information(self, "Отправка на печать", "Таблица пуста")
 
     def get_selected_data(self):
         selected_rows = self.tableWidget.selectionModel().selectedRows()
         data = []
         for row in selected_rows:
-            name = ''
+            name = ""
             origin_art = self.tableWidget.item(row.row(), 0).text()
             art = self.tableWidget.item(row.row(), 1).text()
             count = self.tableWidget.item(row.row(), 2).text()
             status = self.tableWidget.item(row.row(), 3).text()
-            if status == '✅':
-                data.append(FilesOnPrint(name=name, origin_art=origin_art, art=art, count=int(count), status='✅'))
+            if status == "✅":
+                data.append(
+                    FilesOnPrint(
+                        name=name,
+                        origin_art=origin_art,
+                        art=art,
+                        count=int(count),
+                        status="✅",
+                    )
+                )
         return data
 
     def get_all_data(self):
         data = []
         for row in range(self.tableWidget.rowCount()):
             try:
-                name = ''
+                name = ""
                 origin_art = self.tableWidget.item(row, 0).text()
                 art = self.tableWidget.item(row, 1).text()
                 count = self.tableWidget.item(row, 2).text().replace(".0", "")
                 status = self.tableWidget.item(row, 3).text()
-                if status == '✅':
-                    data.append(FilesOnPrint(name=name, art=art, origin_art=origin_art, count=int(count), status='✅'))
+                if status == "✅":
+                    data.append(
+                        FilesOnPrint(
+                            name=name,
+                            art=art,
+                            origin_art=origin_art,
+                            count=int(count),
+                            status="✅",
+                        )
+                    )
             except Exception as ex:
                 logger.error(ex)
         return data
@@ -389,7 +432,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         font.setPointSize(14)
         checkbox.setFont(font)
         checkbox.setObjectName(printer_name)
-        self.gridLayout.addWidget(checkbox, self.column_counter_printer, self.count_printer)
+        self.gridLayout.addWidget(
+            checkbox, self.column_counter_printer, self.count_printer
+        )
         self.count_printer += 1
         if self.count_printer == 2:
             self.column_counter_printer += 1
@@ -407,15 +452,20 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         """Ивент на кнопку загрузить файл"""
 
         def get_download_path():
-            return os.path.join(os.path.expanduser('~'), 'downloads')
+            return os.path.join(os.path.expanduser("~"), "downloads")
 
         try:
-            file_name, _ = QFileDialog.getOpenFileName(self, 'Загрузить файл', get_download_path(),
-                                                       'CSV файлы (*.csv *.xlsx)')
+            file_name, _ = QFileDialog.getOpenFileName(
+                self, "Загрузить файл", get_download_path(), "CSV файлы (*.csv *.xlsx)"
+            )
         except Exception as ex:
             logger.error(ex)
-            file_name, _ = QFileDialog.getOpenFileName(self, 'Загрузить файл', str(self.current_dir),
-                                                       'CSV файлы (*.csv *.xlsx)')
+            file_name, _ = QFileDialog.getOpenFileName(
+                self,
+                "Загрузить файл",
+                str(self.current_dir),
+                "CSV файлы (*.csv *.xlsx)",
+            )
         if file_name:
             try:
                 self.lineEdit.setText(file_name)
@@ -423,8 +473,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 values = [f"{item.origin_art}: {item.count} шт." for item in counts_art]
                 self.update_list_view(values)
             except Exception as ex:
-                logger.error(f'ошибка чтения xlsx {ex}')
-                QMessageBox.information(self, 'Инфо', f'ошибка чтения xlsx {ex}')
+                logger.error(f"ошибка чтения xlsx {ex}")
+                QMessageBox.information(self, "Инфо", f"ошибка чтения xlsx {ex}")
 
     def evt_btn_create_files(self, flag_A3):
         """Ивент на кнопку Создать файлы"""
@@ -441,7 +491,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     except Exception as ex:
                         logger.error(ex)
                     if status and os.path.exists(status.folder):
-                        item.status = '✅'
+                        item.status = "✅"
                 counts_art = sorted(counts_art, key=lambda x: x.status, reverse=True)
                 # try:
                 #     bad_arts = [(i.art, i.count) for i in counts_art
@@ -458,15 +508,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             try:
                 if counts_art:
-                    dialog = QueueDialog(counts_art, 'Значки', filename, flag_A3)
+                    dialog = QueueDialog(counts_art, "Значки", filename, flag_A3)
                     self.dialogs.append(dialog)
                     dialog.show()
 
             except Exception as ex:
-                logger.error(f'Ошибка формирования списков печати {ex}')
+                logger.error(f"Ошибка формирования списков печати {ex}")
 
         else:
-            QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
+            QMessageBox.information(self, "Инфо", "Загрузите заказ")
 
     def update_list_view(self, values):
         model = QtCore.QStringListModel()
@@ -476,13 +526,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def evt_btn_update(self):
         """Ивент на кнопку обновить базу"""
         try:
-            logger.warning('Обновление базы с сайта')
+            logger.warning("Обновление базы с сайта")
             try:
                 main_download_site()
             except Exception as ex:
                 logger.error(ex)
             try:
-                logger.warning('Проверка базы')
+                logger.warning("Проверка базы")
                 update_arts_db()
                 update_sticker_path()
             except Exception as ex:
@@ -503,24 +553,25 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # except Exception as ex:
             #     logger.error(ex)
 
-            QMessageBox.information(self, 'Загрузка', 'Загрузка закончена')
+            QMessageBox.information(self, "Загрузка", "Загрузка закончена")
             self.progress_bar.setValue(100)
         except Exception as ex:
             logger.error(ex)
 
     def evt_btn_print_stickers(self):
         """Ивент на кнопку напечатать стикеры"""
-        if self.lineEdit.text() != '':
+        if self.lineEdit.text() != "":
+
             def find_files_in_directory(directory, arts_list):
                 found_files = []
                 not_found_files = []
                 sticker_dict = {}
                 for file in os.listdir(directory):
                     file_name_no_exp = file.replace(".pdf", "")
-                    file_name = file_name_no_exp.lower().replace(' ', '').strip()
+                    file_name = file_name_no_exp.lower().replace(" ", "").strip()
                     sticker_dict[file_name] = os.path.join(directory, file)
                 for art in arts_list:
-                    file_name = art.origin_art.lower().strip().replace(' ', '')
+                    file_name = art.origin_art.lower().strip().replace(" ", "")
                     if file_name in sticker_dict:
                         found_files.append(sticker_dict[file_name])
                     else:
@@ -543,26 +594,33 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 pdf_writer.close()  # Закрываем итоговый PDF
 
             def create_order_shk(arts, name_doc=""):
-                found_files_stickers, not_found_stickers = find_files_in_directory(sticker_path_all,
-                                                                                   arts)
+                found_files_stickers, not_found_stickers = find_files_in_directory(
+                    sticker_path_all, arts
+                )
                 if found_files_stickers:
                     logger.debug(found_files_stickers)
-                    merge_pdfs_stickers(found_files_stickers, f'Файлы на печать\\!ШК {name_doc}')
-                    logger.success(f'{name_doc} ШК сохранены!')
+                    merge_pdfs_stickers(
+                        found_files_stickers, f"Файлы на печать\\!ШК {name_doc}"
+                    )
+                    logger.success(f"{name_doc} ШК сохранены!")
                 else:
-                    logger.error(f'{name_doc} ШК не найдены!')
+                    logger.error(f"{name_doc} ШК не найдены!")
                 return not_found_stickers
 
             arts = read_excel_file(self.lineEdit.text())
             not_found_stickers_arts = create_order_shk(arts, "Все ")
             if not_found_stickers_arts:
-                QMessageBox.warning(self, 'Проблема', f'Не найдены шк для:\n{", ".join(not_found_stickers_arts)}')
+                QMessageBox.warning(
+                    self,
+                    "Проблема",
+                    f'Не найдены шк для:\n{", ".join(not_found_stickers_arts)}',
+                )
             try:
                 os.startfile(BASE_DIR)
             except Exception as ex:
                 logger.error(ex)
         else:
-            QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
+            QMessageBox.information(self, "Инфо", "Загрузите заказ")
 
     def get_printers(self):
         # Список выбранных принтеров
@@ -576,7 +634,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 checked_checkboxes.append(widget.text())
                 logger.debug(widget.text())
         if not checked_checkboxes:
-            QMessageBox.information(self, 'Инфо', 'Не выбран ни один принтер')
+            QMessageBox.information(self, "Инфо", "Не выбран ни один принтер")
         return checked_checkboxes
 
     def evt_btn_print_skins(self):
@@ -584,7 +642,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         try:
             print_pdf_skin(self.get_printers())
         except Exception as ex:
-            logger.error(f'Ошибка печати обложек {ex}')
+            logger.error(f"Ошибка печати обложек {ex}")
 
     def evt_btn_print_images(self):
         """Ивент на кнопку напечатать значки"""
@@ -593,7 +651,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if printers:
                 print_png_images(printers)
         except Exception as ex:
-            logger.error(f'Ошибка печати обложек {ex}')
+            logger.error(f"Ошибка печати обложек {ex}")
 
     def on_open_dialog_button_clicked(self):
         dialog = DateRangeDialog(self)
@@ -607,16 +665,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
                     end_date_inclusive = date2.toPython() + timedelta(days=1)
                     records = Statistic.select().where(
-                        (Statistic.created_at >= date1.toPython()) &
-                        (Statistic.created_at < end_date_inclusive)
+                        (Statistic.created_at >= date1.toPython())
+                        & (Statistic.created_at < end_date_inclusive)
                     )
                     count_of_records = records.count()
 
                     sum_of_nums = records.select(fn.SUM(Statistic.nums)).scalar()
-                    logger.success(f'Количество артикулов: {count_of_records}\nКоличество значков: {sum_of_nums}')
-                    QMessageBox.information(self, 'Общая статистика',
-                                            f'Количество артикулов: {count_of_records}\n'
-                                            f'Количество значков: {sum_of_nums}')
+                    logger.success(
+                        f"Количество артикулов: {count_of_records}\nКоличество значков: {sum_of_nums}"
+                    )
+                    QMessageBox.information(
+                        self,
+                        "Общая статистика",
+                        f"Количество артикулов: {count_of_records}\n"
+                        f"Количество значков: {sum_of_nums}",
+                    )
 
                     grouped_dialog = GroupedRecordsDialog(self, start_date, end_date)
                     grouped_dialog.exec_()
@@ -628,13 +691,13 @@ def run_script():
     while True:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        logger.warning('Поиск артикулов для замены')
+        logger.warning("Поиск артикулов для замены")
         try:
             delete_arts()
         except Exception as ex:
             logger.error(ex)
 
-        logger.warning('Обновление базы с сайта')
+        logger.warning("Обновление базы с сайта")
         try:
             main_download_site()
         except Exception as ex:
@@ -647,7 +710,7 @@ def run_script():
         # except Exception as ex:
         #     logger.error(ex)
 
-        logger.debug('Проверка базы...')
+        logger.debug("Проверка базы...")
         update_arts_db()
         # try:
         #     update_base_postgresql()
@@ -670,32 +733,32 @@ def run_script():
         except Exception as ex:
             logger.error(ex)
 
-        logger.success('Обновление завершено')
+        logger.success("Обновление завершено")
         time.sleep(5 * 60)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
 
-    shutil.rmtree('temp', ignore_errors=True)
+    shutil.rmtree("temp", ignore_errors=True)
     db.connect()
     db.create_tables([Statistic, GoogleTable, Orders, Article], safe=True)
     db.close()
-    directories = ['logs', 'base', 'Файлы на печать']
+    directories = ["logs", "base", "Файлы на печать"]
     for dir_name in directories:
         os.makedirs(dir_name, exist_ok=True)
     logger.add(
         "logs/logs.log",
         rotation="20 MB",
         level="INFO",
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {file!s} | {line} | {message}"
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {file!s} | {line} | {message}",
     )
 
     app = QtWidgets.QApplication(sys.argv)
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     w = MainWindow()
     w.show()
-    if machine_name != 'ADMIN':
+    if machine_name != "ADMIN":
         script_thread = Thread(target=run_script)
         script_thread.daemon = True
         script_thread.start()

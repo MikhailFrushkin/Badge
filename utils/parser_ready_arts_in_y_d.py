@@ -17,9 +17,9 @@ async def traverse_yandex_disk(session, folder_path, result_dict, offset=0):
     limit = 1000
     url = f"https://cloud-api.yandex.net/v1/disk/resources?path={quote(folder_path)}&limit={limit}&offset={offset}"
     headers = {"Authorization": f"OAuth {token}"}
-    dirs_list = ['Значки ШК', 'AniKoya', 'DP', 'Popsockets', 'сделать', 'Новые значки']
+    dirs_list = ["Значки ШК", "AniKoya", "DP", "Popsockets", "сделать", "Новые значки"]
     try:
-        async with (session.get(url, headers=headers) as response):
+        async with session.get(url, headers=headers) as response:
             data = await response.json()
             tasks = []
 
@@ -45,14 +45,14 @@ async def traverse_yandex_disk(session, folder_path, result_dict, offset=0):
 
 
 async def main_search():
-    folder_path = '/База значков'
+    folder_path = "/База значков"
     result_dict = {}
     async with aiohttp.ClientSession() as session:
         await traverse_yandex_disk(session, folder_path, result_dict)
 
-    df = pd.DataFrame(list(result_dict.items()), columns=['Имя', 'Путь'])
-    logger.info('Создан документ Пути к артикулам.xlsx')
-    df_in_xlsx(df, 'Пути к артикулам')
+    df = pd.DataFrame(list(result_dict.items()), columns=["Имя", "Путь"])
+    logger.info("Создан документ Пути к артикулам.xlsx")
+    df_in_xlsx(df, "Пути к артикулам")
     return result_dict
 
 
@@ -67,10 +67,14 @@ async def get_download_link(session, token, file_path):
                 data = await response.json()
                 return data["href"]
     except asyncio.TimeoutError:
-        logger.error(f"Время ожидания ответа от сервера истекло для файла '{file_path}'.")
+        logger.error(
+            f"Время ожидания ответа от сервера истекло для файла '{file_path}'."
+        )
 
 
-async def download_files_from_yandex_folder(session, token, folder_url, local_folder_path):
+async def download_files_from_yandex_folder(
+    session, token, folder_url, local_folder_path
+):
     headers = {"Authorization": f"OAuth {token}"}
     os.makedirs(local_folder_path, exist_ok=True)
     # Получаем список файлов в папке на Яндекс.Диске
@@ -95,12 +99,12 @@ async def download_files_from_yandex_folder(session, token, folder_url, local_fo
 
 
 async def download_file(session, url, filename):
-    headers = {'Authorization': f'OAuth {token}'}
+    headers = {"Authorization": f"OAuth {token}"}
 
     try:
         async with session.get(url, headers=headers) as response:
             if response.status == 200:
-                async with aiofiles.open(filename, 'wb') as f:
+                async with aiofiles.open(filename, "wb") as f:
                     while True:
                         chunk = await response.content.read(1024)
                         if not chunk:
@@ -121,10 +125,16 @@ async def main_parser(missing_dict):
             tasks = []
 
             for dirname, y_path in chunk:
-                new_folder = os.path.join(all_badge, y_path.replace("disk:/База значков/", ''))
+                new_folder = os.path.join(
+                    all_badge, y_path.replace("disk:/База значков/", "")
+                )
                 # logger.debug(new_folder)
                 folder_url = f"https://cloud-api.yandex.net/v1/disk/resources?path={y_path.replace('disk:', '')}"
-                tasks.append(download_files_from_yandex_folder(session, token, folder_url, new_folder))
+                tasks.append(
+                    download_files_from_yandex_folder(
+                        session, token, folder_url, new_folder
+                    )
+                )
 
             await asyncio.gather(*tasks)
 
@@ -132,13 +142,19 @@ async def main_parser(missing_dict):
 def chunked(iterable, chunk_size):
     """Разделяет итерируемый объект на группы определенного размера."""
     for i in range(0, len(iterable), chunk_size):
-        yield iterable[i:i + chunk_size]
+        yield iterable[i : i + chunk_size]
 
 
 def get_all_folder_comp():
     all_folders = []
     for _, dirs, _ in os.walk(all_badge):
-        all_folders.extend([i.lower() for i in dirs if (len(i) > 8 and i != 'Значки ШК' and i != 'Новые значки')])
+        all_folders.extend(
+            [
+                i.lower()
+                for i in dirs
+                if (len(i) > 8 and i != "Значки ШК" and i != "Новые значки")
+            ]
+        )
     return set(all_folders)
 
 
@@ -154,17 +170,18 @@ def missing_folders():
         except Exception as ex:
             pass
     missing_dict = result_dict
-    logger.debug(f'Новые артикула: {missing_dict.keys()}')
+    logger.debug(f"Новые артикула: {missing_dict.keys()}")
     return missing_dict
 
 
 if __name__ == "__main__":
     # missing_dict = missing_folders()
-    missing_dict = {'bongo_cat-13new-20-37': 'disk:/Компьютер HOME-PC/База '
-                                             'значков/AniKoya/BONGO_CAT-13NEW-20-37',
-                    'bongo_cat-13new-20-56': 'disk:/Компьютер HOME-PC/База '
-                                             'значков/AniKoya/BONGO_CAT-13NEW-20-56',
-                    }
+    missing_dict = {
+        "bongo_cat-13new-20-37": "disk:/Компьютер HOME-PC/База "
+        "значков/AniKoya/BONGO_CAT-13NEW-20-37",
+        "bongo_cat-13new-20-56": "disk:/Компьютер HOME-PC/База "
+        "значков/AniKoya/BONGO_CAT-13NEW-20-56",
+    }
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main_parser(missing_dict))
 

@@ -1,7 +1,14 @@
 import sys
 from datetime import datetime
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QPushButton
+from PyQt5.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
+    QPushButton,
+)
 from PyQt5.QtGui import QPixmap
 from db import Article
 from PyQt5.QtCore import Qt
@@ -45,7 +52,7 @@ class ImageLabelApp(QMainWindow):
             (QApplication.desktop().width() - window_width) // 2,
             (QApplication.desktop().height() - window_height) // 2,
             window_width,
-            window_height
+            window_height,
         )
         self.setFixedSize(window_width, window_height)  # Фиксируем размер окна
 
@@ -55,15 +62,19 @@ class ImageLabelApp(QMainWindow):
     def load_articles(self):
         """3558"""
         offset_value = 3558
-        self.articles = Article.select().where(Article.size == self.size).offset(offset_value)
+        self.articles = (
+            Article.select().where(Article.size == self.size).offset(offset_value)
+        )
         print(self.articles.count())
         if self.articles.count() > 0:
             self.load_image(self.current_article_index)
 
     def load_image(self, article_index):
-        if 0 <= article_index < len(self.articles):     
+        if 0 <= article_index < len(self.articles):
             article = self.articles[article_index]
-            image_paths = article.images.split(',')  # Предполагается, что пути разделены запятыми
+            image_paths = article.images.split(
+                ","
+            )  # Предполагается, что пути разделены запятыми
 
             if image_paths:
                 self.current_image_index = 0
@@ -102,7 +113,7 @@ class ImageLabelApp(QMainWindow):
             self.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ImageLabelApp(44)
     window.show()

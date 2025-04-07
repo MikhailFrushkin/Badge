@@ -34,7 +34,9 @@ class Ui_MainWindow(object):
         self.pushButton_2.setFont(font)
         self.pushButton_2.setObjectName("pushButton_2")
         self.horizontalLayout.addWidget(self.pushButton_2)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout.addItem(spacerItem)
         self.verticalLayout.addLayout(self.horizontalLayout)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
@@ -114,7 +116,7 @@ class Ui_MainWindow(object):
         self.verticalLayout.addLayout(self.gridLayout_2)
 
         # Кнопка обновления
-        if machine_name != 'ADMIN':
+        if machine_name != "ADMIN":
             self.pushButton.setEnabled(False)
             self.pushButton_5.setEnabled(False)
             self.pushButton_4.setEnabled(False)
