@@ -98,7 +98,6 @@ def blur_images(folder, size):
 
 def main_download_site():
     result_dict_arts = []
-    # categories = ['Значки']
     categories = ["Адвент календари", "Значки"]
 
     art_list = get_arts_in_base()
@@ -112,7 +111,7 @@ def main_download_site():
         if remove_russian_letters(item["art"].upper().strip()) not in art_list
     ]
     logger.debug(f"Артикулов для загрузки с сервера:{len(data)}")
-    data = data[:10]
+    data = data[:100]
 
     logger.success(f"Будет загружено:{len(data)}")
     for item in data:

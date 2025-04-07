@@ -45,6 +45,7 @@ from utils.utils import enum_printers, FilesOnPrint, df_in_xlsx, remove_russian_
 
 
 class GroupedRecordsDialog(QDialog):
+    """Окно Статистики печати"""
     def __init__(self, parent, start_date, end_date):
         super(GroupedRecordsDialog, self).__init__(parent)
         self.setWindowTitle("Статистика печати")
@@ -111,6 +112,7 @@ class GroupedRecordsDialog(QDialog):
 
 
 class DateRangeDialog(QDialog):
+    """Окно выбора даты вывода статистики"""
     def __init__(self, parent=None):
         super(DateRangeDialog, self).__init__(parent)
         layout = QVBoxLayout(self)
@@ -167,26 +169,6 @@ class DateRangeDialog(QDialog):
             logger.error(ex)
 
 
-class CustomDialog(QDialog):
-    def __init__(self, parent=None):
-        super(CustomDialog, self).__init__(parent)
-        self.setWindowTitle("Новые артикулы")
-
-        # Создаем текстовое поле для отображения списка артикулов
-        self.text_edit = QTextEdit(self)
-        self.text_edit.setReadOnly(True)
-
-        # Кнопка для закрытия диалогового окна
-        self.close_button = QPushButton("Закрыть", self)
-        self.close_button.clicked.connect(self.close)
-
-        # Размещаем элементы на вертикальном слое
-        layout = QVBoxLayout()
-        layout.addWidget(self.text_edit)
-        layout.addWidget(self.close_button)
-        self.setLayout(layout)
-
-
 # class Dialog(QDialog):
 #     def __init__(self, button_names):
 #         super().__init__()
@@ -231,7 +213,7 @@ class CustomDialog(QDialog):
 
 class QueueDialog(QWidget):
     """
-    Окно со спискос на печать
+    Окно со списком на печать
     """
 
     def __init__(self, files_on_print, title, name_doc, A3_flag=False, parent=None):
@@ -345,6 +327,7 @@ class QueueDialog(QWidget):
             QMessageBox.information(self, "Отправка на печать", "Таблица пуста")
 
     def get_selected_data(self):
+        """Печать выбранных артикулов"""
         selected_rows = self.tableWidget.selectionModel().selectedRows()
         data = []
         for row in selected_rows:
@@ -366,6 +349,7 @@ class QueueDialog(QWidget):
         return data
 
     def get_all_data(self):
+        """Печать всех артикулов"""
         data = []
         for row in range(self.tableWidget.rowCount()):
             try:
@@ -395,6 +379,7 @@ class QueueDialog(QWidget):
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
+    """Функционал основного окна"""
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -427,6 +412,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.pushButton_2.clicked.connect(self.on_open_dialog_button_clicked)
 
     def addPrinterCheckbox(self, printer_name):
+        """Добавление принтеров в чекбоксы на основном окне"""
         checkbox = QCheckBox(printer_name, self.centralwidget)
         font = QtGui.QFont()
         font.setPointSize(14)
@@ -441,17 +427,20 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.count_printer = 0
 
     def update_progress(self, current_value, total_value):
+        """Обновление прогресс бара"""
         progress = int(current_value / total_value * 100)
         self.progress_bar.setValue(progress)
         QApplication.processEvents()
 
     def restart(self):
+        """Перезапуск программы"""
         os.execl(sys.executable, os.path.abspath(__file__), *sys.argv)
 
     def evt_btn_open_file_clicked(self):
         """Ивент на кнопку загрузить файл"""
 
         def get_download_path():
+            """Получение пути к папке с Загрузками для открытия при выборе файла"""
             return os.path.join(os.path.expanduser("~"), "downloads")
 
         try:
@@ -479,7 +468,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def evt_btn_create_files(self, flag_A3):
         """Ивент на кнопку Создать файлы"""
         filename = self.lineEdit.text()
-
+        counts_art = 0
         if filename:
             try:
                 counts_art = read_excel_file(filename)
@@ -537,7 +526,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 update_sticker_path()
             except Exception as ex:
                 logger.error(ex)
-            directory_path_sticker = sticker_path_all
+
+            #Так как отказались печатать ШК(стикеры) с локальной машины, так как они могут меняться или быть неверными,
+            # сейчас печатают их через новую программу через апи CRM
+            # directory_path_sticker = sticker_path_all
             # try:
             #     logger.debug('Загрузка стикеров я.диска:')
             #     main_search_sticker(directory_path_sticker, token, folder_path='/Новая база (1)')
@@ -623,7 +615,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             QMessageBox.information(self, "Инфо", "Загрузите заказ")
 
     def get_printers(self):
-        # Список выбранных принтеров
+        """Список выбранных принтеров"""
         checked_checkboxes = []
         for i in range(self.gridLayout.count()):
             item = self.gridLayout.itemAt(i)
@@ -688,6 +680,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 def run_script():
+    """Функция во втором потоке, которая обновляет базу и удаляет если
+     есть артикула на удаление и проверяет базу на косяки в артикулах"""
     while True:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -716,7 +710,7 @@ def run_script():
         #     update_base_postgresql()
         # except Exception as ex:
         #     logger.error(ex)
-        directory_path_sticker = sticker_path_all
+        # directory_path_sticker = sticker_path_all
         # try:
         #     logger.debug('Загрузка стикеров я.диска:')
         #     main_search_sticker(directory_path_sticker, token, folder_path='/Новая база (1)')
@@ -734,7 +728,7 @@ def run_script():
             logger.error(ex)
 
         logger.success("Обновление завершено")
-        time.sleep(5 * 60)
+        time.sleep(50 * 60)
 
 
 if __name__ == "__main__":
@@ -758,6 +752,7 @@ if __name__ == "__main__":
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     w = MainWindow()
     w.show()
+    #Если имя машины не ADMIN , то недоступна кнопка "Обновить", происходит автоматически по интервалу
     if machine_name != "ADMIN":
         script_thread = Thread(target=run_script)
         script_thread.daemon = True
