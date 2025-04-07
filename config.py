@@ -19,15 +19,9 @@ def get_base_dir():
 
 BASE_DIR = get_base_dir()
 
-path_root = Path(__file__).resolve().parent
-
 load_dotenv('.env')
 
 token = os.getenv('token')
-try:
-    token2 = os.getenv('token2')
-except Exception as ex:
-    logger.error(ex)
 
 machine_name = os.getenv('machine_name')
 #Подключение к Postgres
@@ -36,15 +30,14 @@ user = os.getenv('user')
 password = os.getenv('password')
 host = os.getenv('host')
 
+#чтение путей к папкам на локальном компе с которыми работает программа
 all_badge = os.getenv('all_badge')
-
 sticker_path_all = os.getenv('sticker_path_all')
-
 acrobat_path = os.getenv('acrobat_path')
 
-path_base_y_disc = '/Значки ANIKOYA  02 23'
 replace_dict = {}
-# Работа с артикулами для замены
+# Работа с артикулами для замены, читает файл и создает словарь, при работе программы если есть в
+# заказе артикул из словаря меняет его на соответствующий
 try:
     if os.path.exists("Замена артикулов.xlsx"):
         df = pd.read_excel("Замена артикулов.xlsx")
@@ -53,6 +46,7 @@ try:
 except Exception as ex:
     logger.error(ex)
 
+#Папки с брендами значков
 brands_paths = {
     'AniKoya': f'{all_badge}\\AniKoya',
     'Дочке понравилось': f'{all_badge}\\Дочке понравилось',
@@ -67,6 +61,7 @@ for brand, brand_dir in brands_paths.items():
     except Exception as ex:
         logger.error(ex)
 
+#Артикула которые игнорим при проверке, у них ошибки, но это норм
 bad_list = ['amazingmauricenabor-12new-6-44', 'che_guevara-44-6', 'harrypotternabor-12new-6-44',
             'rodi_deadplate-13new-2-44', 'sk-13new-1-44', 'spongebob-13new-6-44', 'tatianakosach-13new-44-1',
             'tatianakosach-13new-44-6', 'toya_kaito-13new-2-44', 'velvet_venir-13new-2-44', 'yanderirui-13new-44-1',

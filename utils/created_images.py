@@ -576,9 +576,3 @@ def created_good_images(all_arts, self, A3_flag=False):
             Statistic.create(art=record.art, nums=record.nums_in_folder, size=record.size)
     except Exception as ex:
         logger.error(ex)
-
-
-if __name__ == '__main__':
-    input_file = r'E:\Очередь на печать\49.png'
-    output_file = r'E:\Очередь на печать\!1.png'
-    # crop_to_content2(input_file, output_file)

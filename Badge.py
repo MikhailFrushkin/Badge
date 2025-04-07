@@ -27,7 +27,7 @@ from gui.main_window import Ui_MainWindow
 from utils.created_images import created_good_images
 from utils.delete_bad_arts import delete_arts
 from utils.main import update_arts_db, update_sticker_path
-from utils.print_sub import print_pdf_sticker, print_pdf_skin, print_png_images
+from utils.print_sub import print_pdf_skin, print_png_images
 from utils.read_excel import read_excel_file
 from utils.upload_files import upload_statistic_files_async
 from utils.utils import enum_printers, FilesOnPrint, df_in_xlsx, remove_russian_letters
@@ -165,50 +165,48 @@ class CustomDialog(QDialog):
         layout.addWidget(self.close_button)
         self.setLayout(layout)
 
-    def set_text(self, text):
-        self.text_edit.setPlainText(text)
 
 
-class Dialog(QDialog):
-    def __init__(self, button_names):
-        super().__init__()
-        self.button_names = button_names
-        self.initUI()
-        self.dialogs = []
-
-    def initUI(self):
-        self.setWindowTitle("Выберите принтер для печати стикеров")
-
-        # Создаем контейнер и устанавливаем для него компоновку
-        container = QWidget(self)
-        layout = QVBoxLayout(container)
-
-        for button_name in self.button_names:
-            button = QPushButton(button_name, self)
-            button.clicked.connect(self.buttonClicked)
-            button.setStyleSheet("QPushButton { font-size: 18px; height: 50px; }")
-            layout.addWidget(button)
-
-        # Добавляем прогресс бар и надпись в контейнер
-        self.progress_label = QLabel(self)
-        self.progress_bar = QProgressBar(self)
-        layout.addWidget(self.progress_label)
-        layout.addWidget(self.progress_bar)
-
-        # Устанавливаем контейнер как главный виджет диалогового окна
-        self.setLayout(layout)
-        self.setFixedWidth(400)
-
-    def buttonClicked(self):
-        sender = self.sender()
-        logger.debug(f"Нажата кнопка: {sender.text()}")
-        try:
-            self.show()
-            print_pdf_sticker(printer_name=sender.text(), self=self)
-            self.reject()
-
-        except Exception as ex:
-            logger.error(ex)
+# class Dialog(QDialog):
+#     def __init__(self, button_names):
+#         super().__init__()
+#         self.button_names = button_names
+#         self.initUI()
+#         self.dialogs = []
+#
+#     def initUI(self):
+#         self.setWindowTitle("Выберите принтер для печати стикеров")
+#
+#         # Создаем контейнер и устанавливаем для него компоновку
+#         container = QWidget(self)
+#         layout = QVBoxLayout(container)
+#
+#         for button_name in self.button_names:
+#             button = QPushButton(button_name, self)
+#             button.clicked.connect(self.buttonClicked)
+#             button.setStyleSheet("QPushButton { font-size: 18px; height: 50px; }")
+#             layout.addWidget(button)
+#
+#         # Добавляем прогресс бар и надпись в контейнер
+#         self.progress_label = QLabel(self)
+#         self.progress_bar = QProgressBar(self)
+#         layout.addWidget(self.progress_label)
+#         layout.addWidget(self.progress_bar)
+#
+#         # Устанавливаем контейнер как главный виджет диалогового окна
+#         self.setLayout(layout)
+#         self.setFixedWidth(400)
+#
+#     def buttonClicked(self):
+#         sender = self.sender()
+#         logger.debug(f"Нажата кнопка: {sender.text()}")
+#         try:
+#             self.show()
+#             print_pdf_sticker(printer_name=sender.text(), self=self)
+#             self.reject()
+#
+#         except Exception as ex:
+#             logger.error(ex)
 
 
 class QueueDialog(QWidget):

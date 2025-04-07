@@ -150,36 +150,36 @@ def orders_base_postgresql(self, lists):
         connection.commit()
 
 
-def crop_to_content(image_path, output_path):
-    """обрезка изображения до содержимого"""
-    start = datetime.now()
-    # Открываем изображение с помощью Pillow
-    image = Image.open(image_path)
-    #
-    # Конвертируем изображение в режим RGBA, если оно ещё не в нем
-    image = image.convert("RGBA")
-
-    # Получаем пиксельные данные изображения
-    data = image.getdata()
-
-    # Ищем границы содержимого
-    left, top, right, bottom = image.width, image.height, 0, 0
-    for x in range(image.width):
-        for y in range(image.height):
-            # Если пиксель непрозрачен (alpha > 0), обновляем границы
-            if data[y * image.width + x][3] > 0:  # Пиксельный формат RGBA: (R, G, B, A)
-                left = min(left, x)
-                top = min(top, y)
-                right = max(right, x)
-                bottom = max(bottom, y)
-
-    # Обрезаем изображение до границ содержимого
-    image_cropped = image.crop((left, top, right + 1, bottom + 1))
-
-    # Сохраняем обрезанное изображение
-    image_cropped.save(output_path)
-    image.save(output_path)
-    logger.debug(datetime.now() - start)
+# def crop_to_content(image_path, output_path):
+#     """обрезка изображения до содержимого"""
+#     start = datetime.now()
+#     # Открываем изображение с помощью Pillow
+#     image = Image.open(image_path)
+#     #
+#     # Конвертируем изображение в режим RGBA, если оно ещё не в нем
+#     image = image.convert("RGBA")
+#
+#     # Получаем пиксельные данные изображения
+#     data = image.getdata()
+#
+#     # Ищем границы содержимого
+#     left, top, right, bottom = image.width, image.height, 0, 0
+#     for x in range(image.width):
+#         for y in range(image.height):
+#             # Если пиксель непрозрачен (alpha > 0), обновляем границы
+#             if data[y * image.width + x][3] > 0:  # Пиксельный формат RGBA: (R, G, B, A)
+#                 left = min(left, x)
+#                 top = min(top, y)
+#                 right = max(right, x)
+#                 bottom = max(bottom, y)
+#
+#     # Обрезаем изображение до границ содержимого
+#     image_cropped = image.crop((left, top, right + 1, bottom + 1))
+#
+#     # Сохраняем обрезанное изображение
+#     image_cropped.save(output_path)
+#     image.save(output_path)
+#     logger.debug(datetime.now() - start)
 
 
 class GoogleTable(Model):
@@ -324,22 +324,6 @@ class Statistic(Model):
 
     class Meta:
         database = db
-
-
-def add_record_google_table(name, folder_link, article, shop):
-    """Добавление записи в таблицу с гугла"""
-
-    record, created = GoogleTable.get_or_create(
-        folder_link=folder_link,
-        defaults={
-            'name': name,
-            'article': article,
-            'shop': shop
-        }
-    )
-
-    if created:
-        logger.success(f'Новая запись добавлена: {name}')
 
 
 def push_number(art_id, num):
