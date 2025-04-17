@@ -18,9 +18,8 @@ def get_base_dir():
 
 
 BASE_DIR = get_base_dir()
-
+OUTPUT_READY_FILES = os.path.join(BASE_DIR, "Файлы на печать")
 load_dotenv(".env")
-
 token = os.getenv("token")
 
 machine_name = os.getenv("machine_name")

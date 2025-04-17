@@ -33,11 +33,11 @@ from peewee import fn
 
 from api_rest import main_download_site
 from base.db import Article, Statistic, GoogleTable, db, Orders
-from config import machine_name, sticker_path_all, BASE_DIR
+from config import machine_name, sticker_path_all, BASE_DIR, OUTPUT_READY_FILES
 from gui.main_window import Ui_MainWindow
 from utils.created_images import created_good_images
+from utils.db_utils import update_arts_db, update_sticker_path
 from utils.delete_bad_arts import delete_arts
-from utils.main import update_arts_db, update_sticker_path
 from utils.print_sub import print_pdf_skin, print_png_images
 from utils.read_excel import read_excel_file
 from utils.upload_files import upload_statistic_files_async
@@ -46,6 +46,7 @@ from utils.utils import enum_printers, FilesOnPrint, df_in_xlsx, remove_russian_
 
 class GroupedRecordsDialog(QDialog):
     """Окно Статистики печати"""
+
     def __init__(self, parent, start_date, end_date):
         super(GroupedRecordsDialog, self).__init__(parent)
         self.setWindowTitle("Статистика печати")
@@ -113,6 +114,7 @@ class GroupedRecordsDialog(QDialog):
 
 class DateRangeDialog(QDialog):
     """Окно выбора даты вывода статистики"""
+
     def __init__(self, parent=None):
         super(DateRangeDialog, self).__init__(parent)
         layout = QVBoxLayout(self)
@@ -167,48 +169,6 @@ class DateRangeDialog(QDialog):
             self.update_date_highlight()
         except Exception as ex:
             logger.error(ex)
-
-
-# class Dialog(QDialog):
-#     def __init__(self, button_names):
-#         super().__init__()
-#         self.button_names = button_names
-#         self.initUI()
-#         self.dialogs = []
-#
-#     def initUI(self):
-#         self.setWindowTitle("Выберите принтер для печати стикеров")
-#
-#         # Создаем контейнер и устанавливаем для него компоновку
-#         container = QWidget(self)
-#         layout = QVBoxLayout(container)
-#
-#         for button_name in self.button_names:
-#             button = QPushButton(button_name, self)
-#             button.clicked.connect(self.buttonClicked)
-#             button.setStyleSheet("QPushButton { font-size: 18px; height: 50px; }")
-#             layout.addWidget(button)
-#
-#         # Добавляем прогресс бар и надпись в контейнер
-#         self.progress_label = QLabel(self)
-#         self.progress_bar = QProgressBar(self)
-#         layout.addWidget(self.progress_label)
-#         layout.addWidget(self.progress_bar)
-#
-#         # Устанавливаем контейнер как главный виджет диалогового окна
-#         self.setLayout(layout)
-#         self.setFixedWidth(400)
-#
-#     def buttonClicked(self):
-#         sender = self.sender()
-#         logger.debug(f"Нажата кнопка: {sender.text()}")
-#         try:
-#             self.show()
-#             print_pdf_sticker(printer_name=sender.text(), self=self)
-#             self.reject()
-#
-#         except Exception as ex:
-#             logger.error(ex)
 
 
 class QueueDialog(QWidget):
@@ -294,8 +254,7 @@ class QueueDialog(QWidget):
         if selected_data:
             created_good_images(selected_data, self, self.A3_flag)
             try:
-                path = os.path.join(BASE_DIR, "Файлы на печать")
-                os.startfile(path)
+                os.startfile(OUTPUT_READY_FILES)
             except Exception as ex:
                 logger.error(ex)
         else:
@@ -317,7 +276,7 @@ class QueueDialog(QWidget):
             try:
                 created_good_images(all_data, self, self.A3_flag)
                 try:
-                    path = os.path.join(BASE_DIR, "Файлы на печать")
+                    path = os.path.join(OUTPUT_READY_FILES)
                     os.startfile(path)
                 except Exception as ex:
                     logger.error(ex)
@@ -380,6 +339,7 @@ class QueueDialog(QWidget):
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     """Функционал основного окна"""
+
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -527,7 +487,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             except Exception as ex:
                 logger.error(ex)
 
-            #Так как отказались печатать ШК(стикеры) с локальной машины, так как они могут меняться или быть неверными,
+            # Так как отказались печатать ШК(стикеры) с локальной машины, так как они могут меняться или быть неверными,
             # сейчас печатают их через новую программу через апи CRM
             # directory_path_sticker = sticker_path_all
             # try:
@@ -592,7 +552,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 if found_files_stickers:
                     logger.debug(found_files_stickers)
                     merge_pdfs_stickers(
-                        found_files_stickers, f"Файлы на печать\\!ШК {name_doc}"
+                        found_files_stickers, f"{OUTPUT_READY_FILES}\\!ШК {name_doc}"
                     )
                     logger.success(f"{name_doc} ШК сохранены!")
                 else:
@@ -752,7 +712,7 @@ if __name__ == "__main__":
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     w = MainWindow()
     w.show()
-    #Если имя машины не ADMIN , то недоступна кнопка "Обновить", происходит автоматически по интервалу
+    # Если имя машины не ADMIN , то недоступна кнопка "Обновить", происходит автоматически по интервалу
     if machine_name != "ADMIN":
         script_thread = Thread(target=run_script)
         script_thread.daemon = True

@@ -136,7 +136,3 @@ def update_sticker_path():
             row.sticker = os.path.join(sticker_path_all, sticker_file_path)
             row.save()
 
-
-if __name__ == "__main__":
-    directory = r"E:\База значков\AniKoya"
-    pass

@@ -27,6 +27,7 @@ from reportlab.pdfgen import canvas  # Генерация PDF
 
 # Импорт моделей БД и вспомогательных функций
 from base.db import push_number, Orders, Article, Statistic
+from config import OUTPUT_READY_FILES
 from utils.created_one_pdf import created_pdfs
 from utils.utils import ProgressBar, remove_russian_letters
 
@@ -190,7 +191,7 @@ def combine_images_to_pdf(input_files, output_pdf, size=None, progress=None, sel
         # Обработка больших изображений (отдельный файл)
         if big_list_skin:
             try:
-                big_output = f"Файлы на печать/Большие подложки {size}.pdf"
+                big_output = f"{OUTPUT_READY_FILES}/Большие подложки {size}.pdf"
                 c = canvas.Canvas(big_output, pagesize=A4)
                 img_width, img_height = 505, 674
 
@@ -415,7 +416,6 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False, popso
         # Настройка параметров
         border_color = (0, 0, 0, 255)  # Цвет рамки (черный)
         border_width = 1  # Толщина рамки
-        ready_path = "Файлы на печать"
 
         # Загрузка конфигурации
         config_path = ("Настройки\\Параметры значков_A3.json" if A3_flag
@@ -516,9 +516,9 @@ def create_contact_sheet(images=None, size=None, self=None, A3_flag=False, popso
 
                 # Определение пути сохранения
                 if not popsocket:
-                    path_ready = f"{ready_path}/{size}/{index}.png"
+                    path_ready = f"{OUTPUT_READY_FILES}/{size}/{index}.png"
                 else:
-                    path_ready = f"{ready_path}/Popsockets/{index}.png"
+                    path_ready = f"{OUTPUT_READY_FILES}/Popsockets/{index}.png"
 
                 # Добавление служебной информации и сохранение
                 x = config["number on badge"]["x"] - 40
@@ -588,8 +588,6 @@ def created_good_images(all_arts, self, A3_flag=False):
     bad_skin_list = None
 
     try:
-        # Инициализация переменных
-        ready_path = "Файлы на печать"
         self.list_on_print = 0  # Счетчик листов
 
         # Подготовка базы данных
@@ -598,17 +596,17 @@ def created_good_images(all_arts, self, A3_flag=False):
 
         # Подготовка директорий
         try:
-            shutil.rmtree(ready_path, ignore_errors=True)
+            shutil.rmtree(OUTPUT_READY_FILES, ignore_errors=True)
             time.sleep(1)  # Пауза для завершения удаления
         except Exception as ex:
             logger.error(f"Ошибка очистки директории: {ex}")
 
         # Создание необходимых папок
-        os.makedirs(f"{ready_path}\\25", exist_ok=True)
-        os.makedirs(f"{ready_path}\\37", exist_ok=True)
-        os.makedirs(f"{ready_path}\\44", exist_ok=True)
-        os.makedirs(f"{ready_path}\\56", exist_ok=True)
-        os.makedirs(f"{ready_path}\\Popsockets", exist_ok=True)
+        os.makedirs(f"{OUTPUT_READY_FILES}\\25", exist_ok=True)
+        os.makedirs(f"{OUTPUT_READY_FILES}\\37", exist_ok=True)
+        os.makedirs(f"{OUTPUT_READY_FILES}\\44", exist_ok=True)
+        os.makedirs(f"{OUTPUT_READY_FILES}\\56", exist_ok=True)
+        os.makedirs(f"{OUTPUT_READY_FILES}\\Popsockets", exist_ok=True)
 
         # Заполнение таблицы Orders данными
         for art in all_arts:
@@ -692,7 +690,7 @@ def created_good_images(all_arts, self, A3_flag=False):
                     logger.debug(f"Создание наклеек {size}")
                     bad_skin_list = combine_images_to_pdf(
                         queryset.order_by(Orders.num_on_list),
-                        f"{ready_path}/Наклейки {size}.pdf",
+                        f"{OUTPUT_READY_FILES}/Наклейки {size}.pdf",
                         size,
                         progress,
                         self,
@@ -706,7 +704,7 @@ def created_good_images(all_arts, self, A3_flag=False):
                     logger.debug(f"Создание файла ШК {size}")
                     merge_pdfs_stickers(
                         queryset.order_by(Orders.num_on_list),
-                        f"Файлы на печать\\ШК {size}"
+                        f"{OUTPUT_READY_FILES}\\ШК {size}"
                     )
                 except Exception as ex:
                     logger.error(f"Ошибка создания ШК {size}: {ex}")
@@ -752,7 +750,7 @@ def created_good_images(all_arts, self, A3_flag=False):
                     logger.debug("Создание наклеек Popsocket")
                     bad_skin_list = combine_images_to_pdf(
                         queryset.order_by(Orders.num_on_list),
-                        f"{ready_path}\\Наклейки Popsockets.pdf",
+                        f"{OUTPUT_READY_FILES}\\Наклейки Popsockets.pdf",
                         size,
                         progress,
                         self,
@@ -766,7 +764,7 @@ def created_good_images(all_arts, self, A3_flag=False):
                     logger.debug("Создание файла ШК Popsocket")
                     merge_pdfs_stickers(
                         queryset.order_by(Orders.num_on_list),
-                        f"Файлы на печать\\ШК Popsocket"
+                        f"{OUTPUT_READY_FILES}\\ШК Popsocket"
                     )
                 except Exception as ex:
                     logger.error(f"Ошибка создания ШК Popsocket: {ex}")

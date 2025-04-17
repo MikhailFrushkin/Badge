@@ -7,6 +7,7 @@ from loguru import logger
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
+from config import OUTPUT_READY_FILES
 from utils.utils import ProgressBar
 
 
@@ -55,10 +56,9 @@ def created_pdfs(self=None):
     if self:
         self.progress_bar.setValue(0)
 
-    ready_path = "Файлы на печать"
     directory_list = ["25", "37", "44", "56", "Popsockets"]
     for size_dir in directory_list:
-        directory = os.path.join(ready_path, size_dir)
+        directory = os.path.join(OUTPUT_READY_FILES, size_dir)
         if os.path.exists(directory):
             len_files = len(os.listdir(directory))
             if len_files != 0:

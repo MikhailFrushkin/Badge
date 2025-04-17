@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QMessageBox
 from loguru import logger
 
 from base.db import Orders
-from config import acrobat_path
+from config import acrobat_path, OUTPUT_READY_FILES
 
 
 def print_pdf_sticker(printer_name, self=None):
@@ -48,12 +48,10 @@ def print_pdf_sticker(printer_name, self=None):
 def print_pdf_skin(printers):
     file_list = []
     tuple_printing = tuple()
-    ready_path = "Файлы на печать"
-
-    for file in os.listdir(f"{ready_path}"):
-        if os.path.isfile(os.path.join(ready_path, file)):
+    for file in os.listdir(f"{OUTPUT_READY_FILES}"):
+        if os.path.isfile(os.path.join(OUTPUT_READY_FILES, file)):
             if file.split(".")[1] == "pdf" and file.split(".")[0].strip().isdigit():
-                file_path = os.path.join(ready_path, file)
+                file_path = os.path.join(OUTPUT_READY_FILES, file)
                 file_list.append(file_path)
 
     for file, printer in zip(file_list, itertools.cycle(printers)):
@@ -74,10 +72,9 @@ def print_pdf_skin(printers):
 
 def print_png_images(printers):
     file_list = []
-    ready_path = "Файлы на печать"
-    for root, dirs, files in os.walk(ready_path):
+    for root, dirs, files in os.walk(OUTPUT_READY_FILES):
         for file in files:
-            if file.endswith("png"):
+            if file.endswith(".png"):
                 file_list.append(os.path.join(root, file))
 
     tuple_printing = list(zip(file_list, itertools.cycle(printers)))
@@ -92,11 +89,3 @@ def print_png_images(printers):
             )
         except subprocess.CalledProcessError:
             print("Ошибка при печати файла.")
-
-
-if __name__ == "__main__":
-    file_path = (
-        r"E:\Новая база значков\AniKoya\Готовые\6\37\REZERO-4NEW-NABOR37\!10003.png"
-    )
-    printer_name = "Отправить в OneNote 16"
-    print_pdf_skin(printer_name)
