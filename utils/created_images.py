@@ -28,6 +28,7 @@ from reportlab.pdfgen import canvas  # Генерация PDF
 # Импорт моделей БД и вспомогательных функций
 from base.db import push_number, Orders, Article, Statistic
 from config import OUTPUT_READY_FILES
+from utils.create_pdf_sticker_file import create_barcodes
 from utils.created_one_pdf import created_pdfs
 from utils.utils import ProgressBar, remove_russian_letters
 
@@ -600,13 +601,16 @@ def created_good_images(all_arts, self, A3_flag=False):
             time.sleep(1)  # Пауза для завершения удаления
         except Exception as ex:
             logger.error(f"Ошибка очистки директории: {ex}")
-
-        # Создание необходимых папок
-        os.makedirs(f"{OUTPUT_READY_FILES}\\25", exist_ok=True)
-        os.makedirs(f"{OUTPUT_READY_FILES}\\37", exist_ok=True)
-        os.makedirs(f"{OUTPUT_READY_FILES}\\44", exist_ok=True)
-        os.makedirs(f"{OUTPUT_READY_FILES}\\56", exist_ok=True)
-        os.makedirs(f"{OUTPUT_READY_FILES}\\Popsockets", exist_ok=True)
+        folders = [
+            f"{OUTPUT_READY_FILES}\\25",
+            f"{OUTPUT_READY_FILES}\\37",
+            f"{OUTPUT_READY_FILES}\\44",
+            f"{OUTPUT_READY_FILES}\\56",
+            f"{OUTPUT_READY_FILES}\\Popsockets"
+        ]
+        for folder in folders:
+            # Создание необходимых папок
+            os.makedirs(folder, exist_ok=True)
 
         # Заполнение таблицы Orders данными
         for art in all_arts:
@@ -645,12 +649,12 @@ def created_good_images(all_arts, self, A3_flag=False):
                     order.delete_instance()
                     continue
 
-                # Проверка существования файла стикера
-                if not os.path.exists(order.sticker):
-                    logger.error(f"Стикер не найден {order.sticker}")
-                    order.sticker = None
-                    order.save()
-                    bad_arts_stickers.append((order.art, order.size))
+                # # Проверка существования файла стикера
+                # if not os.path.exists(order.sticker):
+                #     logger.error(f"Стикер не найден {order.sticker}")
+                #     order.sticker = None
+                #     order.save()
+                #     bad_arts_stickers.append((order.art, order.size))
             except Exception as ex:
                 logger.error(f"Ошибка проверки файлов для {order.art}: {ex}")
                 continue
@@ -679,18 +683,17 @@ def created_good_images(all_arts, self, A3_flag=False):
                     queryset, size, A3_flag, self, count
                 )
 
-                # Настройка прогресс-бара
                 if self:
                     self.progress_bar.setValue(0)
                     self.progress_label.setText(f"Прогресс: Создание подложек {size} mm.")
                     progress = ProgressBar(queryset.count(), self)
 
-                # Создание PDF с наклейками
+                # Создание PDF с наклейками/подложки
                 try:
                     logger.debug(f"Создание наклеек {size}")
                     bad_skin_list = combine_images_to_pdf(
                         queryset.order_by(Orders.num_on_list),
-                        f"{OUTPUT_READY_FILES}/Наклейки {size}.pdf",
+                        f"{OUTPUT_READY_FILES}/Подложки {size}.pdf",
                         size,
                         progress,
                         self,
@@ -701,11 +704,14 @@ def created_good_images(all_arts, self, A3_flag=False):
 
                 # Создание PDF со штрих-кодами
                 try:
+                    temp_q = queryset.order_by(Orders.num_on_list)
+                    arts = [i.art for i in temp_q]
                     logger.debug(f"Создание файла ШК {size}")
-                    merge_pdfs_stickers(
-                        queryset.order_by(Orders.num_on_list),
-                        f"{OUTPUT_READY_FILES}\\ШК {size}"
-                    )
+                    create_barcodes(arts, f"api ШК {size}")
+                    # merge_pdfs_stickers(
+                    #     queryset.order_by(Orders.num_on_list),
+                    #     f"{OUTPUT_READY_FILES}\\ШК {size}"
+                    # )
                 except Exception as ex:
                     logger.error(f"Ошибка создания ШК {size}: {ex}")
 
@@ -761,11 +767,14 @@ def created_good_images(all_arts, self, A3_flag=False):
 
                 # Создание PDF со штрих-кодами для Popsockets
                 try:
+                    temp_q = queryset.order_by(Orders.num_on_list)
+                    arts = [i.art for i in temp_q]
                     logger.debug("Создание файла ШК Popsocket")
-                    merge_pdfs_stickers(
-                        queryset.order_by(Orders.num_on_list),
-                        f"{OUTPUT_READY_FILES}\\ШК Popsocket"
-                    )
+                    create_barcodes(arts, f"api ШК Popsocket")
+                    # merge_pdfs_stickers(
+                    #     queryset.order_by(Orders.num_on_list),
+                    #     f"{OUTPUT_READY_FILES}\\ШК Popsocket"
+                    # )
                 except Exception as ex:
                     logger.error(f"Ошибка создания ШК Popsocket: {ex}")
 

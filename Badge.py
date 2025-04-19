@@ -35,6 +35,7 @@ from api_rest import main_download_site
 from base.db import Article, Statistic, GoogleTable, db, Orders
 from config import machine_name, sticker_path_all, BASE_DIR, OUTPUT_READY_FILES
 from gui.main_window import Ui_MainWindow
+from utils.create_pdf_sticker_file import create_barcodes
 from utils.created_images import created_good_images
 from utils.db_utils import update_arts_db, update_sticker_path
 from utils.delete_bad_arts import delete_arts
@@ -513,54 +514,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def evt_btn_print_stickers(self):
         """Ивент на кнопку напечатать стикеры"""
         if self.lineEdit.text() != "":
-
-            def find_files_in_directory(directory, arts_list):
-                found_files = []
-                not_found_files = []
-                sticker_dict = {}
-                for file in os.listdir(directory):
-                    file_name_no_exp = file.replace(".pdf", "")
-                    file_name = file_name_no_exp.lower().replace(" ", "").strip()
-                    sticker_dict[file_name] = os.path.join(directory, file)
-                for art in arts_list:
-                    file_name = art.origin_art.lower().strip().replace(" ", "")
-                    if file_name in sticker_dict:
-                        found_files.append(sticker_dict[file_name])
-                    else:
-                        not_found_files.append(art.origin_art)
-                logger.debug(not_found_files)
-                return found_files, not_found_files
-
-            def merge_pdfs_stickers(arts_paths, output_path):
-                pdf_writer = fitz.open()  # Создаем новый PDF
-
-                for input_path in arts_paths:
-                    try:
-                        pdf_reader = fitz.open(input_path)  # Открываем PDF
-                        pdf_writer.insert_pdf(pdf_reader)  # Вставляем страницы
-                        pdf_reader.close()  # Закрываем PDF
-                    except Exception as e:
-                        print(f"Error processing {input_path}: {e}")
-
-                pdf_writer.save(f"{output_path}.pdf")  # Сохраняем итоговый PDF
-                pdf_writer.close()  # Закрываем итоговый PDF
-
-            def create_order_shk(arts, name_doc=""):
-                found_files_stickers, not_found_stickers = find_files_in_directory(
-                    sticker_path_all, arts
-                )
-                if found_files_stickers:
-                    logger.debug(found_files_stickers)
-                    merge_pdfs_stickers(
-                        found_files_stickers, f"{OUTPUT_READY_FILES}\\!ШК {name_doc}"
-                    )
-                    logger.success(f"{name_doc} ШК сохранены!")
-                else:
-                    logger.error(f"{name_doc} ШК не найдены!")
-                return not_found_stickers
-
             arts = read_excel_file(self.lineEdit.text())
-            not_found_stickers_arts = create_order_shk(arts, "Все ")
+            art_list = []
+            for art in arts:
+                for _ in range(int(art.count)):
+                    art_list.append(art.art)
+            not_found_stickers_arts = create_barcodes(art_list, f"api Все ШК")
             if not_found_stickers_arts:
                 QMessageBox.warning(
                     self,
@@ -568,7 +527,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     f'Не найдены шк для:\n{", ".join(not_found_stickers_arts)}',
                 )
             try:
-                os.startfile(BASE_DIR)
+                os.startfile(OUTPUT_READY_FILES)
             except Exception as ex:
                 logger.error(ex)
         else:

@@ -131,6 +131,7 @@ def main_download_site():
                 size = item["size"]
                 count = item["quantity"]
                 folder = os.path.join(all_badge, brand, art)
+                logger.debug(folder)
                 if (
                     category == "Значки"
                     and art.split("-")[-1].isdigit()
@@ -190,6 +191,7 @@ def main_download_site():
             else:
                 logger.warning(f'Артикул существует {item["art"]}')
         except Exception as ex:
+            logger.error(art)
             logger.error(ex)
 
 

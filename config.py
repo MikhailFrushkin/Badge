@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -33,6 +34,8 @@ host = os.getenv("host")
 all_badge = os.getenv("all_badge")
 sticker_path_all = os.getenv("sticker_path_all")
 acrobat_path = os.getenv("acrobat_path")
+if not all_badge:
+    logger.error("all_badge")
 
 replace_dict = {}
 # Работа с артикулами для замены, читает файл и создает словарь, при работе программы если есть в
@@ -59,7 +62,6 @@ for brand, brand_dir in brands_paths.items():
         os.makedirs(brand_dir, exist_ok=True)
     except Exception as ex:
         logger.error(ex)
-
 # Артикула которые игнорим при проверке, у них ошибки, но это норм
 bad_list = [
     "amazingmauricenabor-12new-6-44",
