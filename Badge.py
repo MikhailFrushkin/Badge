@@ -604,11 +604,11 @@ def run_script():
     while True:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        logger.warning("Поиск артикулов для замены")
-        try:
-            delete_arts()
-        except Exception as ex:
-            logger.error(ex)
+        # logger.warning("Поиск артикулов для замены")
+        # try:
+        #     delete_arts()
+        # except Exception as ex:
+        #     logger.error(ex)
 
         logger.warning("Обновление базы с сайта")
         try:

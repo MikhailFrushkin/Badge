@@ -21,7 +21,7 @@ def get_base_dir():
 BASE_DIR = get_base_dir()
 OUTPUT_READY_FILES = os.path.join(BASE_DIR, "Файлы на печать")
 load_dotenv(".env")
-token = os.getenv("token")
+token = "smkgmnsdvnskvn32"
 
 machine_name = os.getenv("machine_name")
 # Подключение к Postgres
@@ -34,9 +34,8 @@ host = os.getenv("host")
 all_badge = os.getenv("all_badge")
 sticker_path_all = os.getenv("sticker_path_all")
 acrobat_path = os.getenv("acrobat_path")
-if not all_badge:
-    logger.error("all_badge")
-
+for dir_name in [all_badge, sticker_path_all]:
+    os.makedirs(dir_name, exist_ok=True)
 replace_dict = {}
 # Работа с артикулами для замены, читает файл и создает словарь, при работе программы если есть в
 # заказе артикул из словаря меняет его на соответствующий
